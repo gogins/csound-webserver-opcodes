@@ -61,6 +61,33 @@ channel.
 Thereafter, the window events and other events of the browser are handled by polling the 
 browser's event loop every kperiod.
 
+# webkit2_eval
+
+Evaluates user-defined JavaScript code in the browser's JavaScript context.
+
+## Description
+
+`webkit2_eval` - Evaluates user-defined JavaScript code in the browser's JavaScript context.
+This code has full access to the Csound object in the JavaScript context as well as to the 
+browser's DocumentObjectModel. The results returned from evaluating this code, if any, are 
+returned on the `S_callback_channel`.
+
+## Syntax
+```
+x_result webkit2_eval i_handle, S_javascript_code
+```
+## Initialization
+
+*i_handle* - Handle to a Webkit browser previously created with `webkit2_browser`.
+
+*S_javascript_code* - Arbitrary JavaScript code. If the code does not define a 
+return value, the return value is `undefined`. The return value is returned asynchronously 
+on the `S_callback_channel`.
+
+## Performance
+
+`S_javascript_code` will be evaluated at k-rate if `x_result` is a k-rate variable.
+
 # Installation
 
 1. Install the WebKitGTK package and its dependencies.
