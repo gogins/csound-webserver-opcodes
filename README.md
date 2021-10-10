@@ -8,9 +8,10 @@ http://michaelgogins.tumblr.com
 The WebKit2 opcodes embed the WebKitGTK Web browser and its JavaScript runtime 
 into Csound as a set of opcodes. They enable a Csound orchestra to include HTML5 
 code, including JavaScript code; to open a browser window during the Csound 
-performance; and to communicate back forth between the Document Object Model in 
-the browser and Csound, both via an interface to the Csound instance exported 
-to the browser's JavaScript context, and via C++ when used with the Clang opcodes.
+performance; to open an Internet resource during the Csound performande; and to 
+communicate back forth between the Document Object Model in the browser and 
+Csound, both via an interface to the Csound instance exported to the browser's 
+JavaScript context, and via C++ when used with the Clang opcodes.
 
 # webkit2_window
 
@@ -87,6 +88,22 @@ on the `S_callback_channel`.
 ## Performance
 
 `S_javascript_code` will be evaluated at k-rate if `x_result` is a k-rate variable.
+
+# From C++
+
+The `webkit2_opcodes` plugin exports a C++ function that provides programmatic access, 
+via C++, with the same functionality as the above opcodes. Code that uses this interface 
+must be compiled for C++17. Such code has full access to the browser (an instance of 
+WebKitWebView) and to Csound.
+
+```
+WebKit2Opcodes *get_webkit2(int i_handle);
+
+struct WebKit2Opcodes {
+  std::variant eval(std::string javascript_code);
+  GtkWidget *get_web_kit_web_view();
+  CSOUND *get
+};
 
 # Installation
 
