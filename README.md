@@ -104,6 +104,7 @@ struct WebKitOpcodes {
   GtkWidget *get_web_kit_web_view();
   CSOUND *get
 };
+```
 
 # Installation
 
