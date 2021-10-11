@@ -5,7 +5,7 @@ Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
-The WebKit2 opcodes embed the WebKitGTK Web browser and its JavaScript runtime 
+The WebKit opcodes embed the WebKitGTK Web browser and its JavaScript runtime 
 into Csound as a set of opcodes. They enable a Csound orchestra to include HTML5 
 code, including JavaScript code; to open a browser window during the Csound 
 performance; to open an Internet resource during the Csound performande; and to 
@@ -20,7 +20,7 @@ browser.
 
 ## Description
 
-`webkit2_window` - Opens a top-level window containing an instance of the WebKit2
+`webkit_window` - Opens a top-level window containing an instance of the WebKit2
 browser. This browser can basically do anything any browser can do, and also contains 
 a built-in Csound object. The browser can display a user-defined user interface to 
 the Csound orchestra, take control of the Csound performance, display a generated score, 
@@ -97,9 +97,9 @@ must be compiled for C++17. Such code has full access to the browser (an instanc
 WebKitWebView) and to Csound.
 
 ```
-WebKit2Opcodes *get_webkit2(int i_handle);
+WebKit2Opcodes *get_webkit(int i_handle);
 
-struct WebKit2Opcodes {
+struct WebKitOpcodes {
   std::variant eval(std::string javascript_code);
   GtkWidget *get_web_kit_web_view();
   CSOUND *get
@@ -109,7 +109,7 @@ struct WebKit2Opcodes {
 
 1. Install the WebKitGTK package and its dependencies.
 2. Install Csound.
-3. Build the `webkit2_opcodes` plugin opcode library by executing `build.sh`. You may need 
+3. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
 to modify this build script for y0ur system.
 5. Test by executing `csound webkit2_example.csd`. 
 
