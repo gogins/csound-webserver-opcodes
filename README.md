@@ -68,7 +68,7 @@ Evaluates user-defined JavaScript code in the browser's JavaScript context.
 
 ## Description
 
-`webkit2_eval` - Evaluates user-defined JavaScript code in the browser's JavaScript context.
+`webkit_eval` - Evaluates user-defined JavaScript code in the browser's JavaScript context.
 This code has full access to the Csound object in the JavaScript context as well as to the 
 browser's DocumentObjectModel. The results returned from evaluating this code, if any, are 
 returned on the `S_callback_channel`.
@@ -97,7 +97,7 @@ must be compiled for C++17. Such code has full access to the browser (an instanc
 WebKitWebView) and to Csound.
 
 ```
-WebKit2Opcodes *get_webkit(int i_handle);
+WebKitOpcodes *get_webkit(int i_handle);
 
 struct WebKitOpcodes {
   std::variant eval(std::string javascript_code);
