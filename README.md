@@ -1,4 +1,4 @@
-# webkit2-opcodes
+# webkit-opcodes
 ![GitHub All Releases (total)](https://img.shields.io/github/downloads/gogins/webkit2-opcodes/total.svg)<br>
 
 Michael Gogins<br>
@@ -13,7 +13,7 @@ communicate back forth between the Document Object Model in the browser and
 Csound, both via an interface to the Csound instance exported to the browser's 
 JavaScript context, and via C++ when used with the Clang opcodes.
 
-# webkit2_window
+# webkit_window
 
 `webkit2_window` - Opens a top-level window containing an instance of the WebKit2
 browser.
@@ -28,7 +28,7 @@ and so on.
 
 ## Syntax
 ```
-i_handle webkit2_window S_window_title, i_width, i_height [, S_html5_code, S_callback_channel]
+i_handle webkit_window S_window_title, i_width, i_height [, S_html5_code, S_callback_channel]
 ```
 ## Initialization
 
@@ -62,7 +62,7 @@ channel.
 Thereafter, the window events and other events of the browser are handled by polling the 
 browser's event loop every kperiod.
 
-# webkit2_eval
+# webkit_eval
 
 Evaluates user-defined JavaScript code in the browser's JavaScript context.
 
@@ -75,7 +75,7 @@ returned on the `S_callback_channel`.
 
 ## Syntax
 ```
-x_result webkit2_eval i_handle, S_javascript_code
+x_result webkit_eval i_handle, S_javascript_code
 ```
 ## Initialization
 
