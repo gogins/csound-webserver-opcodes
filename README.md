@@ -15,7 +15,7 @@ JavaScript context, and via C++ when used with the Clang opcodes.
 
 # webkit_window
 
-`webkit2_window` - Opens a top-level window containing an instance of the WebKit2
+`webkit_window` - Opens a top-level window containing an instance of the WebKit2
 browser.
 
 ## Description
