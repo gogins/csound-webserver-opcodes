@@ -13,98 +13,24 @@ communicate back forth between the Document Object Model in the browser and
 Csound, both via an interface to the Csound instance exported to the browser's 
 JavaScript context, and via C++ when used with the Clang opcodes.
 
-# webkit_window
-
-`webkit_window` - Opens a top-level window containing an instance of the WebKit2
-browser.
-
-## Description
-
-`webkit_window` - Opens a top-level window containing an instance of the WebKit2
-browser. This browser can basically do anything any browser can do, and also contains 
-a built-in Csound object. The browser can display a user-defined user interface to 
-the Csound orchestra, take control of the Csound performance, display a generated score, 
-and so on.
-
-## Syntax
+These are the opcodes: 
 ```
-i_handle webkit_window S_window_title, i_width, i_height [, S_html5_code, S_callback_channel]
+i_webkit_handle webkit_create
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+webkit_visibility i_webkit_handle, i_visible
+webkit_run_javascript i_webkit_handle, S_javascript_code, S_return_channel
+webkit_inspector i_webkit_handle
 ```
-## Initialization
-
-*S_window_title* - Title shown in the frame of the browser window.
-
-*i_width* - Width in pixels of the browser window. A negative value means full-screen.
-
-*i_height* - Height in pixels of the browser window. A negative value means full-screen.
-
-*S_html5_code* - If present, this code is loaded into the browser and displayed. It can 
-include any valid HTML5 code including HTML, JavaScript, CSS, etc.
-
-*S_callback_channel* - The name of a Csound control channel on which the results of 
-asynchronous method invocations will be returned.
-
-*i_handle* - A negative number is returned if there is an error. On success, a positive 
-number is returned that serves as a handle to the browser window for the other opcodes.
-
-## Performance
-
-The browser window is opened at the requested size, and the `S_html5_code`, if present, 
-is loaded and executed.
-
-The running Csound instance is injected into the browser's JavaScript context as a 
-JavaScript object. The methods of this object are asynchronous. The results of calling 
-these methods are returned on a Csound control channel named `S_callback_channel`.
-
-In addition, the Csound object can send and receives messages on any Csound control 
-channel.
-
-Thereafter, the window events and other events of the browser are handled by polling the 
-browser's event loop every kperiod.
-
-# webkit_eval
-
-Evaluates user-defined JavaScript code in the browser's JavaScript context.
-
-## Description
-
-`webkit_eval` - Evaluates user-defined JavaScript code in the browser's JavaScript context.
-This code has full access to the Csound object in the JavaScript context as well as to the 
-browser's DocumentObjectModel. The results returned from evaluating this code, if any, are 
-returned on the `S_callback_channel`.
-
-## Syntax
+In addition, the following JavaScript interface to Csound is defined in the 
+JavaScript context of each Web page opened by these opcodes. As far as possible 
+this interface is the same as that in `csound.hpp`.
 ```
-x_result webkit_eval i_handle, S_javascript_code
-```
-## Initialization
+class Csound {
 
-*i_handle* - Handle to a Webkit browser previously created with `webkit2_browser`.
-
-*S_javascript_code* - Arbitrary JavaScript code. If the code does not define a 
-return value, the return value is `undefined`. The return value is returned asynchronously 
-on the `S_callback_channel`.
-
-## Performance
-
-`S_javascript_code` will be evaluated at k-rate if `x_result` is a k-rate variable.
-
-# From C++
-
-The `webkit2_opcodes` plugin exports a C++ function that provides programmatic access, 
-via C++, with the same functionality as the above opcodes. Code that uses this interface 
-must be compiled for C++17. Such code has full access to the browser (an instance of 
-WebKitWebView) and to Csound.
-
-```
-WebKitOpcodes *get_webkit(int i_handle);
-
-struct WebKitOpcodes {
-  std::variant eval(std::string javascript_code);
-  GtkWidget *get_web_kit_web_view();
-  CSOUND *get
 };
 ```
+
 
 # Installation
 
