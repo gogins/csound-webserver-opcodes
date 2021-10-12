@@ -13,6 +13,25 @@ communicate back forth between the Document Object Model in the browser and
 Csound, both via an interface to the Csound instance exported to the browser's 
 JavaScript context, and via C++ when used with the Clang opcodes.
 
+These are the opcodes: 
+```
+i_webkit_handle webkit_create
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+webkit_visibility i_webkit_handle, i_visible
+webkit_run_javascript i_webkit_handle, S_javascript_code, S_return_channel
+webkit_inspector i_webkit_handle
+```
+In addition, the following JavaScript interface to Csound is defined in the 
+JavaScript context of each Web page opened by these opcodes. As far as possible 
+this interface is the same as that in `csound.hpp`.
+```
+class Csound {
+
+};
+
+
+
 # webkit_window
 
 `webkit_window` - Opens a top-level window containing an instance of the WebKit2
