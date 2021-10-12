@@ -51,6 +51,12 @@ struct CsoundWebKit {
         webkit_settings_set_enable_webaudio(webkit_settings, true);
         webkit_settings_set_media_playback_requires_user_gesture(webkit_settings, true);
         webkit_settings_set_enable_write_console_messages_to_stdout(webkit_settings, true);
+        webkit_settings_set_enable_media_stream(webkit_settings, true);
+        webkit_settings_set_enable_mediasource(webkit_settings, true);
+        webkit_settings_set_enable_media_capabilities(webkit_settings, true);
+        // TODO: See if these two are really a good idea.
+        webkit_settings_set_allow_file_access_from_file_urls(webkit_settings, true);
+        webkit_settings_set_allow_universal_access_from_file_urls(webkit_settings, true);
         gtk_container_add(GTK_CONTAINER(main_window), GTK_WIDGET(web_view));
         // Set up callbacks so that if either the main window or the browser instance is
         // closed, the program will exit
