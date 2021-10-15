@@ -85,6 +85,31 @@
     </script>
  </head>
 <body style="background-color:CadetBlue">
+<script src="simple-json-rpc.js"></script>
+
+<script>
+    // Create a Simple-JsonRPC object which can call HTTP JSON-RPC queries against the remote server https://rpc.example.com
+    var jrpc = simple_jsonrpc.connect_xhr('https://rpc.example.com');
+
+    // Equivelent to: {"jsonrpc":"2.0","method":"get_account","id":1,"params":["johndoe"]}
+    jrpc.call('get_account', ['johndoe']).then(function(res) {
+        console.log("User ID:", res.id);
+        console.log("User Email:", res.email);
+        console.log("User Name:", res.full_name);
+    });
+    // Equivelent to: {"jsonrpc":"2.0","method":"find_posts","id":2,"params":{"tag":"python","author":"jane.doe"}}
+    jrpc.call('find_posts', {tag: 'python', author: 'jane.doe'}).then(function(posts) {
+        for (var p of posts) {
+            console.log("Post title:", p.title)
+            console.log("Post tags:", p.tags)
+            console.log("Post content:", p.content)
+        }
+    });
+    // Equivelent to: {"jsonrpc":"2.0","method":"status","id":3}
+    jrpc.call('status').then(function(status) {
+        console.log(status);
+    });
+</script>
     <script src="CsoundAudioNode.js"></script>
     <script src="csound_loader.js"></script>
     <h1>Message from Another Planet, version 3</h1>
