@@ -1,0 +1,116 @@
+// Because the WebKit opcodes are instantiated only when Csound is performing,
+// all methods having to do with starting, running, or stopping Csound are 
+// omitted. It is permitted to stop, start, and seek in the score. It is also 
+// permitted to evaluate new Csound orchestra code during performance.
+//
+// Some functions of the Csound API that do not return values are nevertheless 
+// declared here to return a value, to ensure that calls are synchronous, 
+// rather than JSON-RPC asynchronous notifications.
+[
+	{
+		"name": "CompileCsdText",
+		"params": {
+			"csd_text": ""
+		},
+		"returns" : 0
+	},
+	{
+		"name": "CompileOrc",
+		"params": {
+			"orc_code": ""
+		},
+		"returns" : 0
+	},
+	{
+		"name": "EvalCode",
+		"params": {
+			"orc_code": ""
+		},
+		"returns" : 0.0
+	},
+	{
+		"name": "GetControlChannel",
+		"params": {
+			"channel_name": ""
+		},
+		"returns" : 0.0
+	},
+	{
+		"name": "GetKsmps",
+		"returns" : 0
+	},
+	{
+		"name": "GetNchnls",
+		"returns" : 0
+	},
+	{
+		"name": "GetNchnlsInput",
+		"returns" : 0
+	},
+	{
+		"name": "GetScoreTime",
+		"returns" : 0.0
+	},
+	{
+		"name": "GetSr",
+		"returns" : 0
+	},
+    {
+		"name": "InputMessage",
+		"params": {
+			"sco_code": ""
+		},
+		"returns" : 0
+    },
+    {
+		"name": "IsScorePending",
+		"returns" : true
+    },
+    {
+		"name": "Message",
+		"params": {
+			"message": ""
+        }
+    },
+    {
+		"name": "ReadScore",
+		"params": {
+			"sco_code": ""
+		},
+		"returns" : 0
+    },
+	{
+		"name": "RewindScore",
+		"returns" : 0
+	},
+	{
+		"name": "ScoreEvent",
+		"params": {
+			"opcode_code": "i",
+            "pfields": [0.0]
+		},
+		"returns" : 0
+	},
+	{
+		"name": "SetControlChannel",
+		"params": {
+			"channel_name": "",
+            "channel_value": 0.0
+		},
+		"returns" : 0
+	},
+	{
+		"name": "SetMessageCallback",
+		"params": {
+			"callback": {}
+		},
+		"returns" : 0
+	},
+	{
+		"name": "SetScorePending",
+		"params": {
+			"score_time": 0.0
+		},
+		"returns" : 0
+	}
+]

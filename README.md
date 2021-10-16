@@ -34,11 +34,19 @@ class Csound {
 
 # Installation
 
-1. Install the WebKitGTK package and its dependencies.
-2. Install Csound.
-3. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
+1. Install Csound.
+2. Install the WebKitGTK package and its dependencies.
+3. Install [libsonrpccpp](sudo apt-get install libjsonrpccpp-dev libjsonrpccpp-tools), 
+   preferably as a system package, e.g. 
+   `sudo apt-get install libjsonrpccpp-dev libjsonrpccpp-tools`.
+4. Generate the stubs and skeletons for the RPC channel that Web pages displayed 
+   by the opcodes use to call Csound:
+   ```
+   jsonrpcstub --verbose csoundrpc.json --js-client=Csound --cpp-server=CsoundSkeleton
+   ```   
+4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
 to modify this build script for y0ur system.
-5. Test by executing `csound webkit2_example.csd`. 
+5. Test by executing `csound webkit_example.csd`. 
 
 # Credits
 

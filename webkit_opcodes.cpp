@@ -10,6 +10,9 @@
 #include <libsoup-2.4/libsoup/soup.h>
 #include <libsoup-2.4/libsoup/soup-address.h>
 #include <webkit2/webkit2.h>
+#include <jsonrpccpp/server/connectors/httpserver.h>
+
+#include "csoundskeleton.h"
 
 // From: https://wiki.gnome.org/Projects/WebKitGtk/ProgrammingGuide/Tutorial
 
@@ -30,23 +33,109 @@ static gboolean close_webview_callback(WebKitWebView* webView, GtkWidget* window
     return true;
 }
 
+/**
+ * This class implements the abstract skeleton of the Csound proxy using an 
+ * instance of Csound and a network connector provided by the opcodes.
+ */
+struct CsoundServer : public CsoundSkeleton {
+    std::shared_ptr<Csound> csound;
+    CsoundServer(std::shared_ptr<Csound> csound_, jsonrpc::AbstractServerConnector &connector) : csound(csound_), CsoundSkeleton(connector) {};
+    virtual ~CsoundServer(){}     
+    int CompileCsdText(const std::string& csd_text) override {
+        int result = csound->CompileCsdText(csd_text.c_str());
+        return result;
+    }
+    int CompileOrc(const std::string& orc_code) override {
+        int result = csound->CompileOrc(orc_code.c_str());
+        return result;
+    }
+    MYFLT EvalCode(const std::string& orc_code) override {
+        MYFLT value = csound->CompileOrc(orc_code.c_str());
+        return value;
+    }
+    double GetControlChannel(const std::string& channel_name) override {
+        MYFLT value = csound->GetControlChannel(channel_name.c_str());
+        return value;
+    }
+    int GetKsmps() override {
+        int value = csound->GetKsmps();
+        return value;
+    }
+    int GetNchnls() override {
+        int value = csound->GetNchnls();
+        return value;
+    }
+    int GetNchnlsInput() override {
+        int value = csound->GetNchnlsInput();
+        return value;
+    }
+    double GetScoreTime() override {
+        MYFLT value = csound->GetScoreTime();
+        return value;
+    }
+    int GetSr() override {
+        int value = csound->GetSr();
+        return value;
+    }
+    int InputMessage(const std::string &sco_text) override {
+        int result = OK;
+        csound->InputMessage(sco_text.c_str());
+        return result;
+    }
+    bool IsScorePending() override {
+        bool value = csound->IsScorePending();
+        return value;
+    }
+    void Message(const std::string& message) override {
+        csound->Message(message.c_str());
+    }
+    int ReadScore(const std::string& sco_code) override {
+        int result = csound->ReadScore(sco_code.c_str());
+        return result;
+    }
+    int RewindScore() override {
+        int result = OK;
+        csound->RewindScore();
+        return result;
+    }
+    // Does nothing at this time.
+    int ScoreEvent(const std::string& opcode_code, const Json::Value& pfields) override {
+        int result = OK;
+        return result;
+    }
+    int SetControlChannel(const std::string& channel_name, double channel_value) override {
+        int result = OK;
+        csound->SetControlChannel(channel_name.c_str(), channel_value);
+        return result;
+    }
+    // Does nothing at this time.
+    int SetMessageCallback(const Json::Value& callback)  override {
+        int result = OK;
+        return result;
+    }
+    int SetScorePending(double score_time) override {
+        int result = OK;
+        csound->SetScorePending(score_time);
+        return result;
+    }
+};
+
 struct CsoundWebKit {
     std::shared_ptr<Csound> csound;
+    std::shared_ptr<jsonrpc::HttpServer> network_server;
+    std::shared_ptr<CsoundServer> csound_server;
     GtkWidget *main_window;
     WebKitWebView *web_view;
     WebKitSettings *webkit_settings;
     WebKitWebContext *webkit_context;
     WebKitWebInspector *webkit_inspector;
-    JSGlobalContextRef js_global_context_ref;
     JSCContext *jsc_context = nullptr;
     JSCClass *csound_class = nullptr;
     JSCValue *csound_constructor = nullptr;
     JSCValue *csound_message_callback = nullptr;
-    ///char browser_csound_callback_name[] = "csound_message_callback";
-
-    ///WebKitScriptWorld *world;
     bool diagnostics_enabled;
     std::string return_channel;
+    int rpc_port = 8383;
     CsoundWebKit(CSOUND *csound_, const char *return_channel_) {
         auto temp_csound = new Csound(csound_);
         csound = std::shared_ptr<Csound>(csound);
@@ -54,6 +143,10 @@ struct CsoundWebKit {
         // Initialize GTK+
         gtk_init(nullptr, nullptr);
         diagnostics_enabled = true;
+        auto temp = new jsonrpc::HttpServer(rpc_port);
+        network_server = std::shared_ptr<jsonrpc::HttpServer>(temp);
+        csound_server = std::shared_ptr<CsoundServer>(new CsoundServer(csound, *temp));
+        network_server->StartListening();
     }
     static std::unique_ptr<CsoundWebKit> create(CSOUND *csound_, const char *return_channel_) {
         std::unique_ptr<CsoundWebKit> result(new CsoundWebKit(csound_, return_channel_));
@@ -64,6 +157,7 @@ struct CsoundWebKit {
         if (initialized == true) {
             return;
         }
+        
         initialized = true;
         std::fprintf(stderr, "CsoundWebKit::inject_csound...");
     }
