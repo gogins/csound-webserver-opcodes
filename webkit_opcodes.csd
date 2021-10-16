@@ -1,6 +1,6 @@
 <CsoundSyntheizer>
 <CsOptions;
--m195 --opcode-libs="./webkit_opcodes.so"  
+-m195  
 </CsOptions>
 <CsInstruments>
 

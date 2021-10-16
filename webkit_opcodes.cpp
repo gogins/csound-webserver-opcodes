@@ -39,7 +39,9 @@ static gboolean close_webview_callback(WebKitWebView* webView, GtkWidget* window
  */
 struct CsoundServer : public CsoundSkeleton {
     std::shared_ptr<Csound> csound;
-    CsoundServer(std::shared_ptr<Csound> csound_, jsonrpc::AbstractServerConnector &connector) : csound(csound_), CsoundSkeleton(connector) {};
+    CsoundServer(std::shared_ptr<Csound> csound_, jsonrpc::AbstractServerConnector &connector) : csound(csound_), CsoundSkeleton(connector) {
+        std::fprintf(stderr, "CsoundServer::CsoundServer: csound: %p connector: %p\n", csound.get(), &connector);
+    };
     virtual ~CsoundServer(){}     
     int CompileCsdText(const std::string& csd_text) override {
         int result = csound->CompileCsdText(csd_text.c_str());
@@ -138,15 +140,17 @@ struct CsoundWebKit {
     int rpc_port = 8383;
     CsoundWebKit(CSOUND *csound_, const char *return_channel_) {
         auto temp_csound = new Csound(csound_);
-        csound = std::shared_ptr<Csound>(csound);
+        csound = std::shared_ptr<Csound>(temp_csound);
         return_channel = return_channel_;
         // Initialize GTK+
         gtk_init(nullptr, nullptr);
         diagnostics_enabled = true;
-        auto temp = new jsonrpc::HttpServer(rpc_port);
-        network_server = std::shared_ptr<jsonrpc::HttpServer>(temp);
-        csound_server = std::shared_ptr<CsoundServer>(new CsoundServer(csound, *temp));
+        auto temp_server = new jsonrpc::HttpServer(rpc_port);
+        network_server = std::shared_ptr<jsonrpc::HttpServer>(temp_server);
+        csound_server = std::shared_ptr<CsoundServer>(new CsoundServer(csound, *temp_server));
+        std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: Starting to listen on port: %d\n", rpc_port);
         network_server->StartListening();
+        std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: Now listening...\n");
     }
     static std::unique_ptr<CsoundWebKit> create(CSOUND *csound_, const char *return_channel_) {
         std::unique_ptr<CsoundWebKit> result(new CsoundWebKit(csound_, return_channel_));
@@ -225,21 +229,9 @@ struct CsoundWebKit {
         }
         value = webkit_javascript_result_get_js_value (js_result);
         jsc_context = jsc_value_get_context(value);
-        inject_csound();
         std::fprintf(stderr, "run_javascript_callback: jsc_context: %p\n", jsc_context);
-        if (jsc_value_is_string (value)) {
-            JSCException *exception;
-            gchar *str_value = jsc_value_to_string(value);
-            exception = jsc_context_get_exception(jsc_context);
-            if (exception) {
-                g_warning("Error running javascript: %s", jsc_exception_get_message(exception));
-            } else {
-                g_print ("Script result: %s\n", str_value);
-            }
-            g_free(str_value);
-        } else {
-            g_warning ("Error running javascript: unexpected return value");
-        }
+        gchar *str_value = jsc_value_to_string(value);
+        g_print ("Script result: %s\n", str_value);
         webkit_javascript_result_unref(js_result);
     }
     static void run_javascript_callback_(GObject *object, GAsyncResult *result, gpointer user_data) {
@@ -300,7 +292,7 @@ public:
         browser->open(S_window_title, i_width, i_height);
         log(csound, "WebKitOpenUri::init: uri: %s\n", S_uri);
         browser->load_uri(S_uri);
-        browser->run_javascript("x=999.999;x;");
+        browser->run_javascript("let x=\"hello\";console.log(x);x;");
         return result;
     }
     int kontrol(CSOUND *csound) {
