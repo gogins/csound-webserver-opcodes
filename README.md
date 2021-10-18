@@ -6,21 +6,17 @@ https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
 The WebKit opcodes embed the WebKitGTK Web browser and its JavaScript runtime 
-into Csound as a set of opcodes. They enable a Csound orchestra to include HTML5 
-code, including JavaScript code; to open a browser window during the Csound 
-performance; to open an Internet resource during the Csound performande; and to 
-communicate back forth between the Document Object Model in the browser and 
-Csound, both via an interface to the Csound instance exported to the browser's 
-JavaScript context, and via C++ when used with the Clang opcodes.
+into Csound as a set of opcodes. They enable a Csound orchestra to include 
+HTML5 code, including JavaScript code; to open a browser window during the 
+Csound performance; to open an Internet resource during the Csound 
+performance; and to control Csound's performance via a JavaScript JSON-RPC 
+proxy for the Csound instance.
 
 These are the opcodes: 
 ```
-i_webkit_handle webkit_create
+i_webkit_handle webkit_create [, i_rpc_port]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
-webkit_visibility i_webkit_handle, i_visible
-webkit_run_javascript i_webkit_handle, S_javascript_code, S_return_channel
-webkit_inspector i_webkit_handle
 ```
 In addition, the following JavaScript interface to Csound is defined in the 
 JavaScript context of each Web page opened by these opcodes. As far as possible 
@@ -31,6 +27,129 @@ class Csound {
 };
 ```
 
+# webkit_create
+
+`webkit_create` - creates an instance of the WebKitGTK Web browser embedded 
+into the Csound performance.
+
+## Description
+
+Creates an instance an instance of the WebKitGTK Web browser embedded 
+into the Csound performance. This is not _quite_ a full-featured browser, but 
+only because it lacks user controls, user settings, history, a URL entry 
+bar, and so on. Such features can, however, be created by means of user-
+defined HTML and JavaScript code.
+
+In every other way, the embedded browser is indeed full-featured. It can 
+display local or remote Web pages, execute JavaScript, open WebSockets, show 
+animated WebGL models, and do many other things.
+
+In particular, the embedded browser can call back into the ongoing Csound 
+performance using a subset of the Csound API defined in the `Csound.js` 
+script. This script can call most methods of the Csound API as implemented 
+in `csound.hpp`, but all functions involving the creation, destruction,  
+starting and stopping, or runtime configuration had to be omitted. The 
+Csound interface in `Csound.js` communicates with the WebKit opcodes and 
+thus with Csound using JSON-RPC and Ajax.
+
+## Syntax
+```
+[i_browser_handle] webkit_create [i_rpc_port]
+```
+## Initialization
+
+*i_rpc_port* - The number of a port on `localhost` that the Csound proxy will
+use for JSON-RPC calls. If omitted, the port defaults to 8383.
+
+*i_browser_handle* - The return value is a handle to the newly created browser. 
+The other WebKit opcodes must take such a handle as their first pfield.
+
+## Performance
+
+Once created, and whether or not it is actually displayed, the browser remains
+in scope until the end of the Csound performance.
+
+# webkit_open_html
+
+`webkit_open_html` - opens a new top-level window and displays in it the content 
+defined in the HTML code. This can be a local file or an Internet resource.
+
+## Syntax
+
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+
+## Initialization
+
+*i_webkit_handle* - the handle of a browser created by `webkit_create`.
+
+*S_window_title* - the title to be displayed by the top-level browser window.
+
+*S_uri* - the Uniform Resource Locator of an Internet resource to be loaded by 
+the browser.
+
+*i_width* - the width of the top-level browser window in pixels.
+
+*i_height* - the height of the top-level browser window in pixels.
+
+## Performance
+
+The browser window remains open for the remainder of the Csound performance. 
+Window events and JavaScript callbacks within the browser are dispatched every 
+kperiod.
+
+Right-clicking on the browser opens the browser's inspector, or debugger. It 
+can be used to view HTML and JavaScript code, inspect elements of the Document 
+Object Model, and to set breakpoints or inspect variables in JavaScript code.
+
+# webkit_open_html
+
+`webkit_open_html` - opens a new top-level window and displays in it the content 
+defined by the S_html parameter, typically a multi-line string constant contained 
+within the `{{` and `}}` delimiters.
+
+## Syntax
+
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+
+## Initialization
+
+*i_webkit_handle* - the handle of a browser created by `webkit_create`.
+
+*S_window_title* - the title to be displayed by the top-level browser window.
+
+*S_html* - a string containing valid HTML5 code, typically a multi-line string 
+constant contained within the `{{` and `}}` delimiters.
+
+*S_base_uri* - a Uniform Resource Locator specify the base from which relative 
+URI addressed are found. This will normally be the filesystem directory 
+that contains the Csound piece. Additional Web pages, JavaScript files, images, 
+and so on can be loaded from the base URI.
+
+*i_width* - the width of the top-level browser window in pixels.
+
+*i_height* - the height of the top-level browser window in pixels.
+
+## Performance
+
+The browser window remains open for the remainder of the Csound performance. 
+Window events and JavaScript callbacks within the browser are dispatched every 
+kperiod.
+
+Right-clicking on the browser opens the browser's inspector, or debugger. It 
+can be used to view HTML and JavaScript code, inspect elements of the Document 
+Object Model, and to set breakpoints or inspect variables in JavaScript code.
+
+In order for user-defined code to call back into Csound, include the 
+`Csound.js` script that defines the Csound proxy in the body of your HTML5 
+code.
+
+Please note, the Web page can call back into Csound, but Csound cannot call 
+directly into the Web page. This may change in future versions of the WebKit 
+opcodes.
+
+## Example
+
+See `webkit_example.js`.
 
 # Installation
 
@@ -45,7 +164,7 @@ class Csound {
    jsonrpcstub --verbose csoundrpc.json --js-client=Csound --cpp-server=CsoundSkeleton
    ```   
 4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
-to modify this build script for y0ur system.
+to modify this build script for your system.
 5. Test by executing `csound webkit_example.csd`. 
 
 # Credits
