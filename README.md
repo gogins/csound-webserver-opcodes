@@ -168,6 +168,7 @@ working directory is. You can use the `pwd` opcode to get this:
 S_current_working_directory pwd
 S_base_uri sprintf "file://%s/", S_current_working_directory
 prints S_base_uri
+webkit_open_html gi_browser, "Message", gS_html_code, S_base_uri, 900, 650
 ```
 
 *i_width* - The width of the top-level browser window in pixels.
