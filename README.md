@@ -153,7 +153,7 @@ webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i
 
 *i_webkit_handle* - The handle of a browser created by `webkit_create`.
 
-*S_window_title* - Yhe title to be displayed by the top-level browser window.
+*S_window_title* - The title to be displayed by the top-level browser window.
 
 *S_html* - A string containing valid HTML5 code, typically a multi-line string 
 constant contained within the `{{` and `}}` delimiters.
@@ -163,7 +163,7 @@ URI addresses are found. This will normally be the filesystem directory
 that contains the Csound piece. Additional Web pages, JavaScript files, images, 
 and so on can be loaded from the base URI.
 
-The `file` URI scheme does not permit relative filepaths. However, it is easy, in 
+The `file` URL scheme does not permit relative filepaths. However, it is easy, in 
 csound, to construct an absolute filepath given that Csound knows what its current 
 working directory is. You can use the `pwd` opcode to get this:
 ```
