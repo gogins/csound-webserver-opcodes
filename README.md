@@ -18,10 +18,10 @@ i_webkit_handle webkit_create [i_rpc_port]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
 ```
-In addition, the following JavaScript interface to Csound is defined in the 
-JavaScript context of each Web page opened by these opcodes. As far as possible 
-this interface is the same as that in `csound.hpp`. The methods of the `csound` object 
-are:
+In addition, the following JavaScript interface to Csound ccan be defined in the 
+JavaScript context of each Web page opened by these opcodes by including the `csound.js` 
+script. As far as possible this interface is the same as that in `csound.hpp`. The methods 
+of the `csound` object are:
 ```
 CompileCsdText
 CompileOrc
