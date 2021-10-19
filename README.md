@@ -29,7 +29,7 @@ class Csound {
 
 # webkit_create
 
-`webkit_create` - creates an instance of the WebKitGTK Web browser embedded 
+`webkit_create` - Creates an instance of the WebKitGTK Web browser embedded 
 into the Csound performance.
 
 ## Description
@@ -46,7 +46,7 @@ animated WebGL models, and do many other things.
 
 In particular, the embedded browser can call back into the ongoing Csound 
 performance using a subset of the Csound API defined in the `Csound.js` 
-script. This script can call most methods of the Csound API as implemented 
+script. This script can call many methods of the Csound API as implemented 
 in `csound.hpp`, but all functions involving the creation, destruction,  
 starting and stopping, or runtime configuration had to be omitted. The 
 Csound interface in `Csound.js` communicates with the WebKit opcodes and 
@@ -61,7 +61,7 @@ thus with Csound using JSON-RPC and Ajax.
 *i_rpc_port* - The number of a port on `localhost` that the Csound proxy will
 use for JSON-RPC calls. If omitted, the port defaults to 8383.
 
-*i_browser_handle* - The return value is a handle to the newly created browser. 
+*i_browser_handle* - Returns a handle to the newly created browser. 
 The other WebKit opcodes must take such a handle as their first pfield.
 
 ## Performance
@@ -69,10 +69,15 @@ The other WebKit opcodes must take such a handle as their first pfield.
 Once created, and whether or not it is actually displayed, the browser remains
 in scope until the end of the Csound performance.
 
-# webkit_open_html
+# webkit_open_uri
 
-`webkit_open_html` - opens a new top-level window and displays in it the content 
-defined in the HTML code. This can be a local file or an Internet resource.
+`webkit_openuri` - Opens a new top-level window and displays in it the content 
+defined in the universal resource identifier. This can be a local file or an 
+Internet resource.
+
+Please note, pages opened with this opcode do not have access to Csound. 
+For that, you must use `webkit_open_html`. `webkit_open_uri` is primarily 
+useful for opening external pages, such as documentation.
 
 ## Syntax
 
@@ -80,16 +85,16 @@ webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 
 ## Initialization
 
-*i_webkit_handle* - the handle of a browser created by `webkit_create`.
+*i_webkit_handle* - The handle of a browser created by `webkit_create`.
 
-*S_window_title* - the title to be displayed by the top-level browser window.
+*S_window_title* - The title to be displayed by the top-level browser window.
 
-*S_uri* - the Uniform Resource Locator of an Internet resource to be loaded by 
+*S_uri* - The Uniform Resource Identifier of an Internet resource to be loaded by 
 the browser.
 
-*i_width* - the width of the top-level browser window in pixels.
+*i_width* - The width of the top-level browser window in pixels.
 
-*i_height* - the height of the top-level browser window in pixels.
+*i_height* - The height of the top-level browser window in pixels.
 
 ## Performance
 
@@ -103,7 +108,7 @@ Object Model, and to set breakpoints or inspect variables in JavaScript code.
 
 # webkit_open_html
 
-`webkit_open_html` - opens a new top-level window and displays in it the content 
+`webkit_open_html` - Opens a new top-level window and displays in it the content 
 defined by the S_html parameter, typically a multi-line string constant contained 
 within the `{{` and `}}` delimiters.
 
@@ -113,21 +118,21 @@ webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i
 
 ## Initialization
 
-*i_webkit_handle* - the handle of a browser created by `webkit_create`.
+*i_webkit_handle* - The handle of a browser created by `webkit_create`.
 
-*S_window_title* - the title to be displayed by the top-level browser window.
+*S_window_title* - Yhe title to be displayed by the top-level browser window.
 
-*S_html* - a string containing valid HTML5 code, typically a multi-line string 
+*S_html* - A string containing valid HTML5 code, typically a multi-line string 
 constant contained within the `{{` and `}}` delimiters.
 
-*S_base_uri* - a Uniform Resource Locator specify the base from which relative 
+*S_base_uri* - A Uniform Resource Identifier specify the base from which relative 
 URI addressed are found. This will normally be the filesystem directory 
 that contains the Csound piece. Additional Web pages, JavaScript files, images, 
 and so on can be loaded from the base URI.
 
-*i_width* - the width of the top-level browser window in pixels.
+*i_width* - The width of the top-level browser window in pixels.
 
-*i_height* - the height of the top-level browser window in pixels.
+*i_height* - The height of the top-level browser window in pixels.
 
 ## Performance
 
