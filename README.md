@@ -54,7 +54,7 @@ thus with Csound using JSON-RPC and Ajax.
 
 ## Syntax
 ```
-[i_browser_handle] webkit_create [i_rpc_port]
+i_browser_handle webkit_create [i_rpc_port]
 ```
 ## Initialization
 
