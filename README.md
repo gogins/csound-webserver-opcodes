@@ -203,8 +203,9 @@ See `webkit_example.js`.
 
 # Installation
 
-1. Install Csound.
-2. Install the [WebKitGTK](https://webkitgtk.org/) package and its dependencies, 
+1. Install [Csound](https://github.com/csound/csound). On Linux, this generally 
+   means building from source code.
+3. Install the [WebKitGTK](https://webkitgtk.org/) package and its dependencies, 
    preferably as a system package, e.g. `sudo apt-get install libwebkit2gtk-4.0-dev`.
 4. Install [libjson-rpc-cpp](https://github.com/cinemast/libjson-rpc-cpp), 
    preferably as a system package, e.g. 
