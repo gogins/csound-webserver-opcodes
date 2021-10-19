@@ -204,8 +204,9 @@ See `webkit_example.js`.
 # Installation
 
 1. Install Csound.
-2. Install the WebKitGTK package and its dependencies.
-3. Install [libsonrpccpp](sudo apt-get install libjsonrpccpp-dev libjsonrpccpp-tools), 
+2. Install the WebKitGTK package and its dependencies, preferably as a system 
+   package, e.g. `sudo apt-get install libwebkit2gtk-4.0-dev`).
+4. Install [libjson-rpc-cpp](https://github.com/cinemast/libjson-rpc-cpp), 
    preferably as a system package, e.g. 
    `sudo apt-get install libjsonrpccpp-dev libjsonrpccpp-tools`.
 4. Generate the stubs and skeletons for the RPC channel that Web pages displayed 
@@ -214,7 +215,7 @@ See `webkit_example.js`.
    jsonrpcstub --verbose csoundrpc.json --js-client=Csound --cpp-server=CsoundSkeleton
    ```   
 4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
-to modify this build script for your system.
+   to modify this build script for your system.
 5. Test by executing `csound webkit_example.csd`. 
 
 # Credits
