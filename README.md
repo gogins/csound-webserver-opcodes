@@ -7,8 +7,8 @@ http://michaelgogins.tumblr.com
 
 The WebKit opcodes embed the WebKitGTK Web browser and its JavaScript runtime 
 into Csound as a set of opcodes. They enable a Csound orchestra to include 
-HTML5 code, including JavaScript code; to open a browser window during the 
-Csound performance; to open an Internet resource during the Csound 
+HTML5 code, including JavaScript code; to open one or more browser windows 
+during the Csound performance; to open Internet resources during the Csound 
 performance; and to control Csound's performance via a JavaScript JSON-RPC 
 proxy for the Csound instance.
 
@@ -20,11 +20,40 @@ webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i
 ```
 In addition, the following JavaScript interface to Csound is defined in the 
 JavaScript context of each Web page opened by these opcodes. As far as possible 
-this interface is the same as that in `csound.hpp`.
+this interface is the same as that in `csound.hpp`. The methods of the `csound` object 
+are:
 ```
-class Csound {
+CompileCsdText
+CompileOrc
+EvalCode
+Get0dBFS
+GetAudioChannel
+GetControlChannel
+GetDebug
+GetKsmps
+GetNchnls
+GetNchnlsInput
+GetScoreOffsetSeconds
+GetScoreTime
+GetSr
+GetStringChannel
+InputMessage
+IsScorePending
+Message
+ReadScore
+RewindScore
+ScoreEvent
+SetControlChannel
+SetDebug
+SetMessageCallback
+SetScoreOffsetSeconds
+SetScorePending
+SetStringChannel
+TableGet
+TableLength
+TableSet
 
-};
+constructor: function(url)
 ```
 
 # webkit_create
@@ -62,7 +91,8 @@ i_browser_handle webkit_create [i_rpc_port]
 use for JSON-RPC calls. If omitted, the port defaults to 8383.
 
 *i_browser_handle* - Returns a handle to the newly created browser. 
-The other WebKit opcodes must take such a handle as their first pfield.
+The other WebKit opcodes must take such a handle as their first pfield. One 
+browser can open any number of Web pages, each in its own top-level window.
 
 ## Performance
 
