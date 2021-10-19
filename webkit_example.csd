@@ -241,7 +241,7 @@ gS_html init {{
 
 gi_browser webkit_create 
 webkit_open_uri gi_browser, "Csound Help", "https://csound.com/docs/manual/indexframes.html", 900, 600
-webkit_open_uri gi_browser, "WebKit Browser Capabilities", "https://html5test.com", 900, 600
+webkit_open_uri gi_browser, "WebKit Opcodes HTML5 Capabilities", "https://html5test.com", 900, 600
 S_pwd pwd
 S_base_uri sprintf "file://%s/", S_pwd
 prints S_base_uri
