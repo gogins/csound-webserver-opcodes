@@ -71,6 +71,7 @@ kgain           =           ampdb(gk_master_level)
                 endin
 
 instr Browser
+
 gS_html init {{
 <!DOCTYPE html>
 <html>
@@ -149,9 +150,7 @@ gS_html init {{
         font-family: 'Orienta', sans-serif;
     }    
     </style>
-    <script src="csound.js">
-    </script>
- </head>
+</head>
 <body style="background-color:CadetBlue">
     <h1>Message from Another Planet, version 4</h1>
     <h3>Adapted for Csound with the WebKit opcodes by Michael Gogins, from "Message from Another Planet" by Jacob Joaquin</h3>
@@ -206,12 +205,14 @@ gS_html init {{
     <input type="button" id='restore' value="Restore" />
     </form>   
     <p>
+<script src="csound.js">
+</script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script><script>    
 </script>
 <script>   
     $(document).ready(function() {
-    var csound = new Csound("http://localhost:8383");
-    console.log("csound: " + csound);
+    window.csound = new Csound("http://localhost:8383");
+    console.log("csound: " + csound.prototype);
     csound.Message("Hello, World! -- from message.html displayed by the WebKit opcodes\\n");
     $('input').on('input', async function(event) {
         var slider_value = parseFloat(event.target.value);
@@ -225,7 +226,6 @@ gS_html init {{
         });
     });
     $('#restore').on('click', async function() {
-        //let csound_ = await get_csound(csound_message_callback);
         $('.persistent-element').each(function() {
             this.value = localStorage.getItem(this.id);
             csound.SetControlChannel(this.id, parseFloat(this.value));
@@ -240,16 +240,18 @@ gS_html init {{
 }}
 
 gi_browser webkit_create 
-print gi_browser
 webkit_open_uri gi_browser, "Csound Help", "https://csound.com/docs/manual/indexframes.html", 900, 600
-webkit_open_uri gi_browser, "WebKit Opcodes Capabilities", "https://html5test.com", 900, 600
-webkit_open_html gi_browser, "Message", gS_html, "file:///home/mkg/webkit-opcodes/", 900, 650
+webkit_open_uri gi_browser, "WebKit Browser Capabilities", "https://html5test.com", 900, 600
+S_pwd pwd
+S_base_uri sprintf "file://%s/", S_pwd
+prints S_base_uri
+webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650
+
 endin
 
 </CsInstruments>
 <CsScore>
 f 0 [10 * 60]
-<CsScore>
 ; p1   p2   p3     p4      p5      p6         p7
 f 1    0    65537  10      1
 f 100  0    256  -7      0       16         1    240    0
