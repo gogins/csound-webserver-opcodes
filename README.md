@@ -161,6 +161,15 @@ URI addresses are found. This will normally be the filesystem directory
 that contains the Csound piece. Additional Web pages, JavaScript files, images, 
 and so on can be loaded from the base URI.
 
+The `file` URI scheme does not permit relative filepaths. However, it is easy, in 
+csound, to construct an absolute filepath given that Csound knows what its current 
+working directory is. You can use the `pwd` opcode to get this:
+```
+S_current_working_directory pwd
+S_base_uri sprintf "file://%s/", S_current_working_directory
+prints S_base_uri
+```
+
 *i_width* - The width of the top-level browser window in pixels.
 
 *i_height* - The height of the top-level browser window in pixels.
