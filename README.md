@@ -102,9 +102,10 @@ The browser window remains open for the remainder of the Csound performance.
 Window events and JavaScript callbacks within the browser are dispatched every 
 kperiod.
 
-Right-clicking on the browser opens the browser's inspector, or debugger. It 
-can be used to view HTML and JavaScript code, inspect elements of the Document 
-Object Model, and to set breakpoints or inspect variables in JavaScript code.
+Right-clicking on the browser opens a context menu with a command to open the 
+browser's inspector, or debugger. It can be used to view HTML and JavaScript 
+code, inspect elements of the Document Object Model, and to set breakpoints or 
+inspect variables in JavaScript code.
 
 # webkit_open_html
 
@@ -140,17 +141,17 @@ The browser window remains open for the remainder of the Csound performance.
 Window events and JavaScript callbacks within the browser are dispatched every 
 kperiod.
 
-Right-clicking on the browser opens the browser's inspector, or debugger. It 
-can be used to view HTML and JavaScript code, inspect elements of the Document 
-Object Model, and to set breakpoints or inspect variables in JavaScript code.
-
 In order for user-defined code to call back into Csound, include the 
-`Csound.js` script that defines the Csound proxy in the body of your HTML5 
-code.
+`csound.js` script that defines the Csound proxy in the body of your Web page. 
 
 Please note, the Web page can call back into Csound, but Csound cannot call 
 directly into the Web page. This may change in future versions of the WebKit 
 opcodes.
+
+Right-clicking on the browser opens a context menu with a command to open the 
+browser's inspector, or debugger. It can be used to view HTML and JavaScript 
+code, inspect elements of the Document Object Model, and to set breakpoints or 
+inspect variables in JavaScript code.
 
 ## Example
 

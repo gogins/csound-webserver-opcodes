@@ -3,6 +3,7 @@
 #include <csound/OpcodeBase.hpp>
 #include <cstdio>
 #include <string>
+#include <jsoncpp/json/json.h>
 #include <map>
 #include <memory>
 #include <glib-2.0/glib.h>
@@ -60,8 +61,27 @@ struct CsoundServer : public CsoundSkeleton {
         MYFLT value = csound->CompileOrc(orc_code.c_str());
         return value;
     }
+    double Get0dBFS() override {
+        MYFLT value = csound->Get0dBFS();
+        return value;
+    }
+    Json::Value GetAudioChannel(const std::string& channel_name) override {
+        auto ksmps = csound->GetKsmps();
+        std::vector<MYFLT> buffer(ksmps);
+        csound->GetAudioChannel(channel_name.c_str(), &buffer.front());
+        Json::Value value(Json::arrayValue);
+        value.resize(ksmps);
+        for (int i = 0; i < ksmps; ++i) {
+            value[i] = buffer[i];
+        }
+        return value;
+    }
     double GetControlChannel(const std::string& channel_name) override {
         MYFLT value = csound->GetControlChannel(channel_name.c_str());
+        return value;
+    }
+    bool GetDebug() override {
+        bool value = csound->GetDebug();
         return value;
     }
     int GetKsmps() override {
@@ -76,9 +96,18 @@ struct CsoundServer : public CsoundSkeleton {
         int value = csound->GetNchnlsInput();
         return value;
     }
+    double GetScoreOffsetSeconds() override {
+        MYFLT value = csound->GetScoreOffsetSeconds();
+        return value;
+    }
     double GetScoreTime() override {
         MYFLT value = csound->GetScoreTime();
         return value;
+    }
+    std::string GetStringChannel(const std::string &channel_name) override {
+        char buffer[0x500];
+        csound->GetStringChannel(channel_name.c_str(), buffer);
+        return buffer;
     }
     int GetSr() override {
         int value = csound->GetSr();
@@ -110,6 +139,21 @@ struct CsoundServer : public CsoundSkeleton {
         int result = OK;
         return result;
     }
+    //~ int SetAudioChannel(const std::string& channel_name, const Json::Value& channel_value) override {
+        //~ int result = OK;
+        //~ std::vector<MYFLT> buffer;
+        //~ auto ksmps = csound->GetKsmps();
+        //~ for (int i = 0; i < ksmps; ++i) {
+            //~ buffer.push_back(channel_value[i].asDouble());
+        //~ }
+        //~ csound->SetAudioChannel(channel_name.c_str(), buffer.data());
+        //~ return result;
+    //~ }
+    bool SetDebug(bool enabled) override {
+        bool result = false;
+        csound->SetDebug(enabled);
+        return result;
+    }
     int SetControlChannel(const std::string& channel_name, double channel_value) override {
         int result = OK;
         csound->SetControlChannel(channel_name.c_str(), channel_value);
@@ -120,9 +164,32 @@ struct CsoundServer : public CsoundSkeleton {
         int result = OK;
         return result;
     }
-    int SetScorePending(double score_time) override {
+    int SetScoreOffsetSeconds(double seconds) override {
         int result = OK;
-        csound->SetScorePending(score_time);
+        csound->SetScoreOffsetSeconds(seconds);
+        return result;
+    }
+    int SetScorePending(bool pending) override {
+        int result = OK;
+        csound->SetScorePending(pending);
+        return result;
+    }
+    int SetStringChannel(const std::string& channel_name, const std::string& channel_value) override {
+        int result;
+        csound->SetStringChannel(channel_name.c_str(), (char *)channel_value.c_str());
+        return result;
+    }
+    int TableLength(int table_number) override {
+        auto result = csound->TableLength(table_number);
+        return result;
+    }
+    double TableGet(int index, int table_number) override {
+        auto result = csound->TableGet(index, table_number);
+        return result;
+    }
+    int TableSet(int index, int table_number, double value) override {
+        int result = OK;
+        csound->TableSet(index, table_number, value);
         return result;
     }
 };
@@ -336,23 +403,7 @@ public:
     }
 };
 
-class WebKitInspector : public csound::OpcodeBase<WebKitInspector>
-{
-public:
-    // OUTPUTS
-    // INPUTS
-    MYFLT *i_browser_handle_;
-    int init(CSOUND *csound) {
-        int result = OK;
-        int i_browser_handle = *i_browser_handle_;
-        std::shared_ptr<CsoundWebKit> browser = browsers_for_handles[i_browser_handle];
-        browser->open_inspector();        
-        return result;
-    }
 };
-
-};
-
 
 /** 
  * Here is the syntax for all the WebKit opcodes:
@@ -360,7 +411,6 @@ public:
  * i_webkit_handle webkit_create [, i_rpc_port]
  * webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
  * webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
- * webkit_inspector i_webkit_handle
  *
  * In addition, each Web page opened by these opcodes has a JavaScript 
  * interface to the invoking instance of Csound.
@@ -400,17 +450,7 @@ extern "C" {
                                           (int (*)(CSOUND*,void*)) webkit_opcodes::WebKitOpenHtml::init_,
                                           (int (*)(CSOUND*,void*)) webkit_opcodes::WebKitOpenHtml::kontrol_,
                                           (int (*)(CSOUND*,void*)) 0);
-        status += csound->AppendOpcode(csound,
-                                          (char *)"webkit_inspector",
-                                          sizeof(webkit_opcodes::WebKitInspector),
-                                          0,
-                                          1,
-                                          (char *)"",
-                                          (char *)"i",
-                                          (int (*)(CSOUND*,void*)) webkit_opcodes::WebKitInspector::init_,
-                                          (int (*)(CSOUND*,void*)) 0,
-                                          (int (*)(CSOUND*,void*)) 0);
-         return status;
+        return status;
     }
 
     PUBLIC int csoundModuleDestroy_webkit_opcodes(CSOUND *csound)

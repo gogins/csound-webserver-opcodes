@@ -28,12 +28,27 @@
 		},
 		"returns" : 0.0
 	},
-	{
-		"name": "GetControlChannel",
-		"params": {
-			"channel_name": ""
-		},
+		{
+		"name": "Get0dBFS",
 		"returns" : 0.0
+	},
+    {
+        "name": "GetAudioChannel",
+        "params": {
+            "channel_name": ""
+        },
+        "returns": [0.0]
+    },
+    {
+        "name": "GetControlChannel",
+        "params": {
+            "channel_name": ""
+        },
+        "returns": 0.0
+    },
+	{
+		"name": "GetDebug",
+		"returns" : false
 	},
 	{
 		"name": "GetKsmps",
@@ -48,12 +63,23 @@
 		"returns" : 0
 	},
 	{
+		"name": "GetScoreOffsetSeconds",
+		"returns" : 0.0
+	},
+	{
 		"name": "GetScoreTime",
 		"returns" : 0.0
 	},
 	{
 		"name": "GetSr",
 		"returns" : 0
+	},
+	{
+		"name": "GetStringChannel",
+		"params": {
+			"channel_name": ""
+		},
+		"returns" : ""
 	},
     {
 		"name": "InputMessage",
@@ -100,6 +126,13 @@
 		"returns" : 0
 	},
 	{
+		"name": "SetDebug",
+		"params": {
+			"enabled": true
+		},
+		"returns" : false
+	},
+	{
 		"name": "SetMessageCallback",
 		"params": {
 			"callback": {}
@@ -107,9 +140,48 @@
 		"returns" : 0
 	},
 	{
-		"name": "SetScorePending",
+		"name": "SetScoreOffsetSeconds",
 		"params": {
 			"score_time": 0.0
+		},
+		"returns" : 0
+	},
+	{
+		"name": "SetScorePending",
+		"params": {
+			"pending": true
+		},
+		"returns" : 0
+	},
+	{
+		"name": "SetStringChannel",
+		"params": {
+			"channel_name": "",
+            "channel_value": ""
+		},
+		"returns" : 0
+	},
+	{
+		"name": "TableLength",
+		"params": {
+            "table_number": 1
+		},
+		"returns" : 0
+	},
+	{
+		"name": "TableGet",
+		"params": {
+            "table_number": 1,
+            "index": 0
+		},
+		"returns" : 0.0
+	},
+	{
+		"name": "TableSet",
+		"params": {
+            "table_number": 1,
+            "index": 0,
+            "value": 0.0
 		},
 		"returns" : 0
 	}

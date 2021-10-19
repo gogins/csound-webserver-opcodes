@@ -15,12 +15,17 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
             this->bindAndAddMethod(jsonrpc::Procedure("CompileCsdText", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "csd_text",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::CompileCsdTextI);
             this->bindAndAddMethod(jsonrpc::Procedure("CompileOrc", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "orc_code",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::CompileOrcI);
             this->bindAndAddMethod(jsonrpc::Procedure("EvalCode", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_REAL, "orc_code",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::EvalCodeI);
+            this->bindAndAddMethod(jsonrpc::Procedure("Get0dBFS", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_REAL,  NULL), &CsoundSkeleton::Get0dBFSI);
+            this->bindAndAddMethod(jsonrpc::Procedure("GetAudioChannel", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_ARRAY, "channel_name",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::GetAudioChannelI);
             this->bindAndAddMethod(jsonrpc::Procedure("GetControlChannel", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_REAL, "channel_name",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::GetControlChannelI);
+            this->bindAndAddMethod(jsonrpc::Procedure("GetDebug", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_BOOLEAN,  NULL), &CsoundSkeleton::GetDebugI);
             this->bindAndAddMethod(jsonrpc::Procedure("GetKsmps", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER,  NULL), &CsoundSkeleton::GetKsmpsI);
             this->bindAndAddMethod(jsonrpc::Procedure("GetNchnls", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER,  NULL), &CsoundSkeleton::GetNchnlsI);
             this->bindAndAddMethod(jsonrpc::Procedure("GetNchnlsInput", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER,  NULL), &CsoundSkeleton::GetNchnlsInputI);
+            this->bindAndAddMethod(jsonrpc::Procedure("GetScoreOffsetSeconds", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_REAL,  NULL), &CsoundSkeleton::GetScoreOffsetSecondsI);
             this->bindAndAddMethod(jsonrpc::Procedure("GetScoreTime", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_REAL,  NULL), &CsoundSkeleton::GetScoreTimeI);
             this->bindAndAddMethod(jsonrpc::Procedure("GetSr", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER,  NULL), &CsoundSkeleton::GetSrI);
+            this->bindAndAddMethod(jsonrpc::Procedure("GetStringChannel", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_STRING, "channel_name",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::GetStringChannelI);
             this->bindAndAddMethod(jsonrpc::Procedure("InputMessage", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "sco_code",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::InputMessageI);
             this->bindAndAddMethod(jsonrpc::Procedure("IsScorePending", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_BOOLEAN,  NULL), &CsoundSkeleton::IsScorePendingI);
             this->bindAndAddNotification(jsonrpc::Procedure("Message", jsonrpc::PARAMS_BY_NAME, "message",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::MessageI);
@@ -28,8 +33,14 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
             this->bindAndAddMethod(jsonrpc::Procedure("RewindScore", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER,  NULL), &CsoundSkeleton::RewindScoreI);
             this->bindAndAddMethod(jsonrpc::Procedure("ScoreEvent", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "opcode_code",jsonrpc::JSON_STRING,"pfields",jsonrpc::JSON_ARRAY, NULL), &CsoundSkeleton::ScoreEventI);
             this->bindAndAddMethod(jsonrpc::Procedure("SetControlChannel", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "channel_name",jsonrpc::JSON_STRING,"channel_value",jsonrpc::JSON_REAL, NULL), &CsoundSkeleton::SetControlChannelI);
+            this->bindAndAddMethod(jsonrpc::Procedure("SetDebug", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_BOOLEAN, "enabled",jsonrpc::JSON_BOOLEAN, NULL), &CsoundSkeleton::SetDebugI);
             this->bindAndAddMethod(jsonrpc::Procedure("SetMessageCallback", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "callback",jsonrpc::JSON_OBJECT, NULL), &CsoundSkeleton::SetMessageCallbackI);
-            this->bindAndAddMethod(jsonrpc::Procedure("SetScorePending", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "score_time",jsonrpc::JSON_REAL, NULL), &CsoundSkeleton::SetScorePendingI);
+            this->bindAndAddMethod(jsonrpc::Procedure("SetScoreOffsetSeconds", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "score_time",jsonrpc::JSON_REAL, NULL), &CsoundSkeleton::SetScoreOffsetSecondsI);
+            this->bindAndAddMethod(jsonrpc::Procedure("SetScorePending", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "pending",jsonrpc::JSON_BOOLEAN, NULL), &CsoundSkeleton::SetScorePendingI);
+            this->bindAndAddMethod(jsonrpc::Procedure("SetStringChannel", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "channel_name",jsonrpc::JSON_STRING,"channel_value",jsonrpc::JSON_STRING, NULL), &CsoundSkeleton::SetStringChannelI);
+            this->bindAndAddMethod(jsonrpc::Procedure("TableLength", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "table_number",jsonrpc::JSON_INTEGER, NULL), &CsoundSkeleton::TableLengthI);
+            this->bindAndAddMethod(jsonrpc::Procedure("TableGet", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_REAL, "index",jsonrpc::JSON_INTEGER,"table_number",jsonrpc::JSON_INTEGER, NULL), &CsoundSkeleton::TableGetI);
+            this->bindAndAddMethod(jsonrpc::Procedure("TableSet", jsonrpc::PARAMS_BY_NAME, jsonrpc::JSON_INTEGER, "index",jsonrpc::JSON_INTEGER,"table_number",jsonrpc::JSON_INTEGER,"value",jsonrpc::JSON_REAL, NULL), &CsoundSkeleton::TableSetI);
         }
 
         inline virtual void CompileCsdTextI(const Json::Value &request, Json::Value &response)
@@ -44,9 +55,23 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
         {
             response = this->EvalCode(request["orc_code"].asString());
         }
+        inline virtual void Get0dBFSI(const Json::Value &request, Json::Value &response)
+        {
+            (void)request;
+            response = this->Get0dBFS();
+        }
+        inline virtual void GetAudioChannelI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->GetAudioChannel(request["channel_name"].asString());
+        }
         inline virtual void GetControlChannelI(const Json::Value &request, Json::Value &response)
         {
             response = this->GetControlChannel(request["channel_name"].asString());
+        }
+        inline virtual void GetDebugI(const Json::Value &request, Json::Value &response)
+        {
+            (void)request;
+            response = this->GetDebug();
         }
         inline virtual void GetKsmpsI(const Json::Value &request, Json::Value &response)
         {
@@ -63,6 +88,11 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
             (void)request;
             response = this->GetNchnlsInput();
         }
+        inline virtual void GetScoreOffsetSecondsI(const Json::Value &request, Json::Value &response)
+        {
+            (void)request;
+            response = this->GetScoreOffsetSeconds();
+        }
         inline virtual void GetScoreTimeI(const Json::Value &request, Json::Value &response)
         {
             (void)request;
@@ -72,6 +102,10 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
         {
             (void)request;
             response = this->GetSr();
+        }
+        inline virtual void GetStringChannelI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->GetStringChannel(request["channel_name"].asString());
         }
         inline virtual void InputMessageI(const Json::Value &request, Json::Value &response)
         {
@@ -103,23 +137,52 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
         {
             response = this->SetControlChannel(request["channel_name"].asString(), request["channel_value"].asDouble());
         }
+        inline virtual void SetDebugI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->SetDebug(request["enabled"].asBool());
+        }
         inline virtual void SetMessageCallbackI(const Json::Value &request, Json::Value &response)
         {
             response = this->SetMessageCallback(request["callback"]);
         }
+        inline virtual void SetScoreOffsetSecondsI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->SetScoreOffsetSeconds(request["score_time"].asDouble());
+        }
         inline virtual void SetScorePendingI(const Json::Value &request, Json::Value &response)
         {
-            response = this->SetScorePending(request["score_time"].asDouble());
+            response = this->SetScorePending(request["pending"].asBool());
+        }
+        inline virtual void SetStringChannelI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->SetStringChannel(request["channel_name"].asString(), request["channel_value"].asString());
+        }
+        inline virtual void TableLengthI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->TableLength(request["table_number"].asInt());
+        }
+        inline virtual void TableGetI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->TableGet(request["index"].asInt(), request["table_number"].asInt());
+        }
+        inline virtual void TableSetI(const Json::Value &request, Json::Value &response)
+        {
+            response = this->TableSet(request["index"].asInt(), request["table_number"].asInt(), request["value"].asDouble());
         }
         virtual int CompileCsdText(const std::string& csd_text) = 0;
         virtual int CompileOrc(const std::string& orc_code) = 0;
         virtual double EvalCode(const std::string& orc_code) = 0;
+        virtual double Get0dBFS() = 0;
+        virtual Json::Value GetAudioChannel(const std::string& channel_name) = 0;
         virtual double GetControlChannel(const std::string& channel_name) = 0;
+        virtual bool GetDebug() = 0;
         virtual int GetKsmps() = 0;
         virtual int GetNchnls() = 0;
         virtual int GetNchnlsInput() = 0;
+        virtual double GetScoreOffsetSeconds() = 0;
         virtual double GetScoreTime() = 0;
         virtual int GetSr() = 0;
+        virtual std::string GetStringChannel(const std::string& channel_name) = 0;
         virtual int InputMessage(const std::string& sco_code) = 0;
         virtual bool IsScorePending() = 0;
         virtual void Message(const std::string& message) = 0;
@@ -127,8 +190,14 @@ class CsoundSkeleton : public jsonrpc::AbstractServer<CsoundSkeleton>
         virtual int RewindScore() = 0;
         virtual int ScoreEvent(const std::string& opcode_code, const Json::Value& pfields) = 0;
         virtual int SetControlChannel(const std::string& channel_name, double channel_value) = 0;
+        virtual bool SetDebug(bool enabled) = 0;
         virtual int SetMessageCallback(const Json::Value& callback) = 0;
-        virtual int SetScorePending(double score_time) = 0;
+        virtual int SetScoreOffsetSeconds(double score_time) = 0;
+        virtual int SetScorePending(bool pending) = 0;
+        virtual int SetStringChannel(const std::string& channel_name, const std::string& channel_value) = 0;
+        virtual int TableLength(int table_number) = 0;
+        virtual double TableGet(int index, int table_number) = 0;
+        virtual int TableSet(int index, int table_number, double value) = 0;
 };
 
 #endif //JSONRPC_CPP_STUB_CSOUNDSKELETON_H_

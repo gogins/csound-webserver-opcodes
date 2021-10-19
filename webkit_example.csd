@@ -150,7 +150,7 @@ gS_html init {{
         font-family: 'Orienta', sans-serif;
     }    
     </style>
-    <script src="Csound.js">
+    <script src="csound.js">
     </script>
  </head>
 <body style="background-color:CadetBlue">
