@@ -47,7 +47,7 @@ animated WebGL models, and do many other things.
 In particular, the embedded browser can call back into the ongoing Csound 
 performance using a subset of the Csound API defined in the `Csound.js` 
 script. This script can call many methods of the Csound API as implemented 
-in `csound.hpp`, but all functions involving the creation, destruction,  
+in `csound.hpp`, but all functions involving the creation, destruction, 
 starting and stopping, or runtime configuration had to be omitted. The 
 Csound interface in `Csound.js` communicates with the WebKit opcodes and 
 thus with Csound using JSON-RPC and Ajax.
