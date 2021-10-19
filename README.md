@@ -14,7 +14,7 @@ proxy for the Csound instance.
 
 These are the opcodes: 
 ```
-i_webkit_handle webkit_create [, i_rpc_port]
+i_webkit_handle webkit_create [i_rpc_port]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
 ```
