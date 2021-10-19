@@ -105,9 +105,11 @@ remains in scope until the end of the Csound performance.
 defined in the universal resource identifier. This can be a local file or an 
 Internet resource.
 
-Please note, pages opened with this opcode do not have access to Csound. 
-For that, you must use `webkit_open_html`. `webkit_open_uri` is primarily 
-useful for opening external resources, such as documentation.
+Please note, pages opened with this opcode will not have access to Csound unless 
+the body of those pages includes the `csound.js` script for the Csound proxy.
+That will not normally be the case for Web pages from the Internet. Thus, 
+`webkit_open_uri` is primarily useful for opening Internet resources such as 
+documentation.
 
 ## Syntax
 
@@ -183,6 +185,8 @@ kperiod.
 
 In order for user-defined code to call back into Csound, include the 
 `csound.js` script that defines the Csound proxy in the body of your Web page. 
+You can include it as a script tag, either loaded from the filesystem, or 
+included directly in the Web page's code.
 
 Please note, the Web page can call back into Csound, but Csound cannot call 
 directly into the Web page. This may change in future versions of the WebKit 
