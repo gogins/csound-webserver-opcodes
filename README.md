@@ -96,8 +96,8 @@ browser can open any number of Web pages, each in its own top-level window.
 
 ## Performance
 
-Once created, and whether or not it is actually displayed, the browser remains
-in scope until the end of the Csound performance.
+Once created, and whether or not it actually displays any Web pages, the browser 
+remains in scope until the end of the Csound performance.
 
 # webkit_open_uri
 
