@@ -71,13 +71,13 @@ in scope until the end of the Csound performance.
 
 # webkit_open_uri
 
-`webkit_openuri` - Opens a new top-level window and displays in it the content 
+`webkit_open_uri` - Opens a new top-level window and displays in it the content 
 defined in the universal resource identifier. This can be a local file or an 
 Internet resource.
 
 Please note, pages opened with this opcode do not have access to Csound. 
 For that, you must use `webkit_open_html`. `webkit_open_uri` is primarily 
-useful for opening external pages, such as documentation.
+useful for opening external resources, such as documentation.
 
 ## Syntax
 
@@ -126,7 +126,7 @@ webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i
 constant contained within the `{{` and `}}` delimiters.
 
 *S_base_uri* - A Uniform Resource Identifier specify the base from which relative 
-URI addressed are found. This will normally be the filesystem directory 
+URI addresses are found. This will normally be the filesystem directory 
 that contains the Csound piece. Additional Web pages, JavaScript files, images, 
 and so on can be loaded from the base URI.
 
