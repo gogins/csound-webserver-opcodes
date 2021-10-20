@@ -215,57 +215,27 @@ for example to send Csound's runtime messages to the Web page for display there,
 or to send a generated score in JSON format for display on the page. Or it can 
 be used to call existing functions in the JavaScript context.
 
+## Syntax
+```
+i_result webkit_run_javascript i_webkit_handle, i_page_id, S_javascript_code
+```
 ## Initialization
 
 *i_webkit_handle* - The handle of a browser created by `webkit_create`.
 
-*S_window_title* - The title to be displayed by the top-level browser window.
+*i_page_id* - The identifier of the Web page in which the code will be executed, 
+obtained from `webkit_open_uri` or `webkit_open_html`.
 
-*S_uri* - The Uniform Resource Identifier of an Internet resource to be loaded by 
-the browser.
-
-*i_width* - The width of the top-level browser window in pixels.
-
-*i_height* - The height of the top-level browser window in pixels.
-
-*i_page_id* - Returns an identifier for the Web page that was opened. This 
-can be passed to `webkit_run_javascript`.
+*S_javascript_code* - JavaScript source code that will be executed immediately in 
+the JavaScript context of the indicated Web page. Such code can be a single 
+function call, or a multi-line string constant contained within the `{{` and `}}` 
+delimiters that creates an entire JavaScript module.
 
 ## Performance
 
-The browser window remains open for the remainder of the Csound performance. 
-Window events and JavaScript callbacks within the browser are dispatched every 
-kperiod.
-
-Right-clicking on the browser opens a context menu with a command to open the 
-browser's inspector, or debugger. It can be used to view HTML and JavaScript 
-code, inspect elements of the Document Object Model, and to set breakpoints or 
-inspect variables in JavaScript code.
-
-# webkit_open_html
-
-`webkit_open_html` - Opens a new top-level window and displays in it the content 
-defined by the S_html parameter, typically a multi-line string constant contained 
-within the `{{` and `}}` delimiters.
-
-## Syntax
-
-i_result webkit_run_javascript i_webkit_handle, i_page_id, S_javascript_code
-
-## Initialization
-
-*i_webkit_handle* - The handle of a browser created by `webkit_create`.
-
-*i_page_id* - An identifier for the Web page in which the code is to run. This 
-identifier is returned from `webkit_open_uri` or `webkit_open_html`.
-
-*S_html* - A string containing valid HTML5 code, typically a multi-line string 
-constant contained within the `{{` and `}}` delimiters.
-
-*S_javascript_code* - JavaScript source to be executed immediately in the 
-JavaScript context of the indicated browser and Web page. Such code has the 
-same scope and priviliges as <script> elements in the Web page.
-
+The JavaScript code executes immediately when the opcode is invoked, but the code 
+can create modules with function definitions, class definitions, and so on that will 
+available for other code on the page.
 
 ## Performance
 
