@@ -16,9 +16,9 @@ context of a Web page from C++ or Csound orchestra code.
 These are the opcodes: 
 ```
 i_webkit_handle webkit_create [, i_rpc_port]
-i_page_id webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
-i_page_id webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
-i_result webkit_run_javascript i_webkit_handle, i_page_id, S_javascript_code
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
 In addition, the following JavaScript interface is in the 
 JavaScript context of each Web page opened by these opcodes. As far as possible 
@@ -122,7 +122,7 @@ documentation.
 
 ## Syntax
 
-i_page_id webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 
 ## Initialization
 
@@ -136,9 +136,6 @@ the browser.
 *i_width* - The width of the top-level browser window in pixels.
 
 *i_height* - The height of the top-level browser window in pixels.
-
-*i_page_id* - Returns an identifier for the Web page that was opened. This 
-can be passed to `webkit_run_javascript`.
 
 ## Performance
 
@@ -159,7 +156,7 @@ within the `{{` and `}}` delimiters.
 
 ## Syntax
 
-i_page_id webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
 
 ## Initialization
 
@@ -189,9 +186,6 @@ webkit_open_html gi_browser, "Message", gS_html_code, S_base_uri, 900, 650
 
 *i_height* - The height of the top-level browser window in pixels.
 
-*i_page_id* - Returns an identifier for the Web page that was opened. This 
-can be passed to `webkit_run_javascript`.
-
 ## Performance
 
 The browser window remains open for the remainder of the Csound performance. 
@@ -199,12 +193,13 @@ Window events and JavaScript callbacks within the browser are dispatched every
 kperiod.
 
 In order for user-defined code to call back into Csound, include the 
-`csound.js` script that defines the Csound proxy in the body of your Web page. 
-You can include it as a script tag, either loaded from the filesystem, or 
-included directly in the Web page's code.
+`csound.js` script that defines the Csound proxy as a script element in the body 
+of the Web page. The script element can be loaded from the filesystem, or 
+it can be included directly in the Web page's code.
 
-Csound can call directly into the Web page using the `webkit_run_javascript` 
-opcode.
+Once an instance of the Csound proxy has been created, not only can the Web page call 
+methods of the Csound API, but also Csound can run JavaScript in the Web page using 
+the `webkit_run_javascript` opcode.
 
 Right-clicking on the browser opens a context menu with a command to open the 
 browser's inspector, or debugger. It can be used to view HTML and JavaScript 
@@ -231,19 +226,23 @@ be used to call existing functions in the JavaScript context.
 
 ## Syntax
 ```
-i_result webkit_run_javascript i_webkit_handle, i_page_id, S_javascript_code
+i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
 ## Initialization
 
 *i_webkit_handle* - The handle of a browser created by `webkit_create`.
 
-*i_page_id* - The identifier of the Web page in which the code will be executed, 
-obtained from `webkit_open_uri` or `webkit_open_html`.
-
 *S_javascript_code* - JavaScript source code that will be executed immediately in 
-the JavaScript context of the indicated Web page. Such code can be a single 
+the JavaScript context of a Web page. Such code can be a single 
 function call, or a multi-line string constant contained within the `{{` and `}}` 
 delimiters that creates an entire JavaScript module.
+
+Please note, this opcode is designed to work with only one Web page opened from one 
+browser instance. The endpoints of the bidirectional RPC channel are defined by the 
+WebSocket created by `webkit_create` and opened also by `csound.js`. The results of 
+trying to call from Csound into more than one Web are undefined. If you need 
+Csound to call into more than one Web page, you should create a separate browser on 
+a separate port for each page.
 
 ## Performance
 
