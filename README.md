@@ -10,15 +10,17 @@ into Csound as a set of opcodes. They enable a Csound orchestra to include
 HTML5 code, including JavaScript code; to open one or more browser windows 
 during the Csound performance; to open Internet resources during the Csound 
 performance; and to control Csound's performance via a JavaScript JSON-RPC 
-proxy for the Csound instance.
+proxy for the Csound instance, or to install and/or execute JavaScript in the 
+context of a Web page from C++ or Csound orchestra code.
 
 These are the opcodes: 
 ```
 i_webkit_handle webkit_create [, i_rpc_port]
-webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
-webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+i_page_id webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+i_page_id webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+i_result webkit_run_javascript i_webkit_handle, i_page_id, S_javascript_code
 ```
-In addition, the following JavaScript interface to Csound is defined in the 
+In addition, the following JavaScript interface is in the 
 JavaScript context of each Web page opened by these opcodes. As far as possible 
 this interface is the same as that in `csound.hpp`. The methods of the `csound` object 
 are:
@@ -81,6 +83,13 @@ starting and stopping, or runtime configuration had to be omitted. The
 Csound interface in `Csound.js` communicates with the WebKit opcodes and 
 thus with Csound using JSON-RPC and Ajax.
 
+Csound itself, or C++ code compiled using the Clang opcodes for Csound, 
+can also execute JavaScript code in the JavaScript context of an opened 
+Web page using `webkit_run_javascript` opcode.
+
+Thus, the interface between Csound and the Web pages that Csound creates 
+is fully bidirectional.
+
 ## Syntax
 ```
 i_browser_handle webkit_create [i_rpc_port]
@@ -111,7 +120,7 @@ useful for opening external resources, such as documentation.
 
 ## Syntax
 
-webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+i_page_id webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 
 ## Initialization
 
@@ -125,6 +134,9 @@ the browser.
 *i_width* - The width of the top-level browser window in pixels.
 
 *i_height* - The height of the top-level browser window in pixels.
+
+*i_page_id* - Returns an identifier for the Web page that was opened. This 
+can be passed to `webkit_run_javascript`.
 
 ## Performance
 
@@ -145,7 +157,7 @@ within the `{{` and `}}` delimiters.
 
 ## Syntax
 
-webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+i_page_id webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
 
 ## Initialization
 
@@ -165,6 +177,9 @@ and so on can be loaded from the base URI.
 
 *i_height* - The height of the top-level browser window in pixels.
 
+*i_page_id* - Returns an identifier for the Web page that was opened. This 
+can be passed to `webkit_run_javascript`.
+
 ## Performance
 
 The browser window remains open for the remainder of the Csound performance. 
@@ -174,9 +189,8 @@ kperiod.
 In order for user-defined code to call back into Csound, include the 
 `csound.js` script that defines the Csound proxy in the body of your Web page. 
 
-Please note, the Web page can call back into Csound, but Csound cannot call 
-directly into the Web page. This may change in future versions of the WebKit 
-opcodes.
+Csound can call directly into the Web page using the `webkit_run_javascript` 
+opcode.
 
 Right-clicking on the browser opens a context menu with a command to open the 
 browser's inspector, or debugger. It can be used to view HTML and JavaScript 
@@ -187,6 +201,78 @@ inspect variables in JavaScript code.
 
 See `webkit_example.js`.
 
+# webkit_run_javascript
+
+`webkit_run_javascript` - Executes JavaScript source code in the JavaScript 
+context of the indicated Web page.
+
+## Description
+
+`webkit_run_javascript` - Executes JavaScript source code in the JavaScript 
+context of the indicated Web page. This can be used to inject new JavaScript 
+modules, including the `Csound.js` Csound proxy, into existing Web pages, or 
+for example to send Csound's runtime messages to the Web page for display there, 
+or to send a generated score in JSON format for display on the page. Or it can 
+be used to call existing functions in the JavaScript context.
+
+## Initialization
+
+*i_webkit_handle* - The handle of a browser created by `webkit_create`.
+
+*S_window_title* - The title to be displayed by the top-level browser window.
+
+*S_uri* - The Uniform Resource Identifier of an Internet resource to be loaded by 
+the browser.
+
+*i_width* - The width of the top-level browser window in pixels.
+
+*i_height* - The height of the top-level browser window in pixels.
+
+*i_page_id* - Returns an identifier for the Web page that was opened. This 
+can be passed to `webkit_run_javascript`.
+
+## Performance
+
+The browser window remains open for the remainder of the Csound performance. 
+Window events and JavaScript callbacks within the browser are dispatched every 
+kperiod.
+
+Right-clicking on the browser opens a context menu with a command to open the 
+browser's inspector, or debugger. It can be used to view HTML and JavaScript 
+code, inspect elements of the Document Object Model, and to set breakpoints or 
+inspect variables in JavaScript code.
+
+# webkit_open_html
+
+`webkit_open_html` - Opens a new top-level window and displays in it the content 
+defined by the S_html parameter, typically a multi-line string constant contained 
+within the `{{` and `}}` delimiters.
+
+## Syntax
+
+i_result webkit_run_javascript i_webkit_handle, i_page_id, S_javascript_code
+
+## Initialization
+
+*i_webkit_handle* - The handle of a browser created by `webkit_create`.
+
+*i_page_id* - An identifier for the Web page in which the code is to run. This 
+identifier is returned from `webkit_open_uri` or `webkit_open_html`.
+
+*S_html* - A string containing valid HTML5 code, typically a multi-line string 
+constant contained within the `{{` and `}}` delimiters.
+
+*S_javascript_code* - JavaScript source to be executed immediately in the 
+JavaScript context of the indicated browser and Web page. Such code has the 
+same scope and priviliges as <script> elements in the Web page.
+
+
+## Performance
+
+What happens during performance is whatever the JavaScript code does. Such code may 
+execute immediately, or it may create a class or library to be invoked later on 
+during the performance.
+   
 # Installation
 
 1. Install Csound.
