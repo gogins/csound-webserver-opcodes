@@ -216,6 +216,46 @@ struct CsoundWebKit {
         std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Starting to listen on rpc_port_: %d\n", rpc_port_);
         network_server->StartListening();
         std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Now listening on rpc_port_: %d...\n", rpc_port_);
+        // Perhaps all state for each WebSocket needs to be in one thread.
+        websocket_server_thread = new std::thread([this]() {
+            /* Very simple WebSocket echo server */
+            uWS::App().ws<PerSocketData>("/*", {
+                /* Settings */
+                .compression = uWS::SHARED_COMPRESSOR,
+                .maxPayloadLength = 16 * 1024,
+                .idleTimeout = 10,
+                .maxBackpressure = 1 * 1024 * 1024,
+                /* Handlers */
+                .upgrade = nullptr,
+                .open = [](auto */*ws*/) {
+                    std::fprintf(stderr, "websocket_server_thread: uWS.open...\n");
+
+                },
+                .message = [this](auto *ws, std::string_view message, uWS::OpCode opCode) {
+                    ws->send(message, opCode);
+                    std::cerr << "websocket_server_thread: uWS.message: " << opCode << " message: " << std::endl;
+                    this->csound->Message("websocket_server: message: %s\n", message);
+                },
+                .drain = [](auto */*ws*/) {
+                    /* Check getBufferedAmount here */
+                },
+                .ping = [](auto */*ws*/, std::string_view) {
+
+                },
+                .pong = [](auto */*ws*/, std::string_view) {
+
+                },
+                .close = [](auto */*ws*/, int /*code*/, std::string_view /*message*/) {
+
+                }
+            }).listen(9001, [this](auto *listen_socket) {
+                if (listen_socket) {
+                    std::cout << "Thread " << std::this_thread::get_id() << " in CsoundWebKit: " << this << " listening on port " << 9001 << std::endl;
+                } else {
+                    std::cout << "Thread " << std::this_thread::get_id() << " failed to listen on port 9001" << std::endl;
+                }
+            }).run();
+        });            
      }
     static std::unique_ptr<CsoundWebKit> create(CSOUND *csound_, int rpc_channel_) {
         std::unique_ptr<CsoundWebKit> result(new CsoundWebKit(csound_, rpc_channel_));
