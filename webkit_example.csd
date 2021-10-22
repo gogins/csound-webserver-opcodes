@@ -211,8 +211,7 @@ gS_html init {{
 </script>
 <script>   
     $(document).ready(function() {
-    window.csound = new Csound("http://localhost:8383");
-    console.log("csound: " + csound.prototype);
+    var csound = new Csound("http://localhost:8383");
     csound.Message("Hello, World! -- from message.html displayed by the WebKit opcodes\\n");
     $('input').on('input', async function(event) {
         var slider_value = parseFloat(event.target.value);
@@ -239,7 +238,7 @@ gS_html init {{
 </html>
 }}
 
-gi_browser webkit_create 
+gi_browser webkit_create 8383
 webkit_open_uri gi_browser, "Csound Help", "https://csound.com/docs/manual/indexframes.html", 900, 600
 webkit_open_uri gi_browser, "WebKit Opcodes HTML5 Capabilities", "https://html5test.com", 900, 600
 S_pwd pwd
