@@ -193,8 +193,8 @@ struct CsoundWebKit {
     std::shared_ptr<Csound> csound;
     std::shared_ptr<jsonrpc::HttpServer> network_server;
     std::shared_ptr<CsoundServer> csound_server;
-    std::shared_ptr<uWS::App> websocket_server;
     std::thread *websocket_server_thread;
+    uWS::App *uws_app = nullptr;
     GtkWidget *main_window;
     WebKitWebView *web_view;
     WebKitSettings *webkit_settings;
@@ -202,39 +202,37 @@ struct CsoundWebKit {
     WebKitWebInspector *webkit_inspector;
     bool diagnostics_enabled;
     int rpc_port = 8383;
-     CsoundWebKit(CSOUND *csound_, int rpc_port_) {
+    CsoundWebKit(CSOUND *csound_, int rpc_port_) {
         diagnostics_enabled = true;
         gtk_init(nullptr, nullptr);
         csound = std::shared_ptr<Csound>(new Csound(csound_));
         if (rpc_port_ != -1) {
             rpc_port = rpc_port_;
         }
-        websocket_server_thread = new std::thread([this]() {
-        });
         network_server = std::shared_ptr<jsonrpc::HttpServer>(new jsonrpc::HttpServer(rpc_port));
         csound_server = std::shared_ptr<CsoundServer>(new CsoundServer(csound, *network_server));
         std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Starting to listen on rpc_port_: %d\n", rpc_port_);
         network_server->StartListening();
         std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Now listening on rpc_port_: %d...\n", rpc_port_);
         // Perhaps all state for each WebSocket needs to be in one thread.
+        std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: Starting WebSocket thread...\n");
         websocket_server_thread = new std::thread([this]() {
             /* Very simple WebSocket echo server */
-            uWS::App().ws<PerSocketData>("/*", {
+            auto app = uWS::App().ws<PerSocketData>("/*", {
                 /* Settings */
                 .compression = uWS::SHARED_COMPRESSOR,
                 .maxPayloadLength = 16 * 1024,
-                .idleTimeout = 10,
+                .idleTimeout = 16,
                 .maxBackpressure = 1 * 1024 * 1024,
                 /* Handlers */
                 .upgrade = nullptr,
-                .open = [](auto */*ws*/) {
-                    std::fprintf(stderr, "websocket_server_thread: uWS.open...\n");
-
+                .open = [](auto *ws) {
+                    std::cerr << "websocket_server_thread: uWS.open: remote: " << ws->getRemoteAddress() << std::endl;
                 },
                 .message = [this](auto *ws, std::string_view message, uWS::OpCode opCode) {
                     ws->send(message, opCode);
-                    std::cerr << "websocket_server_thread: uWS.message: " << opCode << " message: " << std::endl;
-                    this->csound->Message("websocket_server: message: %s\n", message);
+                    std::cerr << "websocket_server_thread: uWS.message: opCode: " << opCode << " message: " << message << std::endl;
+                    //this->csound->Message("websocket_server: message: %s\n", message);
                 },
                 .drain = [](auto */*ws*/) {
                     /* Check getBufferedAmount here */
@@ -245,8 +243,8 @@ struct CsoundWebKit {
                 .pong = [](auto */*ws*/, std::string_view) {
 
                 },
-                .close = [](auto */*ws*/, int /*code*/, std::string_view /*message*/) {
-
+                .close = [](auto */*ws*/, int code, std::string_view message) {
+                    std::cerr << "websocket_server_thread: uWS.close: code: " << code << " message: " << std::endl;
                 }
             }).listen(9001, [this](auto *listen_socket) {
                 if (listen_socket) {
@@ -254,7 +252,10 @@ struct CsoundWebKit {
                 } else {
                     std::cout << "Thread " << std::this_thread::get_id() << " failed to listen on port 9001" << std::endl;
                 }
-            }).run();
+            });
+            // Make this infernal object callable from the CsoundWebKit object.
+            uws_app = &app;
+            app.run();
         });            
      }
     static std::unique_ptr<CsoundWebKit> create(CSOUND *csound_, int rpc_channel_) {
@@ -295,10 +296,43 @@ struct CsoundWebKit {
     virtual void load_html(const char *content, const char *base_uri) {
         webkit_web_view_load_html(web_view, content, base_uri);
     }
-    virtual MYFLT run_javascript(int page_id, const std::string &javascript_code, bool asynchronous) {
+    virtual MYFLT run_javascript_(const char *javascript_code) {
         MYFLT result = OK;
-        return result;
+        std::fprintf(stderr, "CsoundWebKit::run_javascript: %s...\n", javascript_code);
+        uws_app->publish("*", javascript_code, uWS::OpCode::TEXT);
+        std::fprintf(stderr, "CsoundWebKit::run_javascript.\n");
+       return result;
     }
+    void run_javascript_callback(GObject *object, GAsyncResult *result) {
+        std::fprintf(stderr, "run_javascript_callback...\n");
+        WebKitJavascriptResult *js_result;
+        GError *error = nullptr;
+        js_result = webkit_web_view_run_javascript_finish (WEBKIT_WEB_VIEW(object), result, &error);
+        if (!js_result) {
+            g_warning ("Error running javascript: %s", error->message);
+            g_error_free (error);
+            return;
+        }
+        auto value = webkit_javascript_result_get_js_value (js_result);
+        auto jsc_context = jsc_value_get_context(value);
+        std::fprintf(stderr, "run_javascript_callback: jsc_context: %p\n", jsc_context);
+        gchar *str_value = jsc_value_to_string(value);
+        g_print ("Script result: %s\n", str_value);
+        webkit_javascript_result_unref(js_result);
+    }
+    static void run_javascript_callback_(GObject *object, GAsyncResult *result, gpointer user_data) {
+        ((CsoundWebKit *)user_data)->run_javascript_callback(object, result);
+    }
+    virtual int run_javascript(const char *javascript_code_) {
+        auto javascript_code = g_strdup(javascript_code_);
+        std::fprintf(stderr, "run_javascript: code: \"%s\"\n", javascript_code);
+        int result = OK;
+        //webkit_web_view_run_javascript (web_view, script, NULL, web_view_javascript_finished, NULL);
+        webkit_web_view_run_javascript(web_view, javascript_code, nullptr, run_javascript_callback_, nullptr);
+        //webkit_web_view_run_javascript(web_view, javascript_code, nullptr, run_javascript_callback_, this);
+        g_free(javascript_code);
+        return result;
+    }    
     virtual void handle_events() {
         while (gtk_events_pending()) {
             gtk_main_iteration();
@@ -392,6 +426,24 @@ public:
     }
 };
 
+class WebKitRunJavaScript : public csound::OpcodeBase<WebKitRunJavaScript>
+{
+public:
+    // OUTPUTS
+    MYFLT *i_return_value;
+    // INPUTS
+    MYFLT *i_browser_handle_;
+    STRINGDAT *S_javascript_code_;
+    int init(CSOUND *csound) {
+        int result = OK;
+        int i_browser_handle = *i_browser_handle_;
+        auto browser = browsers_for_handles[i_browser_handle];
+        char *javascript_code = S_javascript_code_->data;
+        result = browser->run_javascript(javascript_code);
+        return result;
+    }
+};
+
 };
 
 /** 
@@ -439,6 +491,16 @@ extern "C" {
                                           (char *)"iSSSii",
                                           (int (*)(CSOUND*,void*)) webkit_opcodes::WebKitOpenHtml::init_,
                                           (int (*)(CSOUND*,void*)) webkit_opcodes::WebKitOpenHtml::kontrol_,
+                                          (int (*)(CSOUND*,void*)) 0);
+       status += csound->AppendOpcode(csound,
+                                          (char *)"webkit_run_javascript",
+                                          sizeof(webkit_opcodes::WebKitRunJavaScript),
+                                          0,
+                                          1,
+                                          (char *)"i",
+                                          (char *)"iS",
+                                          (int (*)(CSOUND*,void*)) webkit_opcodes::WebKitRunJavaScript::init_,
+                                          (int (*)(CSOUND*,void*)) 0,
                                           (int (*)(CSOUND*,void*)) 0);
         return status;
     }

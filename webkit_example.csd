@@ -205,10 +205,9 @@ gS_html init {{
     <input type="button" id='restore' value="Restore" />
     </form>   
     <p>
-<script src="csound.js">
 </script>
-<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script><script>    
-</script>
+<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+<script src="csound_websocket.js"></script>
 <script>   
     $(document).ready(function() {
     var csound = new Csound("http://localhost:8383");
@@ -248,6 +247,10 @@ webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650
 
 endin
 
+instr 3
+i_result webkit_run_javascript gi_browser, "window.document.body.style='background-color:Black;'";
+endin
+
 </CsInstruments>
 <CsScore>
 f 0 [10 * 60]
@@ -279,5 +282,6 @@ i 2    0    .      .       .       5.333      1.03
 i 2    0    .      .       .       8          1.02    
 i 2    0    .      1000    .       9          1.01    
 i 2    0    .      500     .       16         1.00    
+i 3   10    1
 </CsScore>
 </CsoundSynthesizer>
