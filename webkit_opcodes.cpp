@@ -1,10 +1,10 @@
-#include <App.h>
 #include <gtk/gtk.h>
 #include <csound/csound.hpp>
 #include <csound/OpcodeBase.hpp>
 #include <cstdio>
 #include <string>
 #include <jsoncpp/json/json.h>
+#include <jsonrpccpp/server/connectors/httpserver.h>
 #include <map>
 #include <memory>
 #include <glib-2.0/glib.h>
@@ -12,7 +12,6 @@
 #include <libsoup-2.4/libsoup/soup.h>
 #include <libsoup-2.4/libsoup/soup-address.h>
 #include <webkit2/webkit2.h>
-#include <jsonrpccpp/server/connectors/httpserver.h>
 
 #include "csoundskeleton.h"
 
@@ -193,8 +192,6 @@ struct CsoundWebKit {
     std::shared_ptr<Csound> csound;
     std::shared_ptr<jsonrpc::HttpServer> network_server;
     std::shared_ptr<CsoundServer> csound_server;
-    std::thread *websocket_server_thread;
-    uWS::App *uws_app = nullptr;
     GtkWidget *main_window;
     WebKitWebView *web_view;
     WebKitSettings *webkit_settings;
@@ -214,53 +211,42 @@ struct CsoundWebKit {
         std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Starting to listen on rpc_port_: %d\n", rpc_port_);
         network_server->StartListening();
         std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Now listening on rpc_port_: %d...\n", rpc_port_);
-        // Perhaps all state for each WebSocket needs to be in one thread.
-        std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: Starting WebSocket thread...\n");
-        websocket_server_thread = new std::thread([this]() {
-            /* Very simple WebSocket echo server */
-            auto app = uWS::App().ws<PerSocketData>("/*", {
-                /* Settings */
-                .compression = uWS::SHARED_COMPRESSOR,
-                .maxPayloadLength = 16 * 1024,
-                .idleTimeout = 16,
-                .maxBackpressure = 1 * 1024 * 1024,
-                /* Handlers */
-                .upgrade = nullptr,
-                .open = [](auto *ws) {
-                    std::cerr << "websocket_server_thread: uWS.open: remote: " << ws->getRemoteAddress() << std::endl;
-                },
-                .message = [this](auto *ws, std::string_view message, uWS::OpCode opCode) {
-                    ws->send(message, opCode);
-                    std::cerr << "websocket_server_thread: uWS.message: opCode: " << opCode << " message: " << message << std::endl;
-                    //this->csound->Message("websocket_server: message: %s\n", message);
-                },
-                .drain = [](auto */*ws*/) {
-                    /* Check getBufferedAmount here */
-                },
-                .ping = [](auto */*ws*/, std::string_view) {
-
-                },
-                .pong = [](auto */*ws*/, std::string_view) {
-
-                },
-                .close = [](auto */*ws*/, int code, std::string_view message) {
-                    std::cerr << "websocket_server_thread: uWS.close: code: " << code << " message: " << std::endl;
-                }
-            }).listen(9001, [this](auto *listen_socket) {
-                if (listen_socket) {
-                    std::cout << "Thread " << std::this_thread::get_id() << " in CsoundWebKit: " << this << " listening on port " << 9001 << std::endl;
-                } else {
-                    std::cout << "Thread " << std::this_thread::get_id() << " failed to listen on port 9001" << std::endl;
-                }
-            });
-            // Make this infernal object callable from the CsoundWebKit object.
-            uws_app = &app;
-            app.run();
-        });            
-     }
+    }
     static std::unique_ptr<CsoundWebKit> create(CSOUND *csound_, int rpc_channel_) {
         std::unique_ptr<CsoundWebKit> result(new CsoundWebKit(csound_, rpc_channel_));
         return result;
+    }
+    virtual void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_event) {
+        if (diagnostics_enabled) std::fprintf(stderr, "WebKitCsound::web_view_load_changed: web_view: %p load_event: %d.\n", web_view, load_event);
+        const char *provisional_uri = nullptr;
+        const char *redirected_uri = nullptr;
+        const char *loaded_uri = nullptr;
+        switch (load_event) {
+        case WEBKIT_LOAD_STARTED:
+            /* New load, we have now a provisional URI */
+            provisional_uri = webkit_web_view_get_uri (web_view);
+            /* Here we could start a spinner or update the
+             * location bar with the provisional URI */
+            break;
+        case WEBKIT_LOAD_REDIRECTED:
+            redirected_uri = webkit_web_view_get_uri (web_view);
+            break;
+        case WEBKIT_LOAD_COMMITTED:
+            /* The load is being performed. Current URI is
+             * the final one and it won't change unless a new
+             * load is requested or a navigation within the
+             * same page is performed */
+            loaded_uri = webkit_web_view_get_uri (web_view);
+            break;
+        case WEBKIT_LOAD_FINISHED:
+            if (diagnostics_enabled) std::fprintf(stderr, "WebKitCsound::web_view_load_finished: web_view: %p load_event: %d.\n", web_view, load_event);
+            break;
+        }
+    }
+    static void web_view_load_changed_(WebKitWebView *web_view,
+                                   WebKitLoadEvent load_event,
+                                   gpointer user_data) {
+        ((CsoundWebKit *)user_data)->web_view_load_changed(web_view, load_event);
     }
     virtual int open(const char *window_title, int width, int height) {
         int result = OK;
@@ -268,6 +254,8 @@ struct CsoundWebKit {
         gtk_window_set_default_size(GTK_WINDOW(main_window), width, height);
         gtk_window_set_title(GTK_WINDOW(main_window), window_title);
         web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+        // Set up a future so we can wait for the load change event.
+        g_signal_connect(web_view, "load_changed", G_CALLBACK(&CsoundWebKit::web_view_load_changed_), this);
         webkit_settings = webkit_web_view_get_settings(web_view);
         webkit_settings_set_enable_javascript(webkit_settings, true);
         webkit_settings_set_enable_webgl(webkit_settings, true);
@@ -284,7 +272,7 @@ struct CsoundWebKit {
         webkit_context = webkit_web_view_get_context(web_view);        
         gtk_container_add(GTK_CONTAINER(main_window), GTK_WIDGET(web_view));
         // Make sure that when the browser area becomes visible, it will get mouse
-        // and keyboard events
+        // and keyboard events.
         gtk_widget_grab_focus(GTK_WIDGET(web_view));
         // Make sure the main window and all its contents are visible
         gtk_widget_show_all(main_window);
@@ -295,13 +283,6 @@ struct CsoundWebKit {
     }
     virtual void load_html(const char *content, const char *base_uri) {
         webkit_web_view_load_html(web_view, content, base_uri);
-    }
-    virtual MYFLT run_javascript_(const char *javascript_code) {
-        MYFLT result = OK;
-        std::fprintf(stderr, "CsoundWebKit::run_javascript: %s...\n", javascript_code);
-        uws_app->publish("*", javascript_code, uWS::OpCode::TEXT);
-        std::fprintf(stderr, "CsoundWebKit::run_javascript.\n");
-       return result;
     }
     void run_javascript_callback(GObject *object, GAsyncResult *result) {
         std::fprintf(stderr, "run_javascript_callback...\n");

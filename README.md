@@ -9,21 +9,21 @@ The WebKit opcodes embed the WebKitGTK Web browser and its JavaScript runtime
 into Csound as a set of opcodes. They enable a Csound orchestra to include 
 HTML5 code, including JavaScript code; to open one or more browser windows 
 during the Csound performance; to open Internet resources during the Csound 
-performance; and to control Csound's performance via a JavaScript JSON-RPC 
-proxy for the Csound instance, or to install and/or execute JavaScript in the 
+performance; to control Csound's performance via a JavaScript JSON-RPC proxy 
+for the Csound instance; or to install and/or execute JavaScript in the 
 context of a Web page from C++ or Csound orchestra code.
 
 These are the opcodes: 
 ```
-i_webkit_handle webkit_create [, i_rpc_port]
+i_webkit_handle webkit_create [i_rpc_port]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
 i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
-In addition, the following JavaScript interface is in the 
-JavaScript context of each Web page opened by these opcodes. As far as possible 
-this interface is the same as that in `csound.hpp`. The methods of the `csound` object 
-are:
+In addition, the following JavaScript interface can be used from the 
+JavaScript context a Web page opened by these opcodes. To do this, include the 
+`csound.js` script in your HTML code. As far as possible, the methods of this 
+interface are the same as that in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
@@ -41,7 +41,7 @@ GetSr
 GetStringChannel
 InputMessage
 IsScorePending
-Message
+Message (this is the only asynchronous method)
 ReadScore
 RewindScore
 ScoreEvent
@@ -57,6 +57,10 @@ TableSet
 
 constructor: function(url)
 ```
+
+Naturally, all Csound API functions that destroy or create Csound, start 
+or stop the performance, or configure Csound's audio or MIDI input or output 
+drivers have had to be omitted from this interface.
 
 # webkit_create
 
@@ -105,20 +109,20 @@ browser can open any number of Web pages, each in its own top-level window.
 
 ## Performance
 
-Once created, and whether or not it actually displays any Web pages, the browser 
-remains in scope until the end of the Csound performance.
+Once created, and whether or not it actually displays any Web pages, the 
+browser remains in scope until the end of the Csound performance.
 
 # webkit_open_uri
 
-`webkit_open_uri` - Opens a new top-level window and displays in it the content 
-defined in the universal resource identifier. This can be a local file or an 
-Internet resource.
+`webkit_open_uri` - Opens a new top-level window and displays in it the 
+content defined in the universal resource identifier. This can be a local file 
+or an Internet resource.
 
-Please note, pages opened with this opcode will not have access to Csound unless 
-the body of those pages includes the `csound.js` script for the Csound proxy.
-That will not normally be the case for Web pages from the Internet. Thus, 
-`webkit_open_uri` is primarily useful for opening Internet resources such as 
-documentation.
+Please note, pages opened with this opcode will not have access to Csound 
+unless the body of those pages includes the `csound.js` script for the Csound 
+proxy. That will not normally be the case for Web pages from the Internet. 
+Thus, `webkit_open_uri` is primarily useful for opening Internet resources 
+such as documentation.
 
 ## Syntax
 
@@ -173,7 +177,7 @@ that contains the Csound piece. Additional Web pages, JavaScript files, images,
 and so on can be loaded from the base URI.
 
 The `file` URL scheme does not permit relative filepaths. However, it is easy, in 
-csound, to construct an absolute filepath given that Csound knows what its current 
+Csound, to construct an absolute filepath given that Csound knows what its current 
 working directory is. You can use the `pwd` opcode to get this:
 ```
 S_current_working_directory pwd
@@ -193,13 +197,13 @@ Window events and JavaScript callbacks within the browser are dispatched every
 kperiod.
 
 In order for user-defined code to call back into Csound, include the 
-`csound.js` script that defines the Csound proxy as a script element in the body 
-of the Web page. The script element can be loaded from the filesystem, or 
+`csound.js` script that defines the Csound proxy as a script element in the 
+body of the Web page. The script element can be loaded from the filesystem, or 
 it can be included directly in the Web page's code.
 
-Once an instance of the Csound proxy has been created, not only can the Web page call 
-methods of the Csound API, but also Csound can run JavaScript in the Web page using 
-the `webkit_run_javascript` opcode.
+Once an instance of the Csound proxy has been created, not only can the Web 
+page call methods of the Csound API, but also Csound can run JavaScript in the 
+Web page using the `webkit_run_javascript` opcode.
 
 Right-clicking on the browser opens a context menu with a command to open the 
 browser's inspector, or debugger. It can be used to view HTML and JavaScript 
@@ -213,16 +217,22 @@ See `webkit_example.js`.
 # webkit_run_javascript
 
 `webkit_run_javascript` - Executes JavaScript source code in the JavaScript 
-context of the indicated Web page.
+context of the browser's default Web page.
 
 ## Description
 
 `webkit_run_javascript` - Executes JavaScript source code in the JavaScript 
-context of the indicated Web page. This can be used to inject new JavaScript 
-modules, including the `Csound.js` Csound proxy, into existing Web pages, or 
-for example to send Csound's runtime messages to the Web page for display there, 
-or to send a generated score in JSON format for display on the page. Or it can 
-be used to call existing functions in the JavaScript context.
+context of the browser's default Web page. This can be used to inject new 
+JavaScript modules, including the `Csound.js` Csound proxy, into existing Web 
+pages, or for example to send Csound's runtime messages to the Web page for 
+display there, or to send a generated score in JSON format for display on the 
+page. Or it can be used to call existing functions in the JavaScript context. 
+However, this opcode is asynchronous and does not return the last value 
+produced by the evaluation of the JavaScript code.
+
+It is however possible to have the JavaScript code return a value by sending 
+the value on a Csound message channel. This is still asynchronous, but it is 
+possible to obtain a computed value this way.
 
 ## Syntax
 ```
@@ -232,29 +242,27 @@ i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 
 *i_webkit_handle* - The handle of a browser created by `webkit_create`.
 
-*S_javascript_code* - JavaScript source code that will be executed immediately in 
-the JavaScript context of a Web page. Such code can be a single 
-function call, or a multi-line string constant contained within the `{{` and `}}` 
+*S_javascript_code* - JavaScript source code that will be executed immediately 
+in the JavaScript context of a Web page. Such code can be a single function 
+call, or a multi-line string constant contained within the `{{` and `}}` 
 delimiters that creates an entire JavaScript module.
 
-Please note, this opcode is designed to work with only one Web page opened from one 
-browser instance. The endpoints of the bidirectional RPC channel are defined by the 
-WebSocket created by `webkit_create` and opened also by `csound.js`. The results of 
-trying to call from Csound into more than one Web are undefined. If you need 
-Csound to call into more than one Web page, you should create a separate browser on 
-a separate port for each page.
+Please note, this opcode is designed to work with only one Web page opened 
+from one browser instance. The results of trying to call from Csound into more 
+than one Web are undefined. If you need Csound to call into more than one Web 
+page, you should create a separate browser on a separate port for each page.
 
 ## Performance
 
-The JavaScript code executes immediately when the opcode is invoked, but the code 
-can create modules with function definitions, class definitions, and so on that will 
-available for other code on the page.
+The JavaScript code executes immediately when the opcode is invoked, but the 
+code can create modules with function definitions, class definitions, and so 
+on that will be available for other code on the page.
 
 ## Performance
 
-What happens during performance is whatever the JavaScript code does. Such code may 
-execute immediately, or it may create a class or library to be invoked later on 
-during the performance.
+What happens during performance is whatever the JavaScript code does. Such 
+code may execute immediately, or it may create a class or library to be 
+invoked later on in the performance.
    
 # Installation
 
