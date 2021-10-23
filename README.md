@@ -15,7 +15,7 @@ context of a Web page from C++ or Csound orchestra code.
 
 These are the opcodes: 
 ```
-i_webkit_handle webkit_create [i_rpc_port]
+i_webkit_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
 i_result webkit_run_javascript i_webkit_handle, S_javascript_code
@@ -96,12 +96,15 @@ is fully bidirectional.
 
 ## Syntax
 ```
-i_browser_handle webkit_create [i_rpc_port]
+i_browser_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
 ```
 ## Initialization
 
 *i_rpc_port* - The number of a port on `localhost` that the Csound proxy will
 use for JSON-RPC calls. If omitted, the port defaults to 8383.
+
+*i_diagnostics_enabled* - If 0 (the default), diagnostic messages are not printed; 
+if non-0, diagnostic messages are printed.
 
 *i_browser_handle* - Returns a handle to the newly created browser. 
 The other WebKit opcodes must take such a handle as their first pfield. One 
@@ -152,6 +155,9 @@ browser's inspector, or debugger. It can be used to view HTML and JavaScript
 code, inspect elements of the Document Object Model, and to set breakpoints or 
 inspect variables in JavaScript code.
 
+Once the Web page has opened, Csound can run JavaScript in the JavaScript 
+context of thate page using the `webkit_run_javascript` opcode.
+
 # webkit_open_html
 
 `webkit_open_html` - Opens a new top-level window and displays in it the content 
@@ -201,9 +207,8 @@ In order for user-defined code to call back into Csound, include the
 body of the Web page. The script element can be loaded from the filesystem, or 
 it can be included directly in the Web page's code.
 
-Once an instance of the Csound proxy has been created, not only can the Web 
-page call methods of the Csound API, but also Csound can run JavaScript in the 
-Web page using the `webkit_run_javascript` opcode.
+Not only can the Web page call methods of the Csound API, but also Csound can 
+run JavaScript in the Web page using the `webkit_run_javascript` opcode.
 
 Right-clicking on the browser opens a context menu with a command to open the 
 browser's inspector, or debugger. It can be used to view HTML and JavaScript 
@@ -216,23 +221,23 @@ See `webkit_example.js`.
 
 # webkit_run_javascript
 
-`webkit_run_javascript` - Executes JavaScript source code in the JavaScript 
-context of the browser's default Web page.
+`webkit_run_javascript` - Executes JavaScript source code asynchronously in 
+the JavaScript context of the browser's default Web page.
 
 ## Description
 
-`webkit_run_javascript` - Executes JavaScript source code in the JavaScript 
-context of the browser's default Web page. This can be used to inject new 
-JavaScript modules, including the `Csound.js` Csound proxy, into existing Web 
-pages, or for example to send Csound's runtime messages to the Web page for 
-display there, or to send a generated score in JSON format for display on the 
-page. Or it can be used to call existing functions in the JavaScript context. 
-However, this opcode is asynchronous and does not return the last value 
-produced by the evaluation of the JavaScript code.
+`webkit_run_javascript` - Executes JavaScript source code asynchronously in 
+the JavaScript context of the browser's default Web page. This can be used to 
+inject new JavaScript modules, including the `Csound.js` Csound proxy, into 
+existing Web pages, or for example to send Csound's runtime messages to the 
+Web page for display there, or to send a generated score in JSON format for 
+display on the page. Or it can be used to call existing functions in the 
+JavaScript context. However, this opcode is asynchronous and does not return 
+the last value produced by the evaluation of the JavaScript code.
 
 It is however possible to have the JavaScript code return a value by sending 
 the value on a Csound message channel. This is still asynchronous, but it is 
-possible to obtain a computed value this way.
+possible to obtain a computed value in this way.
 
 ## Syntax
 ```
@@ -249,8 +254,9 @@ delimiters that creates an entire JavaScript module.
 
 Please note, this opcode is designed to work with only one Web page opened 
 from one browser instance. The results of trying to call from Csound into more 
-than one Web are undefined. If you need Csound to call into more than one Web 
-page, you should create a separate browser on a separate port for each page.
+than one Web page are undefined. If you need Csound to call into more than one 
+Web page, you should create a separate browser on a separate port for each 
+page.
 
 ## Performance
 
@@ -266,20 +272,21 @@ invoked later on in the performance.
    
 # Installation
 
-1. Install [Csound](https://github.com/csound/csound). On Linux, this generally 
-   means building from source code.
-3. Install the [WebKitGTK](https://webkitgtk.org/) package and its dependencies, 
-   preferably as a system package, e.g. `sudo apt-get install libwebkit2gtk-4.0-dev`.
+1. Install [Csound](https://github.com/csound/csound). On Linux, this 
+   generally means building from source code.
+3. Install the [WebKitGTK](https://webkitgtk.org/) package and its 
+   dependencies, preferably as a system package, e.g. 
+   `sudo apt-get install libwebkit2gtk-4.0-dev`.
 4. Install [libjson-rpc-cpp](https://github.com/cinemast/libjson-rpc-cpp), 
    preferably as a system package, e.g. 
    `sudo apt-get install libjsonrpccpp-dev libjsonrpccpp-tools`.
-4. Generate the stubs and skeletons for the RPC channel that Web pages displayed 
-   by the opcodes use to call Csound:
+4. Generate the stubs and skeletons for the RPC channel that Web pages 
+   displayed by the opcodes use to call Csound:
    ```
    jsonrpcstub --verbose csoundrpc.json --js-client=Csound --cpp-server=CsoundSkeleton
    ```   
-4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
-   to modify this build script for your system.
+4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. 
+   You may need to modify this build script for your system.
 5. Test by executing `csound webkit_example.csd`. 
 
 # Credits

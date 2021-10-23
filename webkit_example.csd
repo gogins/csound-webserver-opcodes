@@ -207,7 +207,7 @@ gS_html init {{
     <p>
 </script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-<script src="csound_websocket.js"></script>
+<script src="csound.js"></script>
 <script>   
     $(document).ready(function() {
     var csound = new Csound("http://localhost:8383");
@@ -237,18 +237,18 @@ gS_html init {{
 </html>
 }}
 
-gi_browser webkit_create 8383
+gi_browser webkit_create 8383, 1
 webkit_open_uri gi_browser, "Csound Help", "https://csound.com/docs/manual/indexframes.html", 900, 600
 webkit_open_uri gi_browser, "WebKit Opcodes HTML5 Capabilities", "https://html5test.com", 900, 600
 S_pwd pwd
 S_base_uri sprintf "file://%s/", S_pwd
 prints S_base_uri
 webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650
-
+webkit_run_javascript gi_browser, "window.document.body.style='background-color:Yellow;'";
 endin
 
 instr 3
-i_result webkit_run_javascript gi_browser, "window.document.body.style='background-color:Black;'";
+webkit_run_javascript gi_browser, "window.document.body.style='background-color:Black;'";
 endin
 
 </CsInstruments>
