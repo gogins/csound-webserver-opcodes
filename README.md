@@ -18,7 +18,7 @@ These are the opcodes:
 i_webkit_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
-i_result webkit_run_javascript i_webkit_handle, S_javascript_code
+webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
 In addition, the following JavaScript interface can be used from the 
 JavaScript context a Web page opened by these opcodes. To do this, include the 
