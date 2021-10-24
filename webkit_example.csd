@@ -205,14 +205,12 @@ gS_html init {{
     <input type="button" id='restore' value="Restore" />
     </form>   
     <p>
-<script src="csound.js">
 </script>
-<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script><script>    
-</script>
+<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+<script src="csound.js"></script>
 <script>   
     $(document).ready(function() {
-    window.csound = new Csound("http://localhost:8383");
-    console.log("csound: " + csound.prototype);
+    var csound = new Csound("http://localhost:8383");
     csound.Message("Hello, World! -- from message.html displayed by the WebKit opcodes\\n");
     $('input').on('input', async function(event) {
         var slider_value = parseFloat(event.target.value);
@@ -239,14 +237,18 @@ gS_html init {{
 </html>
 }}
 
-gi_browser webkit_create 
+gi_browser webkit_create 8383, 1
 webkit_open_uri gi_browser, "Csound Help", "https://csound.com/docs/manual/indexframes.html", 900, 600
 webkit_open_uri gi_browser, "WebKit Opcodes HTML5 Capabilities", "https://html5test.com", 900, 600
 S_pwd pwd
 S_base_uri sprintf "file://%s/", S_pwd
 prints S_base_uri
 webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650
+webkit_run_javascript gi_browser, "window.document.body.style='background-color:Yellow;'";
+endin
 
+instr 3
+webkit_run_javascript gi_browser, "window.document.body.style='background-color:Black;'";
 endin
 
 </CsInstruments>
@@ -280,5 +282,6 @@ i 2    0    .      .       .       5.333      1.03
 i 2    0    .      .       .       8          1.02    
 i 2    0    .      1000    .       9          1.01    
 i 2    0    .      500     .       16         1.00    
+i 3   10    1
 </CsScore>
 </CsoundSynthesizer>

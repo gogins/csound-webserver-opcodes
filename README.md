@@ -9,19 +9,21 @@ The WebKit opcodes embed the WebKitGTK Web browser and its JavaScript runtime
 into Csound as a set of opcodes. They enable a Csound orchestra to include 
 HTML5 code, including JavaScript code; to open one or more browser windows 
 during the Csound performance; to open Internet resources during the Csound 
-performance; and to control Csound's performance via a JavaScript JSON-RPC 
-proxy for the Csound instance.
+performance; to control Csound's performance via a JavaScript JSON-RPC proxy 
+for the Csound instance; or to install and/or execute JavaScript in the 
+context of a Web page from C++ or Csound orchestra code.
 
 These are the opcodes: 
 ```
-i_webkit_handle webkit_create [i_rpc_port]
+i_webkit_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
 webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
-In addition, the following JavaScript interface to Csound can be defined in the 
-JavaScript context of each Web page opened by these opcodes by including the `csound.js` 
-script in the page. As far as possible this interface is the same as that in `csound.hpp`. 
-The methods of the `csound` object are:
+In addition, the following JavaScript interface can be used from the 
+JavaScript context a Web page opened by these opcodes. To do this, include the 
+`csound.js` script in your HTML code. As far as possible, the methods of this 
+interface are the same as that in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
@@ -39,7 +41,7 @@ GetSr
 GetStringChannel
 InputMessage
 IsScorePending
-Message
+Message (this is the only asynchronous method)
 ReadScore
 RewindScore
 ScoreEvent
@@ -55,6 +57,10 @@ TableSet
 
 constructor: function(url)
 ```
+
+Naturally, all Csound API functions that destroy or create Csound, start 
+or stop the performance, or configure Csound's audio or MIDI input or output 
+drivers have had to be omitted from this interface.
 
 # webkit_create
 
@@ -81,14 +87,24 @@ starting and stopping, or runtime configuration had to be omitted. The
 Csound interface in `Csound.js` communicates with the WebKit opcodes and 
 thus with Csound using JSON-RPC and Ajax.
 
+Csound itself, or C++ code compiled using the Clang opcodes for Csound, 
+can also execute JavaScript code in the JavaScript context of an opened 
+Web page using `webkit_run_javascript` opcode.
+
+Thus, the interface between Csound and the Web pages that Csound creates 
+is fully bidirectional.
+
 ## Syntax
 ```
-i_browser_handle webkit_create [i_rpc_port]
+i_browser_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
 ```
 ## Initialization
 
 *i_rpc_port* - The number of a port on `localhost` that the Csound proxy will
 use for JSON-RPC calls. If omitted, the port defaults to 8383.
+
+*i_diagnostics_enabled* - If 0 (the default), diagnostic messages are not printed; 
+if non-0, diagnostic messages are printed.
 
 *i_browser_handle* - Returns a handle to the newly created browser. 
 The other WebKit opcodes must take such a handle as their first pfield. One 
@@ -96,20 +112,20 @@ browser can open any number of Web pages, each in its own top-level window.
 
 ## Performance
 
-Once created, and whether or not it actually displays any Web pages, the browser 
-remains in scope until the end of the Csound performance.
+Once created, and whether or not it actually displays any Web pages, the 
+browser remains in scope until the end of the Csound performance.
 
 # webkit_open_uri
 
-`webkit_open_uri` - Opens a new top-level window and displays in it the content 
-defined in the universal resource identifier. This can be a local file or an 
-Internet resource.
+`webkit_open_uri` - Opens a new top-level window and displays in it the 
+content defined in the universal resource identifier. This can be a local file 
+or an Internet resource.
 
-Please note, pages opened with this opcode will not have access to Csound unless 
-the body of those pages includes the `csound.js` script for the Csound proxy.
-That will not normally be the case for Web pages from the Internet. Thus, 
-`webkit_open_uri` is primarily useful for opening Internet resources such as 
-documentation.
+Please note, pages opened with this opcode will not have access to Csound 
+unless the body of those pages includes the `csound.js` script for the Csound 
+proxy. That will not normally be the case for Web pages from the Internet. 
+Thus, `webkit_open_uri` is primarily useful for opening Internet resources 
+such as documentation.
 
 ## Syntax
 
@@ -139,6 +155,9 @@ browser's inspector, or debugger. It can be used to view HTML and JavaScript
 code, inspect elements of the Document Object Model, and to set breakpoints or 
 inspect variables in JavaScript code.
 
+Once the Web page has opened, Csound can run JavaScript in the JavaScript 
+context of thate page using the `webkit_run_javascript` opcode.
+
 # webkit_open_html
 
 `webkit_open_html` - Opens a new top-level window and displays in it the content 
@@ -164,7 +183,7 @@ that contains the Csound piece. Additional Web pages, JavaScript files, images,
 and so on can be loaded from the base URI.
 
 The `file` URL scheme does not permit relative filepaths. However, it is easy, in 
-csound, to construct an absolute filepath given that Csound knows what its current 
+Csound, to construct an absolute filepath given that Csound knows what its current 
 working directory is. You can use the `pwd` opcode to get this:
 ```
 S_current_working_directory pwd
@@ -184,13 +203,12 @@ Window events and JavaScript callbacks within the browser are dispatched every
 kperiod.
 
 In order for user-defined code to call back into Csound, include the 
-`csound.js` script that defines the Csound proxy in the body of your Web page. 
-You can include it as a script tag, either loaded from the filesystem, or 
-included directly in the Web page's code.
+`csound.js` script that defines the Csound proxy as a script element in the 
+body of the Web page. The script element can be loaded from the filesystem, or 
+it can be included directly in the Web page's code.
 
-Please note, the Web page can call back into Csound, but Csound cannot call 
-directly into the Web page. This may change in future versions of the WebKit 
-opcodes.
+Not only can the Web page call methods of the Csound API, but also Csound can 
+run JavaScript in the Web page using the `webkit_run_javascript` opcode.
 
 Right-clicking on the browser opens a context menu with a command to open the 
 browser's inspector, or debugger. It can be used to view HTML and JavaScript 
@@ -201,22 +219,74 @@ inspect variables in JavaScript code.
 
 See `webkit_example.js`.
 
+# webkit_run_javascript
+
+`webkit_run_javascript` - Executes JavaScript source code asynchronously in 
+the JavaScript context of the browser's default Web page.
+
+## Description
+
+`webkit_run_javascript` - Executes JavaScript source code asynchronously in 
+the JavaScript context of the browser's default Web page. This can be used to 
+inject new JavaScript modules, including the `Csound.js` Csound proxy, into 
+existing Web pages, or for example to send Csound's runtime messages to the 
+Web page for display there, or to send a generated score in JSON format for 
+display on the page. Or it can be used to call existing functions in the 
+JavaScript context. However, this opcode is asynchronous and does not return 
+the last value produced by the evaluation of the JavaScript code.
+
+It is however possible to have the JavaScript code return a value by sending 
+the value on a Csound message channel. This is still asynchronous, but it is 
+possible to obtain a computed value in this way.
+
+## Syntax
+```
+i_result webkit_run_javascript i_webkit_handle, S_javascript_code
+```
+## Initialization
+
+*i_webkit_handle* - The handle of a browser created by `webkit_create`.
+
+*S_javascript_code* - JavaScript source code that will be executed immediately 
+in the JavaScript context of a Web page. Such code can be a single function 
+call, or a multi-line string constant contained within the `{{` and `}}` 
+delimiters that creates an entire JavaScript module.
+
+Please note, this opcode is designed to work with only one Web page opened 
+from one browser instance. The results of trying to call from Csound into more 
+than one Web page are undefined. If you need Csound to call into more than one 
+Web page, you should create a separate browser on a separate port for each 
+page.
+
+## Performance
+
+The JavaScript code executes immediately when the opcode is invoked, but the 
+code can create modules with function definitions, class definitions, and so 
+on that will be available for other code on the page.
+
+## Performance
+
+What happens during performance is whatever the JavaScript code does. Such 
+code may execute immediately, or it may create a class or library to be 
+invoked later on in the performance.
+   
 # Installation
 
-1. Install [Csound](https://github.com/csound/csound). On Linux, this generally 
-   means building from source code.
-3. Install the [WebKitGTK](https://webkitgtk.org/) package and its dependencies, 
-   preferably as a system package, e.g. `sudo apt-get install libwebkit2gtk-4.0-dev`.
+1. Install [Csound](https://github.com/csound/csound). On Linux, this 
+   generally means building from source code.
+3. Install the [WebKitGTK](https://webkitgtk.org/) package and its 
+   dependencies, preferably as a system package, e.g. 
+   `sudo apt-get install libwebkit2gtk-4.0-dev`.
 4. Install [libjson-rpc-cpp](https://github.com/cinemast/libjson-rpc-cpp), 
    preferably as a system package, e.g. 
    `sudo apt-get install libjsonrpccpp-dev libjsonrpccpp-tools`.
-4. Generate the stubs and skeletons for the RPC channel that Web pages displayed 
-   by the opcodes use to call Csound:
+4. Generate the stubs and skeletons for the RPC channel that Web pages 
+   displayed by the opcodes use to call Csound:
    ```
    jsonrpcstub --verbose csoundrpc.json --js-client=Csound --cpp-server=CsoundSkeleton
    ```   
-4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. You may need 
-   to modify this build script for your system.
+4. Build the `webkit_opcodes` plugin opcode library by executing `build.sh`. 
+   You may need to modify this build script for your system.
 5. Test by executing `csound webkit_example.csd`. 
 
 # Credits
