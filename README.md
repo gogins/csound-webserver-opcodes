@@ -20,10 +20,11 @@ webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_f
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [i, fullscreen]
 i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
+
 In addition, the following JavaScript interface can be used from the 
 JavaScript context of a Web page opened by these opcodes. To do this, include 
-the `csound.js` script in your HTML code. As far as possible, the methods of 
-this interface are the same as that in `csound.hpp`:
+the `csound.js` script in the body of your HTML code. As far as possible, the 
+methods of this interface are the same as that in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
