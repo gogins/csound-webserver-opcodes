@@ -151,7 +151,7 @@ gS_html init {{
     }    
     </style>
 </head>
-<body style="background-color:CadetBlue">
+<body style="background-color:CadetBlue;box-sizing:border-box;padding:20px;:fullscreen">
     <h1>Message from Another Planet, version 4</h1>
     <h3>Adapted for Csound with the WebKit opcodes by Michael Gogins, from "Message from Another Planet" by Jacob Joaquin</h3>
     <form id='persist'>
@@ -243,16 +243,12 @@ webkit_open_uri gi_browser, "WebKit Opcodes HTML5 Capabilities", "https://html5t
 S_pwd pwd
 S_base_uri sprintf "file://%s/", S_pwd
 prints S_base_uri
-webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650
-webkit_run_javascript gi_browser, "window.document.body.style='background-color:Yellow;'";
-endin
-
-instr 3
-webkit_run_javascript gi_browser, "window.document.body.style='background-color:Black;'";
+webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650, 0 ; Or 1 for fullscreen.
 endin
 
 </CsInstruments>
 <CsScore>
+; Play for 10 minutes.
 f 0 [10 * 60]
 ; p1   p2   p3     p4      p5      p6         p7
 f 1    0    65537  10      1
@@ -282,6 +278,5 @@ i 2    0    .      .       .       5.333      1.03
 i 2    0    .      .       .       8          1.02    
 i 2    0    .      1000    .       9          1.01    
 i 2    0    .      500     .       16         1.00    
-i 3   10    1
 </CsScore>
 </CsoundSynthesizer>

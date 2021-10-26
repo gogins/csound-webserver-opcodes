@@ -16,14 +16,14 @@ context of a Web page from C++ or Csound orchestra code.
 These are the opcodes: 
 ```
 i_webkit_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
-webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
-webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [i, fullscreen]
 i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
 In addition, the following JavaScript interface can be used from the 
-JavaScript context a Web page opened by these opcodes. To do this, include the 
-`csound.js` script in your HTML code. As far as possible, the methods of this 
-interface are the same as that in `csound.hpp`:
+JavaScript context of a Web page opened by these opcodes. To do this, include 
+the `csound.js` script in your HTML code. As far as possible, the methods of 
+this interface are the same as that in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
@@ -129,7 +129,7 @@ such as documentation.
 
 ## Syntax
 
-webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
+webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
 
 ## Initialization
 
@@ -143,6 +143,9 @@ the browser.
 *i_width* - The width of the top-level browser window in pixels.
 
 *i_height* - The height of the top-level browser window in pixels.
+
+*i_fullscreen* - If 0 (the default value), the size of the browser window is 
+`i_width` x `i_height`; if non-0, the browser window is fullscreen.
 
 ## Performance
 
@@ -166,7 +169,7 @@ within the `{{` and `}}` delimiters.
 
 ## Syntax
 
-webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [, i_fullscreen]
 
 ## Initialization
 
@@ -195,6 +198,9 @@ webkit_open_html gi_browser, "Message", gS_html_code, S_base_uri, 900, 650
 *i_width* - The width of the top-level browser window in pixels.
 
 *i_height* - The height of the top-level browser window in pixels.
+
+*i_fullscreen* - If 0 (the default value), the size of the browser window is 
+`i_width` x `i_height`; if non-0, the browser window is fullscreen.
 
 ## Performance
 

@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <future>
 #include <csound/csound.hpp>
 #include <csound/OpcodeBase.hpp>
 #include <cstdio>
@@ -260,11 +261,14 @@ namespace webkit_opcodes {
             gpointer user_data) {
             ((CsoundWebKit *)user_data)->web_view_load_changed(web_view, load_event);
         }
-        virtual int open(const char *window_title, int width, int height) {
+        virtual int open(const char *window_title, int width, int height, bool fullscreen) {
             int result = OK;
             main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-            gtk_window_set_default_size(GTK_WINDOW(main_window), width, height);
             gtk_window_set_title(GTK_WINDOW(main_window), window_title);
+            gtk_window_set_default_size(GTK_WINDOW(main_window), width, height);
+            if (fullscreen == true) {
+                gtk_window_fullscreen(GTK_WINDOW(main_window));
+            }
             web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
             g_signal_connect(web_view, "load_changed", G_CALLBACK(&CsoundWebKit::web_view_load_changed_), this);
             webkit_settings = webkit_web_view_get_settings(web_view);
@@ -276,6 +280,7 @@ namespace webkit_opcodes {
             webkit_settings_set_enable_media_stream(webkit_settings, true);
             webkit_settings_set_enable_mediasource(webkit_settings, true);
             webkit_settings_set_enable_media_capabilities(webkit_settings, true);
+            webkit_settings_set_enable_fullscreen(webkit_settings, true);
             webkit_settings_set_enable_developer_extras(webkit_settings, true);
             // TODO: See if these two are really a good idea.
             webkit_settings_set_allow_file_access_from_file_urls(webkit_settings, true);
@@ -286,7 +291,7 @@ namespace webkit_opcodes {
             gtk_widget_show_all(main_window);
             return result;
         }
-        virtual void load_uri(const char *uri) {
+        virtual void load_uri(const char *uri) {          
             webkit_web_view_load_uri(web_view, uri);
         }
         virtual void load_html(const char *content, const char *base_uri) {
@@ -357,6 +362,7 @@ namespace webkit_opcodes {
             STRINGDAT *S_uri_;
             MYFLT *i_width_;
             MYFLT *i_height_;
+            MYFLT *i_fullscreen_;
             // STATE
             std::shared_ptr<CsoundWebKit> browser;
             int init(CSOUND *csound) {
@@ -367,8 +373,9 @@ namespace webkit_opcodes {
                 char *S_uri = S_uri_->data;
                 int i_width = *i_width_;
                 int i_height = *i_height_;
+                bool i_fullscreen = *i_fullscreen_;
                 browser = browsers_for_handles[i_browser_handle];
-                browser->open(S_window_title, i_width, i_height);
+                browser->open(S_window_title, i_width, i_height, i_fullscreen);
                 log(csound, "webkit_open_uri::init: uri: %s\n", S_uri);
                 browser->load_uri(S_uri);
                 return result;
@@ -390,6 +397,7 @@ namespace webkit_opcodes {
             STRINGDAT *S_base_uri_;
             MYFLT *i_width_;
             MYFLT *i_height_;
+            MYFLT *i_fullscreen_;
             // STATE
             std::shared_ptr<CsoundWebKit> browser;
             int init(CSOUND *csound) {
@@ -400,8 +408,10 @@ namespace webkit_opcodes {
                 char *S_base_uri = S_base_uri_->data;
                 int i_width = *i_width_;
                 int i_height = *i_height_;
+                bool i_fullscreen = *i_fullscreen_;
                 browser = browsers_for_handles[i_browser_handle];
-                browser->open(S_window_title, i_width, i_height);
+                browser->open(S_window_title, i_width, i_height, i_fullscreen);
+                log(csound, "webkit_open_html::init: title: %s\n", S_window_title);
                 browser->load_html(S_html, S_base_uri);
                 return result;
             }
@@ -433,8 +443,8 @@ namespace webkit_opcodes {
  * Here is the syntax for all the WebKit opcodes:
  *
  * i_webkit_handle webkit_create [, i_rpc_port [, i_diagnostics_enabled]]
- * webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height
- * webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height
+ * webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
+ * webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [, i_fullscreen]
  * webkit_run_javascript i_webkit_handle, S_javascript_code [, i_asynchronous]
  *
  * In addition, each Web page opened by these opcodes has a JavaScript
@@ -460,7 +470,7 @@ extern "C" {
                 0,
                 3,
                 (char *)"",
-                (char *)"iSSii",
+                (char *)"iSSiio",
                 (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_uri::init_,
                 (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_uri::kontrol_,
                 (int (*)(CSOUND*,void*)) 0);
@@ -470,7 +480,7 @@ extern "C" {
                 0,
                 3,
                 (char *)"",
-                (char *)"iSSSii",
+                (char *)"iSSSiio",
                 (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_html::init_,
                 (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_html::kontrol_,
                 (int (*)(CSOUND*,void*)) 0);
