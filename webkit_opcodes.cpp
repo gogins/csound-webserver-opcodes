@@ -189,11 +189,6 @@ namespace webkit_opcodes {
         }
     };
 
-    /* ws->getUserData returns one of these */
-    struct PerSocketData {
-        /* Fill with user data */
-    };
-    
     static bool diagnostics_enabled = true;
 
     struct CsoundWebKit {
@@ -269,7 +264,7 @@ namespace webkit_opcodes {
             if (fullscreen == true) {
                 gtk_window_fullscreen(GTK_WINDOW(main_window));
             }
-            web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+            web_view = (webkit_web_view_new());
             g_signal_connect(web_view, "load_changed", G_CALLBACK(&CsoundWebKit::web_view_load_changed_), this);
             webkit_settings = webkit_web_view_get_settings(web_view);
             webkit_settings_set_enable_javascript(webkit_settings, true);
@@ -297,31 +292,32 @@ namespace webkit_opcodes {
         virtual void load_html(const char *content, const char *base_uri) {
             webkit_web_view_load_html(web_view, content, base_uri);
         }
-        void run_javascript_callback(GObject *object, GAsyncResult *result) {
+        void web_view_javascript_finished(GObject *object, GAsyncResult *result) {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::run_javascript_callback...\n");
-            WebKitJavascriptResult *js_result;
+            WebKitJavascriptResult *js_result = nullptr;
             GError *error = nullptr;
             js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
             if(!js_result) {
-                g_warning("Error running javascript: %s", error->message);
+                g_warning("CsoundWebKit::run_javascript_callback: js_result: %p: message: %s", js_result, error->message);
                 g_error_free(error);
                 return;
             }
             auto value = webkit_javascript_result_get_js_value(js_result);
-            auto jsc_context = jsc_value_get_context(value);
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::run_javascript_callback: jsc_context: %p\n", jsc_context);
-            gchar *str_value = jsc_value_to_string(value);
-            if (diagnostics_enabled) g_print("CsoundWebKit::run_javascript_callback: value: %s\n", str_value);
+            if (value != nullptr) {
+                gchar *str_value = jsc_value_to_string(value);
+                if (diagnostics_enabled) g_print("CsoundWebKit::run_javascript_callback: value: %s\n", str_value);
+            }
             webkit_javascript_result_unref(js_result);
         }
-        static void run_javascript_callback_(GObject *object, GAsyncResult *result, gpointer user_data) {
-            ((CsoundWebKit *)user_data)->run_javascript_callback(object, result);
+        static void web_view_javascript_finished_(GObject *object, GAsyncResult *result, gpointer user_data) {
+            ((CsoundWebKit *)user_data)->web_view_javascript_finished(object, result);
         }
         virtual int run_javascript(const char *javascript_code_) {
             int result = OK;
             auto javascript_code = g_strdup(javascript_code_);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::run_javascript: code: \"%s\"\n", javascript_code);
-            webkit_web_view_run_javascript(web_view, javascript_code, nullptr, run_javascript_callback_, nullptr);
+            //webkit_web_view_run_javascript web_view, script, NULL, web_view_javascript_finished, NULL);
+            webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(web_view), javascript_code, nullptr, web_view_javascript_finished_, this);
             g_free(javascript_code);
             return result;
         }
@@ -333,7 +329,7 @@ namespace webkit_opcodes {
     };
 
     static std::map<int, std::shared_ptr<CsoundWebKit> > browsers_for_handles;
-
+    
     class webkit_create : public csound::OpcodeBase<webkit_create> {
         public:
             // OUTPUTS
@@ -451,6 +447,15 @@ namespace webkit_opcodes {
  * interface to the invoking instance of Csound.
  */
 extern "C" {
+    
+    /**
+     * Make the browsers accessible to other C++ modules in LLVM.
+     */
+    PUBLIC void webkit_execute(int browser_handle, const char *javascript_code) {
+        if (webkit_opcodes::browsers_for_handles.find(browser_handle) != webkit_opcodes::browsers_for_handles.end()) {
+            webkit_opcodes::browsers_for_handles[browser_handle]->run_javascript(javascript_code);
+        }
+    };
 
     PUBLIC int csoundModuleInit_webkit_opcodes(CSOUND *csound) {
         std::fprintf(stderr, "csoundModuleInit_webkit_opcodes...\n");
