@@ -201,7 +201,6 @@ namespace webkit_opcodes {
         WebKitWebContext *webkit_context;
         int rpc_port = 8383;
         CsoundWebKit(CSOUND *csound_, int rpc_port_) {
-            diagnostics_enabled = true;
             gtk_init(nullptr, nullptr);
             csound = std::shared_ptr<Csound>(new Csound(csound_));
             if(rpc_port_ != -1) {
@@ -264,7 +263,7 @@ namespace webkit_opcodes {
             if (fullscreen == true) {
                 gtk_window_fullscreen(GTK_WINDOW(main_window));
             }
-            web_view = (webkit_web_view_new());
+            web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
             g_signal_connect(web_view, "load_changed", G_CALLBACK(&CsoundWebKit::web_view_load_changed_), this);
             webkit_settings = webkit_web_view_get_settings(web_view);
             webkit_settings_set_enable_javascript(webkit_settings, true);
@@ -302,9 +301,9 @@ namespace webkit_opcodes {
                 g_error_free(error);
                 return;
             }
-            auto value = webkit_javascript_result_get_js_value(js_result);
-            if (value != nullptr) {
-                gchar *str_value = jsc_value_to_string(value);
+            auto jsc_value = webkit_javascript_result_get_js_value(js_result);
+            if (!(jsc_value_is_undefined(jsc_value) || jsc_value_is_null(jsc_value))) {
+                gchar *str_value = jsc_value_to_string(jsc_value);
                 if (diagnostics_enabled) g_print("CsoundWebKit::run_javascript_callback: value: %s\n", str_value);
             }
             webkit_javascript_result_unref(js_result);
@@ -316,7 +315,6 @@ namespace webkit_opcodes {
             int result = OK;
             auto javascript_code = g_strdup(javascript_code_);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::run_javascript: code: \"%s\"\n", javascript_code);
-            //webkit_web_view_run_javascript web_view, script, NULL, web_view_javascript_finished, NULL);
             webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(web_view), javascript_code, nullptr, web_view_javascript_finished_, this);
             g_free(javascript_code);
             return result;
@@ -340,7 +338,7 @@ namespace webkit_opcodes {
             int init(CSOUND *csound) {
                 int result = OK;
                 int rpc_port = *i_rpc_port;
-                int diagnostics_enabled = *i_diagnostics_enabled;
+                diagnostics_enabled = *i_diagnostics_enabled;
                 std::shared_ptr<CsoundWebKit> browser = CsoundWebKit::create(csound, rpc_port);
                 int handle = browsers_for_handles.size();
                 browsers_for_handles[handle] = browser;
