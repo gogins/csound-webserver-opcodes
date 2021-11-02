@@ -297,8 +297,8 @@ namespace webkit_opcodes {
             GError *error = nullptr;
             js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
             if(!js_result) {
-                g_warning("CsoundWebKit::run_javascript_callback: js_result: %p: message: %s", js_result, error->message);
-                g_error_free(error);
+                ///g_warning("CsoundWebKit::run_javascript_callback: js_result: %p: message: %s", js_result, error->message);
+                ///g_error_free(error);
                 return;
             }
             auto jsc_value = webkit_javascript_result_get_js_value(js_result);
@@ -320,8 +320,8 @@ namespace webkit_opcodes {
             return result;
         }
         virtual void handle_events() {
-            while(gtk_events_pending()) {
-                gtk_main_iteration();
+            while(gtk_events_pending() == true) {
+                gtk_main_iteration_do(false);
             }
         }
     };
