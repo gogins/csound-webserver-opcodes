@@ -59,9 +59,12 @@ TableSet
 constructor: function(url)
 ```
 
-Naturally, all Csound API functions that destroy or create Csound, start 
+Naturally, all Csound API methods that destroy or create Csound, start 
 or stop the performance, or configure Csound's audio or MIDI input or output 
 drivers have had to be omitted from this interface.
+
+Please note, these methods are asynchronous. You may need to wrap the JSON-RPC 
+callbacks in promises in order to obtain results in the correct order.
 
 # webkit_create
 
@@ -94,6 +97,12 @@ Web page using `webkit_run_javascript` opcode.
 
 Thus, the interface between Csound and the Web pages that Csound creates 
 is fully bidirectional.
+
+Please note, calling the `webkit_run_javascript` opcode too frequently during 
+a dense performance may cause the Web page's user interface to become 
+unresponsive. For this reason, I recommend that the Web page not be used 
+to display Csound's diagnostic messages, which can be displayed in the usual 
+way in the operating system terminal.
 
 ## Syntax
 ```
@@ -235,16 +244,13 @@ the JavaScript context of the browser's default Web page.
 
 `webkit_run_javascript` - Executes JavaScript source code asynchronously in 
 the JavaScript context of the browser's default Web page. This can be used to 
-inject new JavaScript modules, including the `Csound.js` Csound proxy, into 
-existing Web pages, or for example to send Csound's runtime messages to the 
-Web page for display there, or to send a generated score in JSON format for 
-display on the page. Or it can be used to call existing functions in the 
-JavaScript context. However, this opcode is asynchronous and does not return 
-the last value produced by the evaluation of the JavaScript code.
+to send a generated score in JSON format for display on the page, or to call 
+existing functions in the JavaScript context. However, this opcode is 
+asynchronous and does not directly return the last value produced by the 
+evaluation of the JavaScript code.
 
-It is however possible to have the JavaScript code return a value by sending 
-the value on a Csound message channel. This is still asynchronous, but it is 
-possible to obtain a computed value in this way.
+It is however possible to have the JavaScript code return a value 
+asynchronously, via the "on success" callback of the Csound API call.
 
 ## Syntax
 ```
@@ -264,6 +270,9 @@ from one browser instance. The results of trying to call from Csound into more
 than one Web page are undefined. If you need Csound to call into more than one 
 Web page, you should create a separate browser on a separate port for each 
 page.
+
+Also note, calling this opcode too frequently during a dense performance can 
+cause the Web page's user interface to become unresponsive.
 
 ## Performance
 

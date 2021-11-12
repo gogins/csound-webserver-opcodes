@@ -76,7 +76,7 @@ gS_html init {{
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Message from Another Planet version 3</title>
+    <title>Message from Another Planet version 4</title>
     <style type="text/css">
     input[type='range'] {
         -webkit-appearance: none;
@@ -205,16 +205,30 @@ gS_html init {{
     <input type="button" id='restore' value="Restore" />
     </form>   
     <p>
-</script>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
 <script src="csound.js"></script>
 <script>   
     $(document).ready(function() {
     var csound = new Csound("http://localhost:8383");
-    csound.Message("Hello, World! -- from message.html displayed by the WebKit opcodes\\n");
-    $('input').on('input', async function(event) {
+    let nchnls_ = 0;
+    var onSuccess = function(id, response) {
+        csound.Message(`id: ${id} response: ${response}\\n`);
+        if (nchnls_promise !== null) {
+            nchnls_promise.resolve(response);
+        }
+        return response;
+    };
+    var onError = function(id, error) {
+        csound.Message(`id: ${id} response: ${error}\\n`);
+    }
+    csound.Message("Hello, World! -- from message.html displayed by the WebKit opcodes\\n", onSuccess);
+    nchnls_promise = new Promise(function(resolve, reject) {
+        csound.GetNchnls(onSuccess, onError);
+    });
+    csound.Message(`nchnls: (${typeof nchnls_}) ${nchnls_}\\n`);
+    $('input').on('input', function(event) {
         var slider_value = parseFloat(event.target.value);
-        csound.SetControlChannel(event.target.id, slider_value);
+        csound.SetControlChannel(event.target.id, slider_value, onSuccess);
         var output_selector = '#' + event.target.id + '_output';
         $(output_selector).val(slider_value);
     });
@@ -223,10 +237,10 @@ gS_html init {{
             localStorage.setItem(this.id, this.value);
         });
     });
-    $('#restore').on('click', async function() {
+    $('#restore').on('click', function() {
         $('.persistent-element').each(function() {
             this.value = localStorage.getItem(this.id);
-            csound.SetControlChannel(this.id, parseFloat(this.value));
+            csound.SetControlChannel(this.id, parseFloat(this.value), onSuccess);
             var output_selector = '#' + this.id + '_output';
             $(output_selector).val(this.value);
         });

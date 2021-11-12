@@ -21,7 +21,7 @@ It's a lot, but it makes for a very powerful computer music system.
 
 </CsLicense>
 <CsOptions>
--m0 -d -odac
+-m0 -d -odac:plughw:2,0
 </CsOptions>
 <CsInstruments>
 
@@ -1337,20 +1337,6 @@ gS_html init {{<!DOCTYPE html>
     </style>
 </head>
 <body style="background-color:CadetBlue;box-sizing:border-box;padding:10px;:fullscreen">
-    <script>
-        csound_message = function(message) {
-            if (typeof webkit_initialized == "undefined" || webkit_initialized === null) {
-                return;
-            }
-            let messages_textarea = document.getElementById("console");
-            if (typeof messages_textarea == "undefined" || messages_textarea === null) {
-                return;
-            }
-            let existing = messages_textarea.value;
-            messages_textarea.value = existing + message;
-            messages_textarea.scrollTop = messages_textarea.scrollHeight;
-        };
-    </script>
     <h2>Iterated Function System Study No. 6</h2>
     <h3>Michael Gogins, 2021
     <input type="button" id='save' value="Save" />
@@ -1361,17 +1347,11 @@ gS_html init {{<!DOCTYPE html>
     <table>
     <col>
     <col>
-    <tr>
-    <td colspan=2>
-    <textarea class="code" id="console" rows=15 style="width:99%;">
-    </textarea>
-    </tr>
     <td>
     <table>
     <col width="2*">
     <col width="5*">
     <col width="100px">
-        
     <tr>
     <td>
     <label for=gk_FMWaterBell_level>FMWaterBell level (dB)</label>
@@ -1705,12 +1685,19 @@ Csound.prototype.TableSet = function(index, table_number, value, callbackSuccess
 };
 </script>
 <script>   
+
+    function showResult(response) {
+    };
+
+    function showError(response) {
+    };
+
     var number_format = new Intl.NumberFormat('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3 });
     $(document).ready(function() {
         var csound = new Csound("http://localhost:8383");
         $('input').on('input', function(event) {
             var slider_value = parseFloat(event.target.value);
-            csound.SetControlChannel(event.target.id, slider_value);
+            csound.SetControlChannel(event.target.id, slider_value, showResult, showError);
             var output_selector = '#' + event.target.id + '_output';
             var formatted = number_format.format(slider_value);
             $(output_selector).val(formatted);
@@ -1723,7 +1710,7 @@ Csound.prototype.TableSet = function(index, table_number, value, callbackSuccess
         $('#restore').on('click', function() {
             $('.persistent-element').each(function() {
                 this.value = localStorage.getItem(this.id);
-                csound.SetControlChannel(this.id, parseFloat(this.value));
+                csound.SetControlChannel(this.id, parseFloat(this.value), showResult, showError);
                 var output_selector = '#' + this.id + '_output';
                 $(output_selector).val(this.value);
             });
@@ -1989,28 +1976,8 @@ extern "C" {
 
 void webkit_execute(int browser_handle, const char *javascript_code);
 
-// This function calls back into the Web page with Csound's diagnostic messages.
-
-void csound_message_callback(CSOUND *csound, int attr, const char *format, va_list valist) {
-    char message[0x2000];
-    std::vsnprintf(message, 0x2000, format, valist);
-    // Print the message also to stderr.
-    std::fprintf(stderr, "%s", message);
-    char javascript[0x3000];
-    std::sprintf(javascript, "csound_message(`%s`);", message);
-    // Calling JavaScript in the Web page is not immediately possible due to its 
-    // asynchronous initialization. The actual number of calls to skip must be 
-    // determined by trial and error.
-    static int call_count = 0;
-    if (call_count >=39) {
-        webkit_execute(0, javascript);
-    }
-    call_count++;
-}
-
 int score_generator(CSOUND *csound) {
     int result = OK;
-    csound->SetMessageCallback(csound, csound_message_callback);
     // Transformations are homogeneous matrices, and notes are homogeneous 
     // column vectors.
     Note note;
