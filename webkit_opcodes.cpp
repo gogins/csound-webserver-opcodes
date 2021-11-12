@@ -461,21 +461,21 @@ extern "C" {
      * Tries waiting for browsers that are still in process of creation.
     */
        
-    static void webkit_execute_routine(int browser_handle, std::string javascript_code)
+    static void webkit_run_javascript_routine(int browser_handle, std::string javascript_code)
     {
-       for (int sleep_i = 0; sleep_i < 20; ++sleep_i) {
+       for (int sleep_i = 0; sleep_i < 2000; ++sleep_i) {
             if (webkit_opcodes::browsers_for_handles.find(browser_handle) != webkit_opcodes::browsers_for_handles.end()) {
                 webkit_opcodes::browsers_for_handles[browser_handle]->run_javascript(javascript_code);
                 std::fprintf(stderr, "webkit_execute_routine: executed.\n");
                 return;
             }
-            std::this_thread::sleep_for(1s);
+            std::this_thread::sleep_for(10ms);
         }
         std::fprintf(stderr, "webkit_execute_routine: Error: no browser for handle %d! (%ld browsers)\n", browser_handle,  webkit_opcodes::browsers_for_handles.size());
     }
     static std::thread *execute_thread;
-    PUBLIC void webkit_execute(int browser_handle, std::string javascript_code) {
-        execute_thread = new std::thread(&webkit_execute_routine, browser_handle, javascript_code);
+    PUBLIC void webkit_run_javascript(int browser_handle, std::string javascript_code) {
+        execute_thread = new std::thread(&webkit_run_javascript_routine, browser_handle, javascript_code);
     };
     
     PUBLIC int csoundModuleInit_webkit_opcodes(CSOUND *csound) {

@@ -371,12 +371,12 @@ gS_html init {{<!DOCTYPE html>
         var piano_roll = new PianoRoll.PianoRoll3D(canvas);
         
     function animate() {
-        requestAnimationFrame(animate)
-        // trackball controls needs to be updated in the animation loop before it will work
         piano_roll.controls.update()
         piano_roll.render3D()
-        ///stats.update()
+        requestAnimationFrame(animate)
     }
+    
+    requestAnimationFrame(animate)
 
     function render() {
         renderer.render(scene, camera)
@@ -390,6 +390,10 @@ gS_html init {{<!DOCTYPE html>
         
     var stop = function() {
         Silencio.saveDatGuiJson(gui);
+    }
+
+    var recenter = function() {
+        piano_roll.draw3D(canvas);
     }
 
     var parameters = {
@@ -437,6 +441,7 @@ gS_html init {{<!DOCTYPE html>
         gk_overlap: 0.05,
         generate: window.generate,
         stop: window.stop,
+        recenter: window.recenter,
     };
         
     var default_json = {
@@ -556,6 +561,7 @@ gS_html init {{<!DOCTYPE html>
          }
          gui.remember(parameters);
          gui.add(parameters, 'stop').name('Stop [Ctrl-S]');
+         gui.add(parameters, 'recenter').name('Re-center [Ctrl-C]');
          var Master = gui.addFolder('Master');
          add_slider(Master, 'gk_MVerb_feedback', 0, 1);
          add_slider(Master, 'gk_ReverbSC_feedback', 0, 1);
@@ -681,7 +687,6 @@ gS_html init {{<!DOCTYPE html>
         });
         $('#restore').click();
     });
-    animate();
 </script>
 </body>
 </html>
@@ -732,7 +737,7 @@ static bool diagnostics_enabled = false;
 
 extern "C" { 
 
-void webkit_execute(int browser_handle, std::string javascript_code);
+void webkit_run_javascript(int browser_handle, std::string javascript_code);
 
 struct Cursor
 {
@@ -945,7 +950,7 @@ extern "C" int score_generator(CSOUND *csound) {
     std::cerr << "JSON score:" << std::endl << json_score << std::endl;
     std::string javascript_code = "piano_roll.fromJson(`" + json_score + "`);";
     std::cerr << javascript_code << std::endl; 
-    webkit_execute(0, javascript_code);
+    webkit_run_javascript(0, javascript_code);
     return result;
 };
 

@@ -236,14 +236,19 @@ inspect variables in JavaScript code.
 See `webkit_example.js`.
 
 # webkit_run_javascript
+# extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
 
 `webkit_run_javascript` - Executes JavaScript source code asynchronously in 
-the JavaScript context of the browser's default Web page.
+the JavaScript context of the browser's default Web page. Note that there is a 
+"C" version of the opcode that can be called by C++ code that has been 
+compiled by the Clang opcodes during the performance.
 
 ## Description
 
 `webkit_run_javascript` - Executes JavaScript source code asynchronously in 
-the JavaScript context of the browser's default Web page. This can be used to 
+the JavaScript context of the browser's default Web page. Note that there is a 
+"C" version of the opcode that can be called by C++ code that has been 
+compiled by the Clang opcodes during the performance. This can be used to 
 to send a generated score in JSON format for display on the page, or to call 
 existing functions in the JavaScript context. However, this opcode is 
 asynchronous and does not directly return the last value produced by the 
@@ -252,13 +257,19 @@ evaluation of the JavaScript code.
 It is however possible to have the JavaScript code return a value 
 asynchronously, via the "on success" callback of the Csound API call.
 
+Please note, it is quite possible to call `webkit_run_javascript` in the 
+orchestra header, before the browser has actually been initialized. In such 
+cases, the JavaScript code is enqueued. The code is dequeued when (a) the 
+browser has been initialized, and (b) its Web page has finished loading. So, 
+it is always safe to call this opcode.
+
 ## Syntax
 ```
-i_result webkit_run_javascript i_webkit_handle, S_javascript_code
+i_result webkit_run_javascript i_browser_handle, S_javascript_code
 ```
 ## Initialization
 
-*i_webkit_handle* - The handle of a browser created by `webkit_create`.
+*i_browser_handle* - The handle of a browser created by `webkit_create`.
 
 *S_javascript_code* - JavaScript source code that will be executed immediately 
 in the JavaScript context of a Web page. Such code can be a single function 
@@ -276,9 +287,10 @@ cause the Web page's user interface to become unresponsive.
 
 ## Performance
 
-The JavaScript code executes immediately when the opcode is invoked, but the 
-code can create modules with function definitions, class definitions, and so 
-on that will be available for other code on the page.
+The JavaScript code executes immediately when the browser has been created and 
+its Web page has finished loading, but the code can create modules with 
+function definitions, class definitions, and so on that will be available for 
+other code on the page.
 
 ## Performance
 
