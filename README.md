@@ -20,6 +20,14 @@ webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_f
 webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [i, fullscreen]
 i_result webkit_run_javascript i_webkit_handle, S_javascript_code
 ```
+There is a public "C" function that does exactly the same thing as the 
+`webkit_run_javascript` opcode, and has exactly the same name:
+```
+extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
+```
+This is provided for the use of score generators and other code written in C++ and run 
+in the Csound performance using the Clang opcodes (a just-in-time C++ compiler for 
+csound).
 
 In addition, the following JavaScript interface can be used from the 
 JavaScript context of a Web page opened by these opcodes. To do this, include 
@@ -169,7 +177,7 @@ code, inspect elements of the Document Object Model, and to set breakpoints or
 inspect variables in JavaScript code.
 
 Once the Web page has opened, Csound can run JavaScript in the JavaScript 
-context of thate page using the `webkit_run_javascript` opcode.
+context of that page using the `webkit_run_javascript` opcode.
 
 # webkit_open_html
 
@@ -236,12 +244,15 @@ inspect variables in JavaScript code.
 See `webkit_example.js`.
 
 # webkit_run_javascript
-# extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
 
 `webkit_run_javascript` - Executes JavaScript source code asynchronously in 
-the JavaScript context of the browser's default Web page. Note that there is a 
-"C" version of the opcode that can be called by C++ code that has been 
-compiled by the Clang opcodes during the performance.
+the JavaScript context of the browser's default Web page. 
+
+Note that there is a "C" version of the opcode that can be called during the 
+performance by C++ code compiled by the Clang just-in-time compiler:
+```
+extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
+```
 
 ## Description
 
@@ -259,9 +270,9 @@ asynchronously, via the "on success" callback of the Csound API call.
 
 Please note, it is quite possible to call `webkit_run_javascript` in the 
 orchestra header, before the browser has actually been initialized. In such 
-cases, the JavaScript code is enqueued. The code is dequeued when (a) the 
-browser has been initialized, and (b) its Web page has finished loading. So, 
-it is always safe to call this opcode.
+cases, the JavaScript code is enqueued. The code is dequeued and executed when 
+(a) the browser has been initialized, and (b) its Web page has finished loading. 
+So, it is always safe to call this opcode.
 
 ## Syntax
 ```
@@ -291,8 +302,6 @@ The JavaScript code executes immediately when the browser has been created and
 its Web page has finished loading, but the code can create modules with 
 function definitions, class definitions, and so on that will be available for 
 other code on the page.
-
-## Performance
 
 What happens during performance is whatever the JavaScript code does. Such 
 code may execute immediately, or it may create a class or library to be 
