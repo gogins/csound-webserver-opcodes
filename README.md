@@ -25,7 +25,7 @@ There is a public "C" function that does exactly the same thing as the
 ```
 extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
 ```
-This is provided for the use of score generators and other code written in C++ and run 
+This is provided for the use of score generators and other code written in C++ that run 
 in the Csound performance using the Clang opcodes (a just-in-time C++ compiler for 
 csound).
 
@@ -71,8 +71,9 @@ Naturally, all Csound API methods that destroy or create Csound, start
 or stop the performance, or configure Csound's audio or MIDI input or output 
 drivers have had to be omitted from this interface.
 
-Please note, these methods are asynchronous. You may need to wrap the JSON-RPC 
-callbacks in promises in order to obtain results in the correct order.
+Please note, these methods are asynchronous. You may need to use the JSON-RPC 
+callbacks to obtain results, perhaps using promises to keep the results in the 
+correct order.
 
 # webkit_create
 
@@ -101,12 +102,13 @@ thus with Csound using JSON-RPC and Ajax.
 
 Csound itself, or C++ code compiled using the Clang opcodes for Csound, 
 can also execute JavaScript code in the JavaScript context of an opened 
-Web page using `webkit_run_javascript` opcode.
+Web page using the `webkit_run_javascript` opcode (Csound) or function 
+(C++ code running in Csound).
 
 Thus, the interface between Csound and the Web pages that Csound creates 
 is fully bidirectional.
 
-Please note, calling the `webkit_run_javascript` opcode too frequently during 
+Please note, calling `webkit_run_javascript` too frequently during 
 a dense performance may cause the Web page's user interface to become 
 unresponsive. For this reason, I recommend that the Web page not be used 
 to display Csound's diagnostic messages, which can be displayed in the usual 
@@ -232,7 +234,7 @@ body of the Web page. The script element can be loaded from the filesystem, or
 it can be included directly in the Web page's code.
 
 Not only can the Web page call methods of the Csound API, but also Csound can 
-run JavaScript in the Web page using the `webkit_run_javascript` opcode.
+run JavaScript in that Web page using the `webkit_run_javascript` opcode.
 
 Right-clicking on the browser opens a context menu with a command to open the 
 browser's inspector, or debugger. It can be used to view HTML and JavaScript 
@@ -248,7 +250,7 @@ See `webkit_example.js`.
 `webkit_run_javascript` - Executes JavaScript source code asynchronously in 
 the JavaScript context of the browser's default Web page. 
 
-Note that there is a "C" version of the opcode that can be called during the 
+Note that there is a C++ version of the opcode that can be called during the 
 performance by C++ code compiled by the Clang just-in-time compiler:
 ```
 extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
@@ -258,7 +260,7 @@ extern "C" void webkit_run_javascript(int browser_handle, std::string javascript
 
 `webkit_run_javascript` - Executes JavaScript source code asynchronously in 
 the JavaScript context of the browser's default Web page. Note that there is a 
-"C" version of the opcode that can be called by C++ code that has been 
+C++ version of the opcode that can be called by C++ code that has been 
 compiled by the Clang opcodes during the performance. This can be used to 
 to send a generated score in JSON format for display on the page, or to call 
 existing functions in the JavaScript context. However, this opcode is 
