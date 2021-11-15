@@ -1,13 +1,13 @@
 <CsoundSyntheizer>
 <CsLicense>
 
-B L U E   L E A V E S   V E R S I O N   4
+R E D   L E A V E S   V E R S I O N   1
 
 Michael Gogins, 2021
 
-This piece is a variation on a piece of electroacoustic concert music, 
-algorithmically composed, that has been performed in international festivals 
-and is available on electronic distribution.
+This piece is another in the "Leaves" series of pieces of electroacoustic 
+concert music, algorithmically composed, that have been performed in 
+international festivals and are available on electronic distribution.
 
 This piece demonstrates the use of the Faust opcodes, the Clang opcodes, the 
 CsoundAC C++ library for algorithmic composition, the vst4cs opcodes, the 
@@ -56,15 +56,16 @@ information on how to use some of these features in your own pieces.
 <CsInstruments>
 
 //////////////////////////////////////////////////////////////////////////////
-// Change to 96000 with 1 ksmps for final rendering to soundfile.
+// Change to sr=96000 with ksmps=1 for final rendering to soundfile.
 //////////////////////////////////////////////////////////////////////////////
 sr = 48000
 ksmps = 128
 nchnls = 2
 0dbfs = 5
 //////////////////////////////////////////////////////////////////////////////
-// This ensures that the same random stream  is used for each rendering.
-// rand, randh, randi, rnd(x) and birnd(x) are not affected by seed.
+// This random seed ensures that the same random stream  is used for each 
+// rendering. Note that rand, randh, randi, rnd(x) and birnd(x) are not 
+// affected by seed.
 //////////////////////////////////////////////////////////////////////////////
 seed 88818145
 
@@ -107,6 +108,9 @@ prealloc 7, 50
 prealloc 8, 20
 prealloc 9, 20
 
+//////////////////////////////////////////////////////////////////////////////
+// These are all the Csound instruments and effects used in this piece.
+//////////////////////////////////////////////////////////////////////////////
 #include "FMWaterBell.inc"
 #include "Phaser.inc"
 #include "Droner.inc"
@@ -140,22 +144,21 @@ instr Browser
 gS_html init {{<!DOCTYPE html>
 <html>
 <head>
-    <title>Blue Leaves version 4</title>
-    <style type="text/css">
+    <title>Red Leaves version 1</title>
     <!--
 //////////////////////////////////////////////////////////////////////////////
 // Override the CSS style of the numerical values shown for dat-gui sliders.
 //////////////////////////////////////////////////////////////////////////////    
     -->
-    div {
-        font-size: 7px;
-        background-color: gray;
+    <style type="text/css">
+    input[type='text']{
+        font-size: 9pt;
         height: 100%;
         width: 100%;
         vertical-align: middle;
     }
     input[type='range'] {
-        font-size: 9px;
+        font-size: 9pt;
         -webkit-appearance: none;
         box-shadow: inset 0 0 3px #333;
         background-color: gray;
@@ -175,17 +178,21 @@ gS_html init {{<!DOCTYPE html>
         border-radius: 10px;
     }
     </style>
+    <!--
     //////////////////////////////////////////////////////////////////////////
     // All dependencies that are in some sense standard and widely used, are 
     // loaded from content delivery networks.
     ///////////////////////////////////////////////////////////////////////////   
+    -->
     <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.js"></script>    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.js" integrity="sha512-NLtnLBS9Q2w7GKK9rKxdtgL7rA7CAS85uC/0xd9im4J/yOL4F9ZVlv634NAM7run8hz3wI2GabaA6vv8vJtHiQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>    
+    <!--
     //////////////////////////////////////////////////////////////////////////
     // All other dependencies are incorporated into this repository, and are 
     // loaded as local files.
     ///////////////////////////////////////////////////////////////////////////   
+    -->
     <script src="TrackballControls.js"></script>
     <script src="PianoRoll3D.js"></script>    
     <script src="csound.js"></script>    
@@ -543,7 +550,7 @@ gi_browser webkit_create
 S_pwd pwd
 S_base_uri sprintf "file://%s/", S_pwd
 prints S_base_uri
-webkit_open_html gi_browser, "Blue Leaves version 4", gS_html, S_base_uri, 12000, 10000, 0
+webkit_open_html gi_browser, "Red Leaves version 1", gS_html, S_base_uri, 12000, 10000, 0
 endin
 alwayson "Browser"
 
@@ -681,7 +688,7 @@ extern "C" int score_generator(CSOUND *csound) {
 
     auto g3 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth <= 1) {
+        if (depth <= 0) {
             return pen;
         }
         pen.note[csound::Event::TIME] = pen.note[csound::Event::TIME] * .65 - .23;
@@ -690,7 +697,7 @@ extern "C" int score_generator(CSOUND *csound) {
         pen.note[csound::Event::VELOCITY] =  1.0;
         pen.note[csound::Event::PAN] = -.675;
         score.append(pen.note);
-        if (depth >= 5) {
+        if (depth == 7) {
             pen.chord = pen.chord.T(5);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
@@ -708,7 +715,7 @@ extern "C" int score_generator(CSOUND *csound) {
         pen.note[csound::Event::INSTRUMENT] = 4.0 * 4.0 + double(depth % 4);
         pen.note[csound::Event::VELOCITY] =  2.0;
         pen.note[csound::Event::PAN] = -.875;
-        if (depth == 5) {
+        if (depth == 3) {
             pen.chord = pen.chord.K();
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
@@ -724,9 +731,8 @@ extern "C" int score_generator(CSOUND *csound) {
                     0, 1, 1, 0,
                     1, 0, 1, 1;
     csound::Score score;
-    recurrent(generators, transitions, 9, 0, pen, score);
+    recurrent(generators, transitions, 11, 0, pen, score);
     std::cout << "Generated duration:     " << score.getDuration() << std::endl;
-    
     //////////////////////////////////////////////////////////////////////////////
     // We apply the chords that were generated along WITH the notes, TO the notes.
     // This creates an algorithmically generated chord progression.
@@ -757,14 +763,14 @@ extern "C" int score_generator(CSOUND *csound) {
     }
     std::cout << "Conformed notes:        " << size << std::endl;
     score.rescale(csound::Event::TIME,          true,  0.0, false,  0.0);
-    score.rescale(csound::Event::INSTRUMENT,    true,  1.0, true,   9.99999);
+    score.rescale(csound::Event::INSTRUMENT,    true,  9.0, true,   0);
     score.rescale(csound::Event::VELOCITY,      true, 40.0, true,   0.0);
-    score.rescale(csound::Event::DURATION,      true,  0.5, true,   4.0);
+    //score.rescale(csound::Event::DURATION,      true,  0.5, true,   4.0);
     score.rescale(csound::Event::PAN,           true,  0.0, true,   0.0);
     std::cout << "Move to origin duration:" << score.getDuration() << std::endl;
     score.setDuration(240.0);
     std::cout << "set duration:           " << score.getDuration() << std::endl;
-    score.rescale(csound::Event::DURATION,      true,  2.375, true,   4.0);
+    score.rescale(csound::Event::DURATION,      true,  .5, true,   4.0);
     score.tieOverlappingNotes(true);
     score.findScale();
     score.setDuration(360.0);
