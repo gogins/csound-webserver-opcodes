@@ -348,7 +348,7 @@ namespace webkit_opcodes {
                 int result = OK;
                 int rpc_port = *i_rpc_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
-                std::shared_ptr<CsoundWebKit> browser = CsoundWebKit::create(csound, rpc_port);
+                std::shared_ptr<CsoundWebKit> browser = std::move(CsoundWebKit::create(csound, rpc_port));
                 int handle = browsers_for_handles.size();
                 browsers_for_handles[handle] = browser;
                 *i_browser_handle = handle;
@@ -461,7 +461,7 @@ extern "C" {
      * Tries waiting for browsers that are still in process of creation.
     */
        
-    static void webkit_run_javascript_routine(int browser_handle, std::string javascript_code)
+    static void webkit_run_javascript_routine(CSOUND *csound, int browser_handle, std::string javascript_code)
     {
        for (int sleep_i = 0; sleep_i < 2000; ++sleep_i) {
             if (webkit_opcodes::browsers_for_handles.find(browser_handle) != webkit_opcodes::browsers_for_handles.end()) {
@@ -474,8 +474,8 @@ extern "C" {
         std::fprintf(stderr, "webkit_execute_routine: Error: no browser for handle %d! (%ld browsers)\n", browser_handle,  webkit_opcodes::browsers_for_handles.size());
     }
     static std::thread *execute_thread;
-    PUBLIC void webkit_run_javascript(int browser_handle, std::string javascript_code) {
-        execute_thread = new std::thread(&webkit_run_javascript_routine, browser_handle, javascript_code);
+    PUBLIC void webkit_run_javascript(CSOUND *csound, int browser_handle, std::string javascript_code) {
+        execute_thread = new std::thread(&webkit_run_javascript_routine, csound, browser_handle, javascript_code);
     };
     
     PUBLIC int csoundModuleInit_webkit_opcodes(CSOUND *csound) {

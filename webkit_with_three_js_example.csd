@@ -228,7 +228,7 @@ gS_html init {{<!DOCTYPE html>
                 //////////////////////////////////////////////////////////////
                 // This is the pattern for obtaining return values for all of 
                 // the Csound API's asynchronous JSON-RPC methods: by 
-                // callback.
+                // anonymous callback.
                 //////////////////////////////////////////////////////////////
                 csound.GetScoreTime(function(id, result) {
                     score_time = result; 
@@ -241,8 +241,6 @@ gS_html init {{<!DOCTYPE html>
             requestAnimationFrame(animate)
         }
         
-        requestAnimationFrame(animate)
-
         var stop = function() {
             Silencio.saveDatGuiJson(gui);
         }
@@ -493,6 +491,7 @@ gS_html init {{<!DOCTYPE html>
                     }
                 }
             });
+            requestAnimationFrame(animate)
         };
         var on_success = function(id, result) {
         };
@@ -542,7 +541,10 @@ gS_html init {{<!DOCTYPE html>
 </html>
 }}
 
-gi_browser webkit_create
+//////////////////////////////////////////////////////////////////////////////
+// Uncomment to enable diagnostic messages for the WebKit opcodes.
+//////////////////////////////////////////////////////////////////////////////
+gi_browser webkit_create 8383, 1
 //////////////////////////////////////////////////////////////////////////////
 // The following lines find the current working directory from Csound, 
 // and then use that to construct the base URI for the Web page.
@@ -597,7 +599,7 @@ extern "C" {
 // This function is _defined_ in the WebKit opcodes shared library, but we 
 // must _declare_ it here so that our C++ code can call it.
 //////////////////////////////////////////////////////////////////////////////
-void webkit_run_javascript(int browser_handle, std::string javascript_code);
+void webkit_run_javascript(CSOUND *csound, int browser_handle, std::string javascript_code);
 
 struct Cursor
 {
@@ -818,7 +820,7 @@ extern "C" int score_generator(CSOUND *csound) {
     // JSON text with its embedded quotation marks and such.
     //////////////////////////////////////////////////////////////////////////
     std::string javascript_code = "piano_roll.fromJson(`" + json_score + "`);";
-    webkit_run_javascript(0, javascript_code);
+    webkit_run_javascript(csound, 0, javascript_code);
     return result;
 };
 
@@ -830,7 +832,7 @@ extern "C" int score_generator(CSOUND *csound) {
 // This compiles the above C++ module and then calls its entry point function.
 // Note that dynamic link libraries must be passed as complete filepaths.
 //////////////////////////////////////////////////////////////////////////////
-i_result clang_compile "score_generator", S_score_generator_code, "-g -O2 -std=c++17 -I/home/mkg/clang-opcodes -I/home/mkg/csound-extended/CsoundAC -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/libCsoundAC.so.6.0 /usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /home/mkg/webkit-opcodes/webkit_opcodes.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+i_result clang_compile "score_generator", S_score_generator_code, "-g -v -O2 -std=c++17 -I/home/mkg/clang-opcodes -I/home/mkg/csound-extended/CsoundAC -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/libCsoundAC.so.6.0 /usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /home/mkg/webkit-opcodes/webkit_opcodes.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 instr Exit
 prints "exitnow i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
