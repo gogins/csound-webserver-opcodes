@@ -23,6 +23,11 @@
 // From: https://wiki.gnome.org/Projects/WebKitGtk/ProgrammingGuide/Tutorial
 
 namespace webkit_opcodes {
+    
+    class CsoundWebKit;
+    
+    typedef csound::heap_object_manager_t<CsoundWebKit> webkits;
+    
     /**
      * This class implements the skeleton of the Csound proxy using an
      * instance of Csound and a network connector provided by the opcodes.
@@ -213,6 +218,20 @@ namespace webkit_opcodes {
             network_server->StartListening();
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::CsoundWebKit: network_server: Now listening on rpc_port_: %d...\n", rpc_port_);
         }
+        virtual ~CsoundWebKit() {
+            using namespace std::chrono_literals; 
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::~CsoundWebKit...\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::~CsoundWebKit: stop listening...\n");
+            network_server->StopListening();
+            std::this_thread::sleep_for(2s);
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::~CsoundWebKit: try to close Web view...\n");
+            webkit_web_view_try_close (web_view);
+            std::this_thread::sleep_for(2s);
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::~CsoundWebKit: terminate Web process...\n");
+            webkit_web_view_terminate_web_process(web_view);
+            std::this_thread::sleep_for(2s);
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebKit::~CsoundWebKit.\n");
+        }
         static std::unique_ptr<CsoundWebKit> create(CSOUND *csound_, int rpc_channel_) {
             std::unique_ptr<CsoundWebKit> result(new CsoundWebKit(csound_, rpc_channel_));
             return result;
@@ -335,8 +354,6 @@ namespace webkit_opcodes {
         }
     };
 
-    static std::map<int, std::shared_ptr<CsoundWebKit> > browsers_for_handles;
-    
     class webkit_create : public csound::OpcodeBase<webkit_create> {
         public:
             // OUTPUTS
@@ -348,10 +365,9 @@ namespace webkit_opcodes {
                 int result = OK;
                 int rpc_port = *i_rpc_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
-                std::shared_ptr<CsoundWebKit> browser = std::move(CsoundWebKit::create(csound, rpc_port));
-                int handle = browsers_for_handles.size();
-                browsers_for_handles[handle] = browser;
-                *i_browser_handle = handle;
+                CsoundWebKit *webkit = CsoundWebKit::create(csound, rpc_port).release();
+                int handle = webkits::instance().handle_for_object(csound, webkit);
+                *i_browser_handle = static_cast<MYFLT>(handle);
                 return result;
             }
     };
@@ -367,7 +383,7 @@ namespace webkit_opcodes {
             MYFLT *i_height_;
             MYFLT *i_fullscreen_;
             // STATE
-            std::shared_ptr<CsoundWebKit> browser;
+            CsoundWebKit *browser;
             int init(CSOUND *csound) {
                 log(csound, "webkit_open_uri::init: this: %p\n", this);
                 int result = OK;
@@ -377,7 +393,7 @@ namespace webkit_opcodes {
                 int i_width = *i_width_;
                 int i_height = *i_height_;
                 bool i_fullscreen = *i_fullscreen_;
-                browser = browsers_for_handles[i_browser_handle];
+                browser = webkits::instance().object_for_handle(csound, i_browser_handle);
                 browser->open(S_window_title, i_width, i_height, i_fullscreen);
                 log(csound, "webkit_open_uri::init: uri: %s\n", S_uri);
                 browser->load_uri(S_uri);
@@ -402,17 +418,17 @@ namespace webkit_opcodes {
             MYFLT *i_height_;
             MYFLT *i_fullscreen_;
             // STATE
-            std::shared_ptr<CsoundWebKit> browser;
+            CsoundWebKit *browser;
             int init(CSOUND *csound) {
                 int result = OK;
-                int i_browser_handle = *i_browser_handle_;
+                int i_browser_handle = static_cast<int>(*i_browser_handle_);
                 char *S_window_title = S_window_title_->data;
                 char *S_html = S_html_->data;
                 char *S_base_uri = S_base_uri_->data;
                 int i_width = *i_width_;
                 int i_height = *i_height_;
                 bool i_fullscreen = *i_fullscreen_;
-                browser = browsers_for_handles[i_browser_handle];
+                browser = webkits::instance().object_for_handle(csound, i_browser_handle);
                 browser->open(S_window_title, i_width, i_height, i_fullscreen);
                 log(csound, "webkit_open_html::init: title: %s\n", S_window_title);
                 browser->load_html(S_html, S_base_uri);
@@ -432,8 +448,8 @@ namespace webkit_opcodes {
             STRINGDAT *S_javascript_code_;
             int init(CSOUND *csound) {
                 int result = OK;
-                int i_browser_handle = *i_browser_handle_;
-                auto browser = browsers_for_handles[i_browser_handle];
+                int i_browser_handle = static_cast<int>(*i_browser_handle_);
+                auto browser = webkits::instance().object_for_handle(csound, i_browser_handle);
                 char *javascript_code = S_javascript_code_->data;
                 result = browser->run_javascript(javascript_code);
                 return result;
@@ -460,18 +476,18 @@ extern "C" {
      * Make the browsers accessible to other C++ modules in LLVM.
      * Tries waiting for browsers that are still in process of creation.
     */
-       
     static void webkit_run_javascript_routine(CSOUND *csound, int browser_handle, std::string javascript_code)
     {
        for (int sleep_i = 0; sleep_i < 2000; ++sleep_i) {
-            if (webkit_opcodes::browsers_for_handles.find(browser_handle) != webkit_opcodes::browsers_for_handles.end()) {
-                webkit_opcodes::browsers_for_handles[browser_handle]->run_javascript(javascript_code);
+            auto browser = webkit_opcodes::webkits::instance().object_for_handle(csound, browser_handle);
+            if (browser != nullptr) {
+                browser->run_javascript(javascript_code);
                 std::fprintf(stderr, "webkit_execute_routine: executed.\n");
                 return;
             }
             std::this_thread::sleep_for(10ms);
         }
-        std::fprintf(stderr, "webkit_execute_routine: Error: no browser for handle %d! (%ld browsers)\n", browser_handle,  webkit_opcodes::browsers_for_handles.size());
+        std::fprintf(stderr, "webkit_execute_routine: Error: no browser for handle %d!\n", browser_handle);
     }
     static std::thread *execute_thread;
     PUBLIC void webkit_run_javascript(CSOUND *csound, int browser_handle, std::string javascript_code) {
@@ -524,12 +540,13 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleDestroy_webkit_opcodes(CSOUND *csound) {
-        return 0;
+        webkit_opcodes::webkits::instance().module_destroy(csound);
+        return OK;
     }
 
 #ifndef INIT_STATIC_MODULES
     PUBLIC int csoundModuleCreate(CSOUND *csound) {
-        return 0;
+        return OK;
     }
 
     PUBLIC int csoundModuleInit(CSOUND *csound) {
