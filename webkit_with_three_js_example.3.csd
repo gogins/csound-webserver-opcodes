@@ -651,7 +651,7 @@ extern "C" int score_generator(CSOUND *csound) {
     Cursor pen;
     modality.fromString("0 4 7 11 14");
     pen.chord = modality;
-    pen.note = {1,1,144,1,1,1,0,0,0,0,1};
+    pen.note = {1,.5,144,1,1,1,0,0,0,0,1};
     ///pen.note[csound::Event::DURATION] = 0.4;
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
     auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
