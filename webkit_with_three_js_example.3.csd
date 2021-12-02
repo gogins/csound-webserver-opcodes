@@ -51,7 +51,7 @@ information on how to use some of these features in your own pieces.
 
 </CsLicense>
 <CsOptions>
--m0 -d -odac
+-+msg_color=0 -m0 -d -odac
 </CsOptions>
 <CsInstruments>
 
@@ -302,106 +302,155 @@ gS_html init {{<!DOCTYPE html>
         };
             
         var default_json = {
-            "preset": "Default",
-            "remembered": {
-                "Default": {
-                    "0": {
-                        "gk_ReverbSC_feedback": 0.85,
-                        "gk_MasterOutput_level": -10,
-                        "gi_FMWaterBell_attack": 0.002936276551436901,
-                        "gi_FMWaterBell_release": 0.022698875468554768,
-                        "gi_FMWaterBell_exponent": 12.544773011245312,
-                        "gi_FMWaterBell_sustain": 5.385256143273636,
-                        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
-                        "gk_FMWaterBell_crossfade": 0.48250728862973763,
-                        "gk_FMWaterBell_index": 1.1401499375260309,
-                        "gk_FMWaterBell_vibrato_depth": 0.2897954989209742,
-                        "gk_FMWaterBell_vibrato_rate": 4.762100503545371,
-                        "gk_FMWaterBell_level": 35., 
-                        "gk_Phaser_ratio1": 1,
-                        "gk_Phaser_ratio2": 5./3.,
-                        "gk_Phaser_index1": 1,
-                        "gk_Phaser_index2": 2,
-                        "gk_Phaser_level": 14,
-                        "gk_Bower_pressure": 3.050919377652051,
-                        "gk_Bower_level": -12.677504515770458,
-                        "gk_Droner_partial1": 0.11032374600527997,
-                        "gk_Droner_partial2": 0.4927052938724468,
-                        "gk_Droner_partial3": 0.11921634014172572,
-                        "gk_Droner_partial4": 0.06586077532305128,
-                        "gk_Droner_partial5": 0.6616645824649159,
-                        "gk_Droner_level": 10.,
-                        "gk_Sweeper_britel": 0.2773844231570179,
-                        "gk_Sweeper_briteh": 3.382178217821782,
-                        "gk_Sweeper_britels": 0.19575671852899576,
-                        "gk_Sweeper_britehs": 0.8837340876944837,
-                        "gk_Sweeper_level": 10,
-                        "gk_Buzzer_harmonics": 2.608203677510608,
-                        "gk_Buzzer_level": 27.56,
-                        "gk_Shiner_level": 16,
-                        "gk_Blower_grainDensity": 79.99177885109444,
-                        "gk_Blower_grainDuration": 0.2,
-                        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
-                        "gk_Blower_grainFrequencyRange": 30.596081700708627,
-                        "gk_Blower_level": 4,
-                        "gk_ZakianFlute_level": 0,
-                        "gk_PianoOutPianoteq_level": 14.5
-                    }
-                }
-            },
-                "closed": false,
-                "folders": {
-                "Master": {
-                "preset": "Default",
-                "closed": true,
-                "folders": {}
-                },
-                "FMWaterBell": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                },
-                "Phaser": {
-                "preset": "Default",
-                "closed": true,
-                "folders": {}
-                },
-                "Bower": {
-                "preset": "Default",
-                "closed": true,
-                "folders": {}
-                },
-                "Droner": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                },
-                "Sweeper": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                },
-                "Buzzer": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                },
-                "Shiner": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                },
-                "Blower": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                },
-                "Pianoteq": {
-                "preset": "Default",
-                "closed": false,
-                "folders": {}
-                }
-            }
+  "preset": "Default",
+  "remembered": {
+    "Default": {
+      "0": {
+        "gk_ReverbSC_feedback": 0.94060466265755,
+        "gk_MasterOutput_level": 23.199086906897115,
+        "gi_FMWaterBell_attack": 0.002936276551436901,
+        "gi_FMWaterBell_release": 0.022698875468554768,
+        "gi_FMWaterBell_exponent": 8.72147623362715,
+        "gi_FMWaterBell_sustain": 5.385256143273636,
+        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
+        "gk_FMWaterBell_crossfade": 0.1234039047697504,
+        "gk_FMWaterBell_index": 1.1401499375260309,
+        "gk_FMWaterBell_vibrato_depth": 0.28503171595683335,
+        "gk_FMWaterBell_vibrato_rate": 2.4993821566850647,
+        "gk_FMWaterBell_level": 13.737540159815467,
+        "gk_Phaser_ratio1": 1.0388005601779389,
+        "gk_Phaser_ratio2": 3.0422604827415767,
+        "gk_Phaser_index1": 0.5066315182469726,
+        "gk_Phaser_index2": 0.5066315182469726,
+        "gk_Phaser_level": 8.25438668753604,
+        "gk_Bower_pressure": 2.6204794464123897,
+        "gk_Bower_level": 22.78167291700636,
+        "gk_Droner_partial1": 0.11032374600527997,
+        "gk_Droner_partial2": 0.4927052938724468,
+        "gk_Droner_partial3": 0.11921634014172572,
+        "gk_Droner_partial4": 0.06586077532305128,
+        "gk_Droner_partial5": 0.6616645824649159,
+        "gk_Droner_level": 29.76521954032458,
+        "gk_Sweeper_britel": 0.43034846362962353,
+        "gk_Sweeper_briteh": 3.635884339731444,
+        "gk_Sweeper_britels": 1.801136831699481,
+        "gk_Sweeper_britehs": 3.572617184282066,
+        "gk_Sweeper_level": 20.486036741082465,
+        "gk_Buzzer_harmonics": 11.958151412801714,
+        "gk_Buzzer_level": 23.61650089678787,
+        "gk_Shiner_level": 22.3642589271156,
+        "gk_Blower_grainDensity": 79.99177885109444,
+        "gk_Blower_grainDuration": 0.2,
+        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
+        "gk_Blower_grainFrequencyRange": 30.596081700708627,
+        "gk_Blower_level": 7.754769280939186,
+        "gk_ZakianFlute_level": 25.125628140703512,
+        "gk_PianoOutPianoteq_level": -40
+      }
+    },
+    "yuck": {
+      "0": {
+        "gk_MVerb_feedback": 0.9356518117451063,
+        "gk_ReverbSC_feedback": 0.411032531824611,
+        "gk_MasterOutput_level": 9.795918367346943,
+        "gi_FMWaterBell_attack": 0.002936276551436901,
+        "gi_FMWaterBell_release": 0.022698875468554768,
+        "gi_FMWaterBell_exponent": 12.544773011245312,
+        "gi_FMWaterBell_sustain": 5.385256143273636,
+        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
+        "gk_FMWaterBell_crossfade": 0.48250728862973763,
+        "gk_FMWaterBell_index": 1.1401499375260309,
+        "gk_FMWaterBell_vibrato_depth": 0.2897954989209742,
+        "gk_FMWaterBell_vibrato_rate": 4.762100503545371,
+        "gk_FMWaterBell_level": 3.021216407355027,
+        "gk_Phaser_ratio1": 1,
+        "gk_Phaser_ratio2": 1.0131195335276968,
+        "gk_Phaser_index1": 0.24052478134110788,
+        "gk_Phaser_index2": 4.0389421074552265,
+        "gk_Phaser_level": 7.13036234902124,
+        "gk_Bower_pressure": 3.466241907306546,
+        "gk_Bower_level": 8.19658475635152,
+        "gk_Droner_partial1": 0.11032374600527997,
+        "gk_Droner_partial2": 0.4927052938724468,
+        "gk_Droner_partial3": 0.11921634014172572,
+        "gk_Droner_partial4": 0.06586077532305128,
+        "gk_Droner_partial5": 0.6616645824649159,
+        "gk_Droner_level": 16.512177576816356,
+        "gk_Sweeper_britel": 0.7999177885109444,
+        "gk_Sweeper_briteh": 3.382178217821782,
+        "gk_Sweeper_britels": 1.5628404069468709,
+        "gk_Sweeper_britehs": 0.8837340876944837,
+        "gk_Sweeper_level": 7.13036234902124,
+        "gk_Buzzer_harmonics": 1.6534777176176594,
+        "gk_Buzzer_level": -6.393210749646393,
+        "gk_Shiner_level": 2.332361516034986,
+        "gk_Blower_grainDensity": 79.99177885109444,
+        "gk_Blower_grainDuration": 0.2,
+        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
+        "gk_Blower_grainFrequencyRange": 30.596081700708627,
+        "gk_Blower_level": 8.19658475635152,
+        "gk_ZakianFlute_level": 4.997917534360681
+      }
+    }
+  },
+  "closed": false,
+  "folders": {
+    "Master": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "FMWaterBell": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Phaser": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Bower": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Droner": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Sweeper": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {}
+    },
+    "Buzzer": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Shiner": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Blower": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Zakian Flute": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Pianoteq": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    }
+  }
         };
         //////////////////////////////////////////////////////////////////////
         // The use of jQuery _greatly_ simplifies using JavaScript event 
@@ -649,14 +698,14 @@ extern "C" int score_generator(CSOUND *csound) {
     std::map<double, csound::Chord> chordsForTimes;
     csound::Chord modality;
     Cursor pen;
-    modality.fromString("0 4 7 11 14");
+    modality.fromString("0 4 7 11");
     pen.chord = modality;
-    pen.note = {1,.5,144,1,1,1,0,0,0,0,1};
+    pen.note = {1,2,144,1,1,1,0,0,0,0,1};
     ///pen.note[csound::Event::DURATION] = 0.4;
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
     auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5);
+        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 - 5);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75);
         //~ ///pen.note[csound::Event::INSTRUMENT] = -2.0 * 1.0 + double(depth % 9);
         //~ pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
@@ -666,11 +715,11 @@ extern "C" int score_generator(CSOUND *csound) {
     generators.push_back(g1);
     auto g2 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 7) {
+        if (depth == 6) {
             pen.chord = pen.chord.T(2);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
-        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + 10.05;
+        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (100 + 1);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75);
         ///pen.note[csound::Event::INSTRUMENT] = .1 * double(depth % 4);      
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);                    
@@ -680,12 +729,12 @@ extern "C" int score_generator(CSOUND *csound) {
     generators.push_back(g2);
     auto g3 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 4) {
-            pen.chord = pen.chord.T(3);
+        if (depth == 5) {
+            pen.chord = pen.chord.Q(4, modality);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
-        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5);
-        pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.;
+        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 + 3);
+        pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.025;
         pen.note[csound::Event::INSTRUMENT] = std::cos(pen.note[csound::Event::TIME]);
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
         //~ pen.note[csound::Event::PAN] = -.675;
@@ -694,11 +743,11 @@ extern "C" int score_generator(CSOUND *csound) {
     generators.push_back(g3);
     auto g4 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 6) {
+        if (depth == 4) {
             pen.chord = pen.chord.K();
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
-        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + 9.95;
+        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (100 - 4.5);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.;
         pen.note[csound::Event::INSTRUMENT] = std::sin(pen.note[csound::Event::TIME]);
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
