@@ -790,6 +790,10 @@ extern "C" int score_generator(CSOUND *csound) {
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
     auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
+        if (depth == 4) {
+            pen.chord = pen.chord.Q(4, modality);
+            chordsForTimes[pen.note.getTime()] = pen.chord;
+        }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 - 5);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75);
         //~ ///pen.note[csound::Event::INSTRUMENT] = -2.0 * 1.0 + double(depth % 9);
@@ -800,11 +804,7 @@ extern "C" int score_generator(CSOUND *csound) {
     generators.push_back(g1);
     auto g2 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        //~ if (depth == 4) {
-            //~ pen.chord = pen.chord.T(2);
-            //~ chordsForTimes[pen.note.getTime()] = pen.chord;
-        //~ }
-        if (depth == 5) {
+        if (depth == 3) {
             pen.chord = pen.chord.K();
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
@@ -818,12 +818,12 @@ extern "C" int score_generator(CSOUND *csound) {
     generators.push_back(g2);
     auto g3 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 3) {
+        if (depth == 5) {
             pen.chord = pen.chord.Q(1, modality);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 + 3);
-        pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.025;
+        pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.05;
         pen.note[csound::Event::INSTRUMENT] = std::cos(pen.note[csound::Event::TIME]);
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
         //~ pen.note[csound::Event::PAN] = -.675;
