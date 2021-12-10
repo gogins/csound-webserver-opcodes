@@ -330,53 +330,53 @@ gS_html init {{<!DOCTYPE html>
         // but the initial values actually come from the CSound channels.
         //////////////////////////////////////////////////////////////////////
         var parameters = {
-            "gk_ReverbSC_feedback": 0.94060466265755,
-            "gk_MasterOutput_level": 23.199086906897115,
-            "gi_FMWaterBell_attack": 0.002936276551436901,
-            "gi_FMWaterBell_release": 0.022698875468554768,
-            "gi_FMWaterBell_exponent": 8.72147623362715,
-            "gi_FMWaterBell_sustain": 5.385256143273636,
-            "gi_FMWaterBell_sustain_level": 0.08267388588088297,
-            "gk_FMWaterBell_crossfade": 0.1234039047697504,
-            "gk_FMWaterBell_index": 1.1401499375260309,
-            "gk_FMWaterBell_vibrato_depth": 0.28503171595683335,
-            "gk_FMWaterBell_vibrato_rate": 2.4993821566850647,
-            "gk_FMWaterBell_level": 13.737540159815467,
-            "gk_Phaser_ratio1": 1.0388005601779389,
-            "gk_Phaser_ratio2": 3.0422604827415767,
-            "gk_Phaser_index1": 0.5066315182469726,
-            "gk_Phaser_index2": 0.5066315182469726,
-            "gk_Phaser_level": 8.25438668753604,
-            "gk_STKBowed_vibrato_level": 2.8,
-            "gk_STKBowed_bow_pressure": 110,
-            "gk_STKBowed_bow_position": 20,
-            "gk_STKBowed_vibrato_frequency": 50.2,
-            "gk_STKBowed_level": 0,
-            "gk_Droner_partial1": 0.11032374600527997,
-            "gk_Droner_partial2": 0.4927052938724468,
-            "gk_Droner_partial3": 0.11921634014172572,
-            "gk_Droner_partial4": 0.06586077532305128,
-            "gk_Droner_partial5": 0.6616645824649159,
-            "gk_Droner_level": 29.76521954032458,
-            "gk_Sweeper_britel": 0.43034846362962353,
-            "gk_Sweeper_briteh": 3.635884339731444,
-            "gk_Sweeper_britels": 1.801136831699481,
-            "gk_Sweeper_britehs": 3.572617184282066,
-            "gk_Sweeper_level": 20.486036741082465,
-            "gk_Buzzer_harmonics": 11.958151412801714,
-            "gk_Buzzer_level": 23.61650089678787,
-            "gk_Shiner_level": 22.3642589271156,
-            "gk_Blower_grainDensity": 79.99177885109444,
-            "gk_Blower_grainDuration": 0.2,
-            "gk_Blower_grainAmplitudeRange": 87.88408180043162,
-            "gk_Blower_grainFrequencyRange": 30.596081700708627,
-            "gk_Blower_level": 7.754769280939186,
-            "gk_ZakianFlute_level": 25.125628140703512,
-            "gk_PianoOutPianoteq_level": -40,
-            "save_controls": save_controls,
-            "recenter": recenter
+            gk_ReverbSC_feedback: 0.94060466265755,
+            gk_MasterOutput_level: 23.199086906897115,
+            gi_FMWaterBell_attack: 0.002936276551436901,
+            gi_FMWaterBell_release: 0.022698875468554768,
+            gi_FMWaterBell_exponent: 8.72147623362715,
+            gi_FMWaterBell_sustain: 5.385256143273636,
+            gi_FMWaterBell_sustain_level: 0.08267388588088297,
+            gk_FMWaterBell_crossfade: 0.1234039047697504,
+            gk_FMWaterBell_index: 1.1401499375260309,
+            gk_FMWaterBell_vibrato_depth: 0.28503171595683335,
+            gk_FMWaterBell_vibrato_rate: 2.4993821566850647,
+            gk_FMWaterBell_level: 13.737540159815467,
+            gk_Phaser_ratio1: 1.0388005601779389,
+            gk_Phaser_ratio2: 3.0422604827415767,
+            gk_Phaser_index1: 0.5066315182469726,
+            gk_Phaser_index2: 0.5066315182469726,
+            gk_Phaser_level: 8.25438668753604,
+            gk_STKBowed_vibrato_level: 2.8,
+            gk_STKBowed_bow_pressure: 110,
+            gk_STKBowed_bow_position: 20,
+            gk_STKBowed_vibrato_frequency: 50.2,
+            gk_STKBowed_level: 0,
+            gk_Droner_partial1: 0.11032374600527997,
+            gk_Droner_partial2: 0.4927052938724468,
+            gk_Droner_partial3: 0.11921634014172572,
+            gk_Droner_partial4: 0.06586077532305128,
+            gk_Droner_partial5: 0.6616645824649159,
+            gk_Droner_level: 29.76521954032458,
+            gk_Sweeper_britel: 0.43034846362962353,
+            gk_Sweeper_briteh: 3.635884339731444,
+            gk_Sweeper_britels: 1.801136831699481,
+            gk_Sweeper_britehs: 3.572617184282066,
+            gk_Sweeper_level: 20.486036741082465,
+            gk_Buzzer_harmonics: 11.958151412801714,
+            gk_Buzzer_level: 23.61650089678787,
+            gk_Shiner_level: 22.3642589271156,
+            gk_Blower_grainDensity: 79.99177885109444,
+            gk_Blower_grainDuration: 0.2,
+            gk_Blower_grainAmplitudeRange: 87.88408180043162,
+            gk_Blower_grainFrequencyRange: 30.596081700708627,
+            gk_Blower_level: 7.754769280939186,
+            gk_ZakianFlute_level: 25.125628140703512,
+            gk_PianoOutPianoteq_level: -40,
+            save_controls: save_controls,
+            recenter: recenter
         };
-            
+        
         var number_format = new Intl.NumberFormat('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
         //////////////////////////////////////////////////////////////////////
@@ -390,7 +390,6 @@ gS_html init {{<!DOCTYPE html>
             gui = new dat.GUI({load: parameters, width: 500});
             gui.add(parameters, 'save_controls').name('Save control values [Ctrl-S]');
             gui.add(parameters, 'recenter').name('Re-center piano roll [Ctrl-C]');
-            gui.remember(parameters);
             var Master = gui.addFolder('Master');
             add_slider(Master, 'gk_ReverbSC_feedback', 0, 1);
             add_slider(Master, 'gk_MasterOutput_level', -50, 50);
@@ -452,27 +451,36 @@ gS_html init {{<!DOCTYPE html>
                 var formatted = number_format.format(slider_value);
                 $(output_selector).val(formatted);
             });
-            parameters.save_controls = function() {
-                let text = "";
-                $('.persistent-element').each(function() {
-                    text = text + `${this.id} init ${this.value}\\n`;
-                    console.log(text);
-                });
-                console.log("Saved controls:" + text);
-            };
             //////////////////////////////////////////////////////////////////////
             //  Initializes the values of HTML controls with the values of 
             //  the Csound control channels/variables with the same names.
             //////////////////////////////////////////////////////////////////////
-            $('.persistent-element').each(function() {
-                csound.GetControlChannel(this.id, function(id, value_) {
-                    this.value = value_;
-                    var output_selector = '#' + this.id + '_output';
-                    $(output_selector).val(this.value);
-                    console.log(`Persisted ${this.id} = ${this.value}`);
-                });
-            });
-            //////////////////////////////////////////////////////////////////
+            console.log("Updating widgets with Csound control values...");
+            console.log(JSON.stringify(gui.getSaveObject()));
+            for (const [key, value] of Object.entries(parameters)) {
+                if (typeof value !== 'function') {
+                    console.log(`parameter ${key} = ${value} (${typeof value})`);
+                    csound.GetControlChannel(key, function(id, value_) {
+                        parameters[key] = value_;
+                        console.log(`Initialized gui: ${key} = ${value_}`);
+                    });
+                }
+            };
+            console.log("updated widgets with Csound control values.");
+            parameters.save_controls = function() {
+                console.log("Saving control values...");
+                let text = "";
+                for (const [key, value] of Object.entries(parameters)) {
+                    if (typeof value !== 'function') {
+                        ///console.log(`parameter: ${key} = ${value}`);
+                        let line = `${key} init ${value}\n`;
+                        text = text + line;
+                    }
+                };
+                ///navigator.clipboard.writeText(text);
+                console.log("Saved control values:\\n" + text);
+            };
+             //////////////////////////////////////////////////////////////////
             // The 'Ctrl-H' key hides and unhides everything on the Web page 
             // except for the piano roll score display.
             //////////////////////////////////////////////////////////////////    
@@ -511,7 +519,7 @@ gS_html init {{<!DOCTYPE html>
             var on_parameter_change = function(value) {
                 gk_update(token, value);
             };
-            gui_folder.add(parameters, token, minimum, maximum).onChange(on_parameter_change);
+            gui_folder.add(parameters, token, minimum, maximum).onChange(on_parameter_change).listen();
         };
         
         window.addEventListener("unload", function(event) { 
