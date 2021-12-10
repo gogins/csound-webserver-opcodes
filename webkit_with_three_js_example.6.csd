@@ -15,12 +15,6 @@ signal flow graph opcodes, and the WebKit opcodes -- all in one .csd file.
 
 TODO:
 
--- Fix dynamics and artifact at start (around 4 seconds). I now think this is 
-   caused by updating channels after the piece has begun, which in turn is 
-   caused by the WebKit opcodes opening pages asynchronously. The only 
-   solution is to initialize the channels before rendering actually begins, 
-   by delaying all the notes.
-
 -- Spatialize, with piano not moving and other sounds rotating slowly.
 
 -- Try more involving chord changes.
@@ -146,29 +140,28 @@ alwayson "MasterOutput"
 
 //////////////////////////////////////////////////////////////////////////////
 // These are the initial values of all the global variables/control channels 
-// that can be updated from the Web page. These values can be copied from the 
-// dat.gui settings dialog, if the user has made changes that should be 
-// remembered.
+// that can be updated from the Web page.
 //////////////////////////////////////////////////////////////////////////////
 
-gk_ReverbSC_feedback init 0.94060466265755
-gk_MasterOutput_level init 23.199086906897115
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+gk_ReverbSC_feedback init 0.9621718571661503
+gk_MasterOutput_level init 32.6512310451655
 gi_FMWaterBell_attack init 0.002936276551436901
 gi_FMWaterBell_release init 0.022698875468554768
-gi_FMWaterBell_exponent init 8.72147623362715
+gi_FMWaterBell_exponent init 0
 gi_FMWaterBell_sustain init 5.385256143273636
 gi_FMWaterBell_sustain_level init 0.08267388588088297
 gk_FMWaterBell_crossfade init 0.1234039047697504
 gk_FMWaterBell_index init 1.1401499375260309
 gk_FMWaterBell_vibrato_depth init 0.28503171595683335
 gk_FMWaterBell_vibrato_rate init 2.4993821566850647
-gk_FMWaterBell_level init 13.737540159815467
+gk_FMWaterBell_level init 15.954671449535297
 gk_Phaser_ratio1 init 1.0388005601779389
 gk_Phaser_ratio2 init 3.0422604827415767
 gk_Phaser_index1 init 0.5066315182469726
 gk_Phaser_index2 init 0.5066315182469726
 gk_Phaser_level init 8.25438668753604
-gk_STKBowed_vibrato_level init 2.8
+gk_STKBowed_vibrato_level init 0
 gk_STKBowed_bow_pressure init 110
 gk_STKBowed_bow_position init 20
 gk_STKBowed_vibrato_frequency init 50.2
@@ -178,27 +171,27 @@ gk_Droner_partial2 init 0.4927052938724468
 gk_Droner_partial3 init 0.11921634014172572
 gk_Droner_partial4 init 0.06586077532305128
 gk_Droner_partial5 init 0.6616645824649159
-gk_Droner_level init 29.76521954032458
-gk_Sweeper_britel init 0.43034846362962353
+gk_Droner_level init 18.563508886352523
+gk_Sweeper_britel init 0.4258927115604109
 gk_Sweeper_briteh init 3.635884339731444
-gk_Sweeper_britels init 1.801136831699481
-gk_Sweeper_britehs init 3.572617184282066
-gk_Sweeper_level init 20.486036741082465
+gk_Sweeper_britels init 1.1354964943746944
+gk_Sweeper_britehs init 3.222566443828469
+gk_Sweeper_level init 7.606391651720202
 gk_Buzzer_harmonics init 11.958151412801714
 gk_Buzzer_level init 23.61650089678787
 gk_Shiner_level init 22.3642589271156
-gk_Blower_grainDensity init 79.99177885109444
-gk_Blower_grainDuration init 0.2
-gk_Blower_grainAmplitudeRange init 87.88408180043162
-gk_Blower_grainFrequencyRange init 30.596081700708627
-gk_Blower_level init 7.754769280939186
+gk_Blower_grainDensity init 132.3332789825534
+gk_Blower_grainDuration init 0.2854231208217838
+gk_Blower_grainAmplitudeRange init 174.0746779716289
+gk_Blower_grainFrequencyRange init 62.82406652535464
+gk_Blower_level init 6.562856676993313
 gk_ZakianFlute_level init 25.125628140703512
-gk_PianoOutPianoteq_level init -45
+gk_PianoOutPianoteq_level init -35.526169900538072
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 //////////////////////////////////////////////////////////////////////////////
-// This instrument defines a WebKit browser embedded in Csound.
-// The following HTML5 code is pretty much the standard sort of thing for Web 
-// pages.
+// This instrument defines a WebKit browser embedded in Csound. The following 
+// HTML5 code is pretty much the standard sort of thing for Web pages.
 //
 // However, the <csound.js> script brings a proxy for the instance of Csound 
 // that is performing into the JavaScript context of the Web page, so the 
@@ -247,7 +240,7 @@ gS_html init {{<!DOCTYPE html>
     //////////////////////////////////////////////////////////////////////////
     // All dependencies that are in some sense standard and widely used, are 
     // loaded from content delivery networks.
-    ///////////////////////////////////////////////////////////////////////////   
+    //////////////////////////////////////////////////////////////////////////  
     -->
     <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.js"></script>    
@@ -256,7 +249,7 @@ gS_html init {{<!DOCTYPE html>
     //////////////////////////////////////////////////////////////////////////
     // All other dependencies are incorporated into this repository, and are 
     // loaded as local files.
-    ///////////////////////////////////////////////////////////////////////////   
+    //////////////////////////////////////////////////////////////////////////  
     -->
     <script src="TrackballControls.js"></script>
     <script src="PianoRoll3D.js"></script>    
@@ -286,10 +279,10 @@ gS_html init {{<!DOCTYPE html>
         //////////////////////////////////////////////////////////////////////
         function animate() {
             //////////////////////////////////////////////////////////////////
-            // By rendering the visual display only on every 5th video frame, 
+            // By rendering the visual display only on every nth video frame, 
             // more time is given to Csound's audio rendering.
             //////////////////////////////////////////////////////////////////
-            if (video_frame % 5 == 0) {
+            if (video_frame % 3 == 0) {
                 //////////////////////////////////////////////////////////////
                 // This is the pattern for obtaining return values for all of 
                 // the Csound API's asynchronous JSON-RPC methods: by 
@@ -310,13 +303,11 @@ gS_html init {{<!DOCTYPE html>
             requestAnimationFrame(animate)
         }
         
+        //////////////////////////////////////////////////////////////////////
+        // This is a stub that will be replaced with the actual code after all
+        // the dat.gui controls have been created.
+        //////////////////////////////////////////////////////////////////////
         var save_controls = function() {
-            var text = "";
-            var persistent_elements = document.querySelectorAll(".persistent-element");
-            persistent_elements.forEach(function() {
-                text = text + `${this.id} init ${this.value}\\n`;
-            });
-            console.log("save_controls:" + text);
         }
 
         var recenter = function() {
@@ -385,6 +376,9 @@ gS_html init {{<!DOCTYPE html>
         //
         // jQuery can only set itself up to handle events for elements when 
         // the page has been loaded.
+        //
+        // We do NOT use dat.gui's persistence mechanism based on HTML5 local 
+        // storage, hence no "gui.remember()."
         //////////////////////////////////////////////////////////////////////
         window.onload = function() {
             gui = new dat.GUI({load: parameters, width: 500});
@@ -398,11 +392,11 @@ gS_html init {{<!DOCTYPE html>
             add_slider(FMWaterBell, 'gi_FMWaterBell_release', 0, .1);
             add_slider(FMWaterBell, 'gi_FMWaterBell_exponent', -30, 30);
             add_slider(FMWaterBell, 'gi_FMWaterBell_sustain', 0, 20);
-            add_slider(FMWaterBell, 'gi_FMWaterBell_sustain_level', 0, 1);
-            add_slider(FMWaterBell, 'gk_FMWaterBell_crossfade', 0, 1);
-            add_slider(FMWaterBell, 'gk_FMWaterBell_index', 0, 15);
-            add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_depth', 0, 10);
-            add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_rate', 0, 10);
+            add_slider(FMWaterBell, 'gi_FMWaterBell_sustain_level', 0, 1.);
+            add_slider(FMWaterBell, 'gk_FMWaterBell_crossfade', 0, 1.);
+            add_slider(FMWaterBell, 'gk_FMWaterBell_index', 0, 15.);
+            add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_depth', 0, 10.);
+            add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_rate', 0, 10.);
             add_slider(FMWaterBell, 'gk_FMWaterBell_level',-50, 50);
             var Phaser = gui.addFolder('Phaser');
             add_slider(Phaser, 'gk_Phaser_ratio1', 0, 5);
@@ -446,17 +440,16 @@ gS_html init {{<!DOCTYPE html>
             add_slider(Pianoteq, 'gk_PianoOutPianoteq_level', -50, 50);
             $('input').on('input', function(event) {
                 var slider_value = parseFloat(event.target.value);
-                csound.SetControlChannel(event.target.id, slider_value, on_success, on_failure);
+                csound.SetControlChannel(event.target.id, slider_value, function(id, result){}, function(id,message){});
                 var output_selector = '#' + event.target.id + '_output';
                 var formatted = number_format.format(slider_value);
                 $(output_selector).val(formatted);
             });
             //////////////////////////////////////////////////////////////////////
-            //  Initializes the values of HTML controls with the values of 
-            //  the Csound control channels/variables with the same names.
+            // Initializes the values of HTML controls with the values of the 
+            // Csound control channels/variables with the same names.
             //////////////////////////////////////////////////////////////////////
             console.log("Updating widgets with Csound control values...");
-            console.log(JSON.stringify(gui.getSaveObject()));
             for (const [key, value] of Object.entries(parameters)) {
                 if (typeof value !== 'function') {
                     console.log(`parameter ${key} = ${value} (${typeof value})`);
@@ -466,10 +459,20 @@ gS_html init {{<!DOCTYPE html>
                     });
                 }
             };
-            console.log("updated widgets with Csound control values.");
+            console.log("Updated widgets with Csound control values.");
+            //////////////////////////////////////////////////////////////////////
+            // When the user clicks on the "Sav control values" command, the 
+            // current state of the control parameters is printed to the terminal
+            // in the form of Csound orchestra code. These can be copied from the 
+            // terminal, and pasted over the existing initial control channel 
+            // values in the Csound orchestra. Currently, Web browsers do not 
+            // permit writing to the user's filesystem except in the Downloads 
+            // directory.
+            //////////////////////////////////////////////////////////////////////
             parameters.save_controls = function() {
                 console.log("Saving control values...");
-                let text = "";
+                let delimiter = ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\\n";
+                let text = delimiter;
                 for (const [key, value] of Object.entries(parameters)) {
                     if (typeof value !== 'function') {
                         ///console.log(`parameter: ${key} = ${value}`);
@@ -477,6 +480,7 @@ gS_html init {{<!DOCTYPE html>
                         text = text + line;
                     }
                 };
+                text = text + delimiter;
                 ///navigator.clipboard.writeText(text);
                 console.log("Saved control values:\\n" + text);
             };
@@ -504,15 +508,9 @@ gS_html init {{<!DOCTYPE html>
             requestAnimationFrame(animate)
         };
         
-        var on_success = function(id, value) {
-        };
-        
-        var on_failure = function(id, message) {
-        };
- 
-        var gk_update = function(name, value) {
+         var gk_update = function(name, value) {
             var numberValue = parseFloat(value);
-            csound.SetControlChannel(name, numberValue, on_success, on_failure);
+            csound.SetControlChannel(name, numberValue, function(id, value) {}, function(id, value) {});
         }
 
         var add_slider = function(gui_folder, token, minimum, maximum, name) {
@@ -525,7 +523,6 @@ gS_html init {{<!DOCTYPE html>
         window.addEventListener("unload", function(event) { 
             parameters.save_controls();
         });
-    
     
 </script>
 </body>
@@ -643,8 +640,7 @@ extern "C" int score_generator(CSOUND *csound) {
     Cursor pen;
     modality.fromString("0 4 7 11");
     pen.chord = modality;
-    pen.note = {1,28,144,1,1,1,0,0,0,0,1};
-    ///pen.note[csound::Event::DURATION] = 0.4;
+    pen.note = {1,35,144,1,1,1,0,0,0,0,1};
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
     auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
@@ -666,6 +662,10 @@ extern "C" int score_generator(CSOUND *csound) {
             pen.chord = pen.chord.K();
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
+        if (depth == 6) {
+            pen.chord = pen.chord.Q(-1, modality);
+            chordsForTimes[pen.note.getTime()] = pen.chord;
+        }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (1000 + 1);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75);
         ///pen.note[csound::Event::INSTRUMENT] = .1 * double(depth % 4);      
@@ -676,10 +676,6 @@ extern "C" int score_generator(CSOUND *csound) {
     generators.push_back(g2);
     auto g3 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 5) {
-            pen.chord = pen.chord.Q(-1, modality);
-            chordsForTimes[pen.note.getTime()] = pen.chord;
-        }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 + 3);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .715) + 1.05;
         pen.note[csound::Event::INSTRUMENT] = std::cos(pen.note[csound::Event::TIME]);

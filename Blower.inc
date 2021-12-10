@@ -1,7 +1,7 @@
 gk_Blower_grainDensity chnexport "gk_Blower_grainDensity", 3
 gk_Blower_grainDuration chnexport "gk_Blower_grainDuration", 3
-gk_Blower_grainAmplitudeRange chnexport "gk_Blower_grainFrequencyRange", 3
-gk_Blower_grainFrequencyRange chnexport "XXX", 3
+gk_Blower_grainAmplitudeRange chnexport "gk_Blower_grainAmplitudeRange", 3
+gk_Blower_grainFrequencyRange chnexport "gk_Blower_grainFrequencyRange", 3
 gk_Blower_level chnexport "gk_Blower_level", 3
 gk_Blower_midi_dynamic_range chnexport "gk_Blower_midi_dynamic_range", 3
 
