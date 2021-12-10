@@ -125,6 +125,8 @@ prealloc 9, 20
 //////////////////////////////////////////////////////////////////////////////
 // These are all the Csound instruments and effects used in this piece.
 //////////////////////////////////////////////////////////////////////////////
+gi_Pianoteq vstinit "/home/mkg/Pianoteq\ 7/x86-64bit/Pianoteq\ 7.so", 1
+#include "PianoNotePianoteq.inc"
 #include "FMWaterBell.inc"
 #include "Phaser.inc"
 #include "Droner.inc"
@@ -133,8 +135,6 @@ prealloc 9, 20
 #include "Shiner.inc"
 #include "Blower.inc"
 #include "ZakianFlute.inc"
-gi_Pianoteq vstinit "/home/mkg/Pianoteq\ 7/x86-64bit/Pianoteq\ 7.so", 1
-#include "PianoNotePianoteq.inc"
 #include "STKBowed.inc"
 #include "PianoOutPianoteq.inc"
 alwayson "PianoOutPianoteq"
@@ -193,7 +193,7 @@ gk_Blower_grainAmplitudeRange init 87.88408180043162
 gk_Blower_grainFrequencyRange init 30.596081700708627
 gk_Blower_level init 7.754769280939186
 gk_ZakianFlute_level init 25.125628140703512
-gk_PianoOutPianoteq_level init -40
+gk_PianoOutPianoteq_level init -45
 
 //////////////////////////////////////////////////////////////////////////////
 // This instrument defines a WebKit browser embedded in Csound.
@@ -309,9 +309,14 @@ gS_html init {{<!DOCTYPE html>
             video_frame = video_frame + 1;
             requestAnimationFrame(animate)
         }
-
-        var stop = function() {
-            Silencio.saveDatGuiJson(gui);
+        
+        var save_controls = function() {
+            var text = "";
+            var persistent_elements = document.querySelectorAll(".persistent-element");
+            persistent_elements.forEach(function() {
+                text = text + `${this.id} init ${this.value}\\n`;
+            });
+            console.log("save_controls:" + text);
         }
 
         var recenter = function() {
@@ -319,212 +324,61 @@ gS_html init {{<!DOCTYPE html>
         }
         
         //////////////////////////////////////////////////////////////////////
-        // These are the default values of the sliders that are used to 
-        // control the Csound instruments during performance.
+        // These are the controllers and commands that are initialized in the 
+        // dat.gui controls. The controllers must have the same names and 
+        // types as the Csound orchestra's control channels/global variables, 
+        // but the initial values actually come from the CSound channels.
         //////////////////////////////////////////////////////////////////////
         var parameters = {
-        "gk_ReverbSC_feedback": 0.94060466265755,
-        "gk_MasterOutput_level": 23.199086906897115,
-        "gi_FMWaterBell_attack": 0.002936276551436901,
-        "gi_FMWaterBell_release": 0.022698875468554768,
-        "gi_FMWaterBell_exponent": 8.72147623362715,
-        "gi_FMWaterBell_sustain": 5.385256143273636,
-        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
-        "gk_FMWaterBell_crossfade": 0.1234039047697504,
-        "gk_FMWaterBell_index": 1.1401499375260309,
-        "gk_FMWaterBell_vibrato_depth": 0.28503171595683335,
-        "gk_FMWaterBell_vibrato_rate": 2.4993821566850647,
-        "gk_FMWaterBell_level": 13.737540159815467,
-        "gk_Phaser_ratio1": 1.0388005601779389,
-        "gk_Phaser_ratio2": 3.0422604827415767,
-        "gk_Phaser_index1": 0.5066315182469726,
-        "gk_Phaser_index2": 0.5066315182469726,
-        "gk_Phaser_level": 8.25438668753604,
-        "gk_STKBowed_vibrato_level": 2.8,
-        "gk_STKBowed_bow_pressure": 110,
-        "gk_STKBowed_bow_position": 20,
-        "gk_STKBowed_vibrato_frequency": 50.2,
-        "gk_STKBowed_level": 0,
-        "gk_Droner_partial1": 0.11032374600527997,
-        "gk_Droner_partial2": 0.4927052938724468,
-        "gk_Droner_partial3": 0.11921634014172572,
-        "gk_Droner_partial4": 0.06586077532305128,
-        "gk_Droner_partial5": 0.6616645824649159,
-        "gk_Droner_level": 29.76521954032458,
-        "gk_Sweeper_britel": 0.43034846362962353,
-        "gk_Sweeper_briteh": 3.635884339731444,
-        "gk_Sweeper_britels": 1.801136831699481,
-        "gk_Sweeper_britehs": 3.572617184282066,
-        "gk_Sweeper_level": 20.486036741082465,
-        "gk_Buzzer_harmonics": 11.958151412801714,
-        "gk_Buzzer_level": 23.61650089678787,
-        "gk_Shiner_level": 22.3642589271156,
-        "gk_Blower_grainDensity": 79.99177885109444,
-        "gk_Blower_grainDuration": 0.2,
-        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
-        "gk_Blower_grainFrequencyRange": 30.596081700708627,
-        "gk_Blower_level": 7.754769280939186,
-        "gk_ZakianFlute_level": 25.125628140703512,
-        "gk_PianoOutPianoteq_level": -40,
-            stop: window.stop,
-            recenter: window.recenter,
+            "gk_ReverbSC_feedback": 0.94060466265755,
+            "gk_MasterOutput_level": 23.199086906897115,
+            "gi_FMWaterBell_attack": 0.002936276551436901,
+            "gi_FMWaterBell_release": 0.022698875468554768,
+            "gi_FMWaterBell_exponent": 8.72147623362715,
+            "gi_FMWaterBell_sustain": 5.385256143273636,
+            "gi_FMWaterBell_sustain_level": 0.08267388588088297,
+            "gk_FMWaterBell_crossfade": 0.1234039047697504,
+            "gk_FMWaterBell_index": 1.1401499375260309,
+            "gk_FMWaterBell_vibrato_depth": 0.28503171595683335,
+            "gk_FMWaterBell_vibrato_rate": 2.4993821566850647,
+            "gk_FMWaterBell_level": 13.737540159815467,
+            "gk_Phaser_ratio1": 1.0388005601779389,
+            "gk_Phaser_ratio2": 3.0422604827415767,
+            "gk_Phaser_index1": 0.5066315182469726,
+            "gk_Phaser_index2": 0.5066315182469726,
+            "gk_Phaser_level": 8.25438668753604,
+            "gk_STKBowed_vibrato_level": 2.8,
+            "gk_STKBowed_bow_pressure": 110,
+            "gk_STKBowed_bow_position": 20,
+            "gk_STKBowed_vibrato_frequency": 50.2,
+            "gk_STKBowed_level": 0,
+            "gk_Droner_partial1": 0.11032374600527997,
+            "gk_Droner_partial2": 0.4927052938724468,
+            "gk_Droner_partial3": 0.11921634014172572,
+            "gk_Droner_partial4": 0.06586077532305128,
+            "gk_Droner_partial5": 0.6616645824649159,
+            "gk_Droner_level": 29.76521954032458,
+            "gk_Sweeper_britel": 0.43034846362962353,
+            "gk_Sweeper_briteh": 3.635884339731444,
+            "gk_Sweeper_britels": 1.801136831699481,
+            "gk_Sweeper_britehs": 3.572617184282066,
+            "gk_Sweeper_level": 20.486036741082465,
+            "gk_Buzzer_harmonics": 11.958151412801714,
+            "gk_Buzzer_level": 23.61650089678787,
+            "gk_Shiner_level": 22.3642589271156,
+            "gk_Blower_grainDensity": 79.99177885109444,
+            "gk_Blower_grainDuration": 0.2,
+            "gk_Blower_grainAmplitudeRange": 87.88408180043162,
+            "gk_Blower_grainFrequencyRange": 30.596081700708627,
+            "gk_Blower_level": 7.754769280939186,
+            "gk_ZakianFlute_level": 25.125628140703512,
+            "gk_PianoOutPianoteq_level": -40,
+            "save_controls": save_controls,
+            "recenter": recenter
         };
             
-        var default_json = {
-  "preset": "Default",
-  "remembered": {
-    "Default": {
-      "0": {
-        "gk_ReverbSC_feedback": 0.94060466265755,
-        "gk_MasterOutput_level": 23.199086906897115,
-        "gi_FMWaterBell_attack": 0.002936276551436901,
-        "gi_FMWaterBell_release": 0.022698875468554768,
-        "gi_FMWaterBell_exponent": 8.72147623362715,
-        "gi_FMWaterBell_sustain": 5.385256143273636,
-        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
-        "gk_FMWaterBell_crossfade": 0.1234039047697504,
-        "gk_FMWaterBell_index": 1.1401499375260309,
-        "gk_FMWaterBell_vibrato_depth": 0.28503171595683335,
-        "gk_FMWaterBell_vibrato_rate": 2.4993821566850647,
-        "gk_FMWaterBell_level": 13.737540159815467,
-        "gk_Phaser_ratio1": 1.0388005601779389,
-        "gk_Phaser_ratio2": 3.0422604827415767,
-        "gk_Phaser_index1": 0.5066315182469726,
-        "gk_Phaser_index2": 0.5066315182469726,
-        "gk_Phaser_level": 8.25438668753604,
-        "gk_STKBowed_vibrato_level": 2.8,
-        "gk_STKBowed_bow_pressure": 110,
-        "gk_STKBowed_bow_position": 20,
-        "gk_STKBowed_vibrato_frequency": 50.2,
-        "gk_STKBowed_level": 0,
-        "gk_Droner_partial1": 0.11032374600527997,
-        "gk_Droner_partial2": 0.4927052938724468,
-        "gk_Droner_partial3": 0.11921634014172572,
-        "gk_Droner_partial4": 0.06586077532305128,
-        "gk_Droner_partial5": 0.6616645824649159,
-        "gk_Droner_level": 29.76521954032458,
-        "gk_Sweeper_britel": 0.43034846362962353,
-        "gk_Sweeper_briteh": 3.635884339731444,
-        "gk_Sweeper_britels": 1.801136831699481,
-        "gk_Sweeper_britehs": 3.572617184282066,
-        "gk_Sweeper_level": 20.486036741082465,
-        "gk_Buzzer_harmonics": 11.958151412801714,
-        "gk_Buzzer_level": 23.61650089678787,
-        "gk_Shiner_level": 22.3642589271156,
-        "gk_Blower_grainDensity": 79.99177885109444,
-        "gk_Blower_grainDuration": 0.2,
-        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
-        "gk_Blower_grainFrequencyRange": 30.596081700708627,
-        "gk_Blower_level": 7.754769280939186,
-        "gk_ZakianFlute_level": 25.125628140703512,
-        "gk_PianoOutPianoteq_level": -40
-      }
-    },
-    "yuck": {
-      "0": {
-        "gk_MVerb_feedback": 0.9356518117451063,
-        "gk_ReverbSC_feedback": 0.411032531824611,
-        "gk_MasterOutput_level": 9.795918367346943,
-        "gi_FMWaterBell_attack": 0.002936276551436901,
-        "gi_FMWaterBell_release": 0.022698875468554768,
-        "gi_FMWaterBell_exponent": 12.544773011245312,
-        "gi_FMWaterBell_sustain": 5.385256143273636,
-        "gi_FMWaterBell_sustain_level": 0.08267388588088297,
-        "gk_FMWaterBell_crossfade": 0.48250728862973763,
-        "gk_FMWaterBell_index": 1.1401499375260309,
-        "gk_FMWaterBell_vibrato_depth": 0.2897954989209742,
-        "gk_FMWaterBell_vibrato_rate": 4.762100503545371,
-        "gk_FMWaterBell_level": 3.021216407355027,
-        "gk_Phaser_ratio1": 1,
-        "gk_Phaser_ratio2": 1.0131195335276968,
-        "gk_Phaser_index1": 0.24052478134110788,
-        "gk_Phaser_index2": 4.0389421074552265,
-        "gk_Phaser_level": 7.13036234902124,
-        "gk_STKBowed_pressure": 3.466241907306546,
-        "gk_STKBowed_level": 8.19658475635152,
-        "gk_Droner_partial1": 0.11032374600527997,
-        "gk_Droner_partial2": 0.4927052938724468,
-        "gk_Droner_partial3": 0.11921634014172572,
-        "gk_Droner_partial4": 0.06586077532305128,
-        "gk_Droner_partial5": 0.6616645824649159,
-        "gk_Droner_level": 16.512177576816356,
-        "gk_Sweeper_britel": 0.7999177885109444,
-        "gk_Sweeper_briteh": 3.382178217821782,
-        "gk_Sweeper_britels": 1.5628404069468709,
-        "gk_Sweeper_britehs": 0.8837340876944837,
-        "gk_Sweeper_level": 7.13036234902124,
-        "gk_Buzzer_harmonics": 1.6534777176176594,
-        "gk_Buzzer_level": -6.393210749646393,
-        "gk_Shiner_level": 2.332361516034986,
-        "gk_Blower_grainDensity": 79.99177885109444,
-        "gk_Blower_grainDuration": 0.2,
-        "gk_Blower_grainAmplitudeRange": 87.88408180043162,
-        "gk_Blower_grainFrequencyRange": 30.596081700708627,
-        "gk_Blower_level": 8.19658475635152,
-        "gk_ZakianFlute_level": 4.997917534360681
-      }
-    }
-  },
-  "closed": false,
-  "folders": {
-    "Master": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "FMWaterBell": {
-      "preset": "Default",
-      "closed": true,
-      "folders": {}
-    },
-    "Phaser": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "STKBowed": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "Droner": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "Sweeper": {
-      "preset": "Default",
-      "closed": true,
-      "folders": {}
-    },
-    "Buzzer": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "Shiner": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "Blower": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "Zakian Flute": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    },
-    "Pianoteq": {
-      "preset": "Default",
-      "closed": false,
-      "folders": {}
-    }
-  }
-        };
         var number_format = new Intl.NumberFormat('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3 });
+
         //////////////////////////////////////////////////////////////////////
         // The use of jQuery _greatly_ simplifies using JavaScript event 
         // handlers for HTML elements.
@@ -533,13 +387,13 @@ gS_html init {{<!DOCTYPE html>
         // the page has been loaded.
         //////////////////////////////////////////////////////////////////////
         window.onload = function() {
-            gui = new dat.GUI({load: default_json, width: 500});
+            gui = new dat.GUI({load: parameters, width: 500});
+            gui.add(parameters, 'save_controls').name('Save control values [Ctrl-S]');
+            gui.add(parameters, 'recenter').name('Re-center piano roll [Ctrl-C]');
             gui.remember(parameters);
-            gui.add(parameters, 'stop').name('Stop [Ctrl-S]');
-            gui.add(parameters, 'recenter').name('Re-center [Ctrl-C]');
             var Master = gui.addFolder('Master');
             add_slider(Master, 'gk_ReverbSC_feedback', 0, 1);
-            add_slider(Master, 'gk_MasterOutput_level', -40, 40);
+            add_slider(Master, 'gk_MasterOutput_level', -50, 50);
             var FMWaterBell = gui.addFolder('FMWaterBell');
             add_slider(FMWaterBell, 'gi_FMWaterBell_attack', 0, .1);
             add_slider(FMWaterBell, 'gi_FMWaterBell_release', 0, .1);
@@ -550,47 +404,47 @@ gS_html init {{<!DOCTYPE html>
             add_slider(FMWaterBell, 'gk_FMWaterBell_index', 0, 15);
             add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_depth', 0, 10);
             add_slider(FMWaterBell, 'gk_FMWaterBell_vibrato_rate', 0, 10);
-            add_slider(FMWaterBell, 'gk_FMWaterBell_level',-40, 40);
+            add_slider(FMWaterBell, 'gk_FMWaterBell_level',-50, 50);
             var Phaser = gui.addFolder('Phaser');
             add_slider(Phaser, 'gk_Phaser_ratio1', 0, 5);
             add_slider(Phaser, 'gk_Phaser_ratio2', 0, 5);
             add_slider(Phaser, 'gk_Phaser_index1', 0, 15);
             add_slider(Phaser, 'gk_Phaser_index2', 0, 15);
-            add_slider(Phaser, 'gk_Phaser_level', -40, 40);
+            add_slider(Phaser, 'gk_Phaser_level', -50, 50);
             var STKBowed = gui.addFolder('STKBowed');
             add_slider(STKBowed, 'gk_STKBowed_vibrato_level', 0, 127);
             add_slider(STKBowed, 'gk_STKBowed_bow_pressure', 0, 127);
             add_slider(STKBowed, 'gk_STKBowed_bow_position', 0, 127);
             add_slider(STKBowed, 'gk_STKBowed_vibrato_frequency', 0, 127);
-            add_slider(STKBowed, 'gk_STKBowed_level', -40, 40);
+            add_slider(STKBowed, 'gk_STKBowed_level', -50, 50);
             var Droner = gui.addFolder('Droner');
             add_slider(Droner, 'gk_Droner_partial1', 0, 1);
             add_slider(Droner, 'gk_Droner_partial2', 0, 1);
             add_slider(Droner, 'gk_Droner_partial3', 0, 1);
             add_slider(Droner, 'gk_Droner_partial4', 0, 1);
             add_slider(Droner, 'gk_Droner_partial5', 0, 1);
-            add_slider(Droner, 'gk_Droner_level', -40, 40);
+            add_slider(Droner, 'gk_Droner_level', -50, 50);
             var Sweeper = gui.addFolder('Sweeper');
             add_slider(Sweeper, 'gk_Sweeper_britel', 0, 4);
             add_slider(Sweeper, 'gk_Sweeper_briteh', 0, 4);
             add_slider(Sweeper, 'gk_Sweeper_britels', 0, 4);
             add_slider(Sweeper, 'gk_Sweeper_britehs', 0, 4);
-            add_slider(Sweeper, 'gk_Sweeper_level', -40, 40);
+            add_slider(Sweeper, 'gk_Sweeper_level', -50, 50);
             var Buzzer = gui.addFolder('Buzzer');
             add_slider(Buzzer, 'gk_Buzzer_harmonics', 0, 20);
-            add_slider(Buzzer, 'gk_Buzzer_level', -40, 40);
+            add_slider(Buzzer, 'gk_Buzzer_level', -50, 50);
             var Shiner = gui.addFolder('Shiner');
-            add_slider(Shiner, 'gk_Shiner_level', -40, 40);
+            add_slider(Shiner, 'gk_Shiner_level', -50, 50);
             var Blower = gui.addFolder('Blower');
             add_slider(Blower, 'gk_Blower_grainDensity', 0, 400);
             add_slider(Blower, 'gk_Blower_grainDuration', 0, .5);
             add_slider(Blower, 'gk_Blower_grainAmplitudeRange', 0, 400);
             add_slider(Blower, 'gk_Blower_grainFrequencyRange', 0, 100);
-            add_slider(Blower, 'gk_Blower_level', -40, 40);
+            add_slider(Blower, 'gk_Blower_level', -50, 50);
             var Flute = gui.addFolder('Zakian Flute');
-            add_slider(Flute, 'gk_ZakianFlute_level', -40, 40);
+            add_slider(Flute, 'gk_ZakianFlute_level', -50, 50);
             var Pianoteq = gui.addFolder('Pianoteq');
-            add_slider(Pianoteq, 'gk_PianoOutPianoteq_level', -40, 40);
+            add_slider(Pianoteq, 'gk_PianoOutPianoteq_level', -50, 50);
             $('input').on('input', function(event) {
                 var slider_value = parseFloat(event.target.value);
                 csound.SetControlChannel(event.target.id, slider_value, on_success, on_failure);
@@ -598,28 +452,24 @@ gS_html init {{<!DOCTYPE html>
                 var formatted = number_format.format(slider_value);
                 $(output_selector).val(formatted);
             });
-            $('#save').on('click', function() {
+            parameters.save_controls = function() {
+                let text = "";
                 $('.persistent-element').each(function() {
-                    localStorage.setItem(this.id, this.value);
+                    text = text + `${this.id} init ${this.value}\\n`;
+                    console.log(text);
                 });
-            });
-            $('#restore').on('click', function() {
-                $('.persistent-element').each(function() {
-                    this.value = localStorage.getItem(this.id);
-                    csound.SetControlChannel(this.id, parseFloat(this.value), on_success, on_failure);
-                    var output_selector = '#' + this.id + '_output';
-                    $(output_selector).val(this.value);
-                });
-            });
+                console.log("Saved controls:" + text);
+            };
             //////////////////////////////////////////////////////////////////////
             //  Initializes the values of HTML controls with the values of 
-            //  the Csound control channels with the same names.
+            //  the Csound control channels/variables with the same names.
             //////////////////////////////////////////////////////////////////////
             $('.persistent-element').each(function() {
                 csound.GetControlChannel(this.id, function(id, value_) {
                     this.value = value_;
                     var output_selector = '#' + this.id + '_output';
                     $(output_selector).val(this.value);
+                    console.log(`Persisted ${this.id} = ${this.value}`);
                 });
             });
             //////////////////////////////////////////////////////////////////
@@ -639,7 +489,7 @@ gS_html init {{<!DOCTYPE html>
                         gui.closed = true;
                         gui.closed = false;
                     } else if (e_char === 'S') {
-                        parameters.stop();
+                        parameters.save_controls();
                     }
                 }
             });
@@ -665,7 +515,7 @@ gS_html init {{<!DOCTYPE html>
         };
         
         window.addEventListener("unload", function(event) { 
-            parameters.stop();
+            parameters.save_controls();
         });
     
     
@@ -785,13 +635,13 @@ extern "C" int score_generator(CSOUND *csound) {
     Cursor pen;
     modality.fromString("0 4 7 11");
     pen.chord = modality;
-    pen.note = {1,24,144,1,1,1,0,0,0,0,1};
+    pen.note = {1,28,144,1,1,1,0,0,0,0,1};
     ///pen.note[csound::Event::DURATION] = 0.4;
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
     auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
         if (depth == 4) {
-            pen.chord = pen.chord.Q(4, modality);
+            pen.chord = pen.chord.T(4);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 - 5);
@@ -819,11 +669,11 @@ extern "C" int score_generator(CSOUND *csound) {
     auto g3 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
         if (depth == 5) {
-            pen.chord = pen.chord.Q(1, modality);
+            pen.chord = pen.chord.Q(-1, modality);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 + 3);
-        pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.05;
+        pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .715) + 1.05;
         pen.note[csound::Event::INSTRUMENT] = std::cos(pen.note[csound::Event::TIME]);
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
         //~ pen.note[csound::Event::PAN] = -.675;
@@ -886,7 +736,7 @@ extern "C" int score_generator(CSOUND *csound) {
     score.rescale(csound::Event::TIME,          true,  0.0, false,  0.0);
     score.rescale(csound::Event::INSTRUMENT, true,  1.0, true,   9.999);
     ///score.rescale(csound::Event::INSTRUMENT,    true,  8.0, true,   0);
-    score.rescale(csound::Event::VELOCITY,      true, 40.0, true,  10.0);
+    score.rescale(csound::Event::VELOCITY,      true, 40.0, true,  20.0);
     //score.rescale(csound::Event::DURATION,    true,  1.5, true,   4.0);
     score.rescale(csound::Event::PAN,           true,  0.0, true,   0.0);
     std::cout << "Move to origin duration:" << score.getDuration() << std::endl;
@@ -903,7 +753,7 @@ extern "C" int score_generator(CSOUND *csound) {
         score[i].setDepth(randomvariable(mersenneTwister));
         score[i].setPhase(randomvariable(mersenneTwister));
     }
-    score.rescale(csound::Event::TIME,          true,  5.0, false,  0.0);
+    score.rescale(csound::Event::TIME,          true,  1.0, false,  0.0);
     std::cout << "Final duration:         " << score.getDuration() << std::endl;
     //////////////////////////////////////////////////////////////////////////
     // Using the EVTBLK struct for each note is more efficient than using a 
