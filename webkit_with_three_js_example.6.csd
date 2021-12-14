@@ -1,7 +1,7 @@
 <CsoundSyntheizer>
 <CsLicense>
 
-R E D   L E A V E S   V E R S I O N   5
+R E D   L E A V E S   V E R S I O N   6
 
 Michael Gogins, 2021
 
@@ -20,6 +20,8 @@ TODO:
 -- Try more involving chord changes.
 
 -- More involving balances among the pads.
+
+-- Transpose just the piano part up a 6th or octave.
 
 //////////////////////////////////////////////////////////////////////////////
 // Tutorial comments like this are provided throughout the piece. 
@@ -140,7 +142,7 @@ alwayson "MasterOutput"
 
 //////////////////////////////////////////////////////////////////////////////
 // These are the initial values of all the global variables/control channels 
-// that can be updated from the Web page.
+// that can be controlled from the Web page.
 //////////////////////////////////////////////////////////////////////////////
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -332,7 +334,7 @@ gS_html init {{<!DOCTYPE html>
             gk_FMWaterBell_index: 1.1401499375260309,
             gk_FMWaterBell_vibrato_depth: 0.28503171595683335,
             gk_FMWaterBell_vibrato_rate: 2.4993821566850647,
-            gk_FMWaterBell_level: 13.737540159815467,
+            gk_FMWaterBell_level: 26.,
             gk_Phaser_ratio1: 1.0388005601779389,
             gk_Phaser_ratio2: 3.0422604827415767,
             gk_Phaser_index1: 0.5066315182469726,
@@ -774,6 +776,9 @@ extern "C" int score_generator(CSOUND *csound) {
         evtblk.p[2] = note.getTime();
         evtblk.p[3] = note.getDuration();
         evtblk.p[4] = note.getKey();
+        if (evtblk.p[1] == 1) {
+            evtblk.p[4] += 12;
+        }
         evtblk.p[5] = note.getVelocity();
         evtblk.p[6] = note.getDepth();
         evtblk.p[7] = note.getPan();

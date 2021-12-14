@@ -16,6 +16,14 @@ gk_Sweeper_britels init 2
 gk_Sweeper_britehs init 1
 gk_Sweeper_level init 0
 
+gk_Sweeper_front_to_back chnexport "gk_Sweeper_front_to_back", 3 ;  0
+gk_Sweeper_left_to_right chnexport "gk_Sweeper_left_to_right", 3 ;  0.5
+gk_Sweeper_bottom_to_top chnexport "gk_Sweeper_bottom_to_top", 3 ;  0
+
+gk_Sweeper_front_to_back init 0
+gk_Sweeper_left_to_right init 0.5
+gk_Sweeper_bottom_to_top init 0
+
 gi_Sweeper_sine ftgen 0, 0, 65537, 10, 1
 gi_Sweeper_octfn ftgen 0, 0, 65537, -19, 1, 0.5, 270, 0.5
 
@@ -30,9 +38,9 @@ i_duration = p3
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_Sweeper_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-k_space_left_to_right = p7
-k_space_bottom_to_top = p8
+k_space_front_to_back = gk_Sweeper_front_to_back
+k_space_left_to_right = gk_Sweeper_left_to_right
+k_space_bottom_to_top = gk_Sweeper_bottom_to_top
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
 ; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
@@ -71,6 +79,7 @@ aleft delay a1, rnd(0.1)
 aright delay a2, rnd(0.11)
 a_signal = (aleft + aright) * k_gain
 
+prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -78,9 +87,8 @@ a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_s
 outletv "outbformat", a_bsignal
 outleta "out", a_spatial_reverb_send
 #else
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+a_out_left, a_out_right pan2 a_signal, p7
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
