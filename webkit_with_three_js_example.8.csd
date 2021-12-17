@@ -196,13 +196,13 @@ alwayson "MasterOutput"
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
-// These are the initial values of all the global variables/control channels 
-// that can be controlled from the Web page.
+// These define the initial values of all the global variables/control 
+// channels that can be controlled from the Web page.
 //////////////////////////////////////////////////////////////////////////////
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 gk_ReverbSC_feedback init 0.86
-gk_MasterOutput_level init 32.6512310451655
+gk_MasterOutput_level init 46.
 gi_FMWaterBell_attack init 0.002936276551436901
 gi_FMWaterBell_release init 0.022698875468554768
 gi_FMWaterBell_exponent init 0
@@ -245,6 +245,49 @@ gk_Blower_level init 6.562856676993313
 gk_ZakianFlute_level init 25.125628140703512
 gk_PianoOutPianoteq_level init -44.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+gk_ReverbSC_feedback init 0.86
+gk_MasterOutput_level init 46
+gi_FMWaterBell_attack init 0.002936276551436901
+gi_FMWaterBell_release init 0.022698875468554768
+gi_FMWaterBell_exponent init 0
+gi_FMWaterBell_sustain init 5.385256143273636
+gi_FMWaterBell_sustain_level init 0.08267388588088297
+gk_FMWaterBell_crossfade init 0.1234039047697504
+gk_FMWaterBell_index init 1.1401499375260309
+gk_FMWaterBell_vibrato_depth init 0.28503171595683335
+gk_FMWaterBell_vibrato_rate init 2.4993821566850647
+gk_FMWaterBell_level init 22
+gk_Phaser_ratio1 init 1.0388005601779389
+gk_Phaser_ratio2 init 3
+gk_Phaser_index1 init 0.5
+gk_Phaser_index2 init 1
+gk_Phaser_level init 6
+gk_STKBowed_vibrato_level init 0
+gk_STKBowed_bow_pressure init 110
+gk_STKBowed_bow_position init 20
+gk_STKBowed_vibrato_frequency init 50.2
+gk_STKBowed_level init 0
+gk_Droner_partial1 init 0.11032374600527997
+gk_Droner_partial2 init 0.4927052938724468
+gk_Droner_partial3 init 0.11921634014172572
+gk_Droner_partial4 init 0.06586077532305128
+gk_Droner_partial5 init 0.6616645824649159
+gk_Droner_level init 18.563508886352523
+gk_Sweeper_britel init 0.4258927115604109
+gk_Sweeper_briteh init 3.635884339731444
+gk_Sweeper_britels init 1.1354964943746944
+gk_Sweeper_britehs init 3.222566443828469
+gk_Sweeper_level init 7.606391651720202
+gk_Buzzer_harmonics init 11.958151412801714
+gk_Buzzer_level init 23.61650089678787
+gk_Shiner_level init 22.3642589271156
+gk_Blower_grainDensity init 132.3332789825534
+gk_Blower_grainDuration init 0.2854231208217838
+gk_Blower_grainAmplitudeRange init 174.0746779716289
+gk_Blower_grainFrequencyRange init 62.82406652535464
+gk_Blower_level init 6.562856676993313
+gk_ZakianFlute_level init 25.125628140703512
+gk_PianoOutPianoteq_level init -38
 
 //////////////////////////////////////////////////////////////////////////////
 // This instrument defines a WebKit browser embedded in Csound. The following 
@@ -698,10 +741,11 @@ extern "C" int score_generator(CSOUND *csound) {
     modality.fromString("0 4 7 11");
     pen.chord = modality;
     pen.note = {1,35,144,1,1,1,0,0,0,0,1};
+    int base_level = 1;
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
-    auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
+    auto g1 = [&chordsForTimes, &modality, &base_level](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 4) {
+        if ((depth + base_level) == 4) {
             pen.chord = pen.chord.T(4);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
@@ -710,41 +754,38 @@ extern "C" int score_generator(CSOUND *csound) {
         return pen;
     };
     generators.push_back(g1);
-    auto g2 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
+    auto g2 = [&chordsForTimes, &modality, &base_level](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth == 3) {
+        if ((depth + base_level) == 3) {
             pen.chord = pen.chord.K();
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
-        if (depth == 6) {
-            pen.chord = pen.chord.Q(-1, modality);
-            chordsForTimes[pen.note.getTime()] = pen.chord;
+        if ((depth + base_level) == 6) {
+            ///pen.chord = pen.chord.Q(-1, modality);
+            ///pen.chord = pen.chord.T(-1);
+            pen.chord = pen.chord.Q(3, modality);
         }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (1000 + 1);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75);
-        ///pen.note[csound::Event::INSTRUMENT] = .1 * double(depth % 4);      
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);                    
-        //~ pen.note[csound::Event::PAN] = .675;
         return pen;
     };
     generators.push_back(g2);
-    auto g3 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
+    auto g3 = [&chordsForTimes, &modality, &base_level](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 + 3);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .715) + 1.05;
         pen.note[csound::Event::INSTRUMENT] = std::cos(pen.note[csound::Event::TIME]);
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
-        //~ pen.note[csound::Event::PAN] = -.675;
         return pen;
     };
     generators.push_back(g3);
-    auto g4 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
+    auto g4 = [&chordsForTimes, &modality, &base_level](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (1000 - 5);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) + 1.;
         pen.note[csound::Event::INSTRUMENT] = std::sin(pen.note[csound::Event::TIME]);
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);
-        //~ pen.note[csound::Event::PAN] = -.875;
         return pen;
     };
     generators.push_back(g4);
@@ -777,12 +818,6 @@ extern "C" int score_generator(CSOUND *csound) {
         auto startTime = it->first;
         auto &chord = it->second;
         auto segment = csound::slice(score, startTime, endTime);
-        //~ if (segment_count % 3 == 0) {
-            //~ std::fprintf(stderr, "Modulus...\\n");
-            //~ std::fprintf(stderr, "From: %s.\\n", chord.eOP().name().c_str());
-            //~ chord = chord.T(1).eOP(); 
-            //~ std::fprintf(stderr, "To:   %s.\\n", chord.eOP().name().c_str());
-        //~ }
         size += segment.size();
         std::fprintf(stderr, "From %9.4f to %9.4f apply %s to %d notes.\\n", startTime, endTime, chord.eOP().name().c_str(), segment.size());
         std::fprintf(stderr, "Before:\\n");
@@ -806,7 +841,7 @@ extern "C" int score_generator(CSOUND *csound) {
     std::cout << "set duration:           " << score.getDuration() << std::endl;
     score.tieOverlappingNotes(true);
     score.findScale();
-    score.setDuration(360.0 * 1.);
+    score.setDuration(360.0 * 2.);
     std::mt19937 mersenneTwister;
     std::uniform_real_distribution<> randomvariable(.05,.95);
     for (int i = 0, n = score.size(); i < n; ++i) {
@@ -834,7 +869,7 @@ extern "C" int score_generator(CSOUND *csound) {
         if (evtblk.p[1] == 1) {
             evtblk.p[4] += 12;
         }
-        // Compensate for spatialization instruments that actually need to be 
+        // Offset for spatialization instruments that actually need to be 
         // defined first.
         evtblk.p[1] += 4;
         evtblk.p[5] = note.getVelocity();
@@ -881,7 +916,7 @@ endin
 <CsScore>
 ; f 0 does not work here, we actually need to schedule an instrument that 
 ; turns off Csound.
-i "Exit" [6 * 60 + 5]
+i "Exit" [12 * 60 + 5]
 ;f 0 [6 * 60 + 5]
 </CsScore>
 </CsoundSynthesizer>
