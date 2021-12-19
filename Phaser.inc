@@ -10,9 +10,9 @@ gk_Phaser_midi_dynamic_range chnexport "gk_Phaser_midi_dynamic_range", 3 ;  20
 gk_Phaser_attack init .125
 gk_Phaser_release init .125
 gk_Phaser_ratio1 init 1
-gk_Phaser_ratio2 init 1/5
-gk_Phaser_index1 init 1.01
-gk_Phaser_index2 init .103
+gk_Phaser_ratio2 init 5
+gk_Phaser_index1 init 5
+gk_Phaser_index2 init .05
 gk_Phaser_level init 0.5
 gk_Phaser_midi_dynamic_range init 20
 
