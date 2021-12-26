@@ -20,11 +20,15 @@ TODO:
    (b) Then, implement the movements.
    (c) Have the pad sounds move at different speeds so that they are 
        heard merging and separationg.
+   (d) For this, sounds that begin together enter at the same angle on 
+       the circle, but different instruments move at just enough different 
+       speeds to pull apart halfway to the the next piano cue.
 
 -- Try more involving chord changes. Still pretty static, not sure how to 
    change. Still, it works.
 
--- More involving balances among the pads. _Pretty good now._
+-- More involving balances among the pads. _Pretty good now._ Needs less 
+   of one of the high frequency pads, not sure which one.
 
 -- Check that FMWaterBell level is tracking slider. _Yes, it is._
 
@@ -47,6 +51,10 @@ TODO:
    this. Or there may be another cause. _Oops, bad assumption! Score pen must 
    create a chord change on every application of every transformation, 
    different addresses will result in different resulting changes.
+   
+-- Getting too close to treacle? 
+
+-- Interest flags at about 8 minutes 15 seconds. Shorten?
 
 //////////////////////////////////////////////////////////////////////////////
 // Tutorial comments like this are provided throughout the piece. 
@@ -306,6 +314,52 @@ gk_Blower_grainFrequencyRange init 62.82406652535464
 gk_Blower_level init 2
 gk_ZakianFlute_level init 25.125628140703512
 gk_PianoOutPianoteq_level init -42
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+gk_ReverbSC_feedback init 0.86
+gk_MasterOutput_level init 46
+gi_FMWaterBell_attack init 0.002936276551436901
+gi_FMWaterBell_release init 0.022698875468554768
+gi_FMWaterBell_exponent init 0
+gi_FMWaterBell_sustain init 5.385256143273636
+gi_FMWaterBell_sustain_level init 0.08267388588088297
+gk_FMWaterBell_crossfade init 0.1234039047697504
+gk_FMWaterBell_index init 1.1401499375260309
+gk_FMWaterBell_vibrato_depth init 0.28503171595683335
+gk_FMWaterBell_vibrato_rate init 2.4993821566850647
+gk_FMWaterBell_level init 26
+gk_Phaser_ratio1 init 1
+gk_Phaser_ratio2 init 5
+gk_Phaser_index1 init 5
+gk_Phaser_index2 init 0.05
+gk_Phaser_level init 6
+gk_STKBowed_vibrato_level init 0
+gk_STKBowed_bow_pressure init 110
+gk_STKBowed_bow_position init 20
+gk_STKBowed_vibrato_frequency init 50.2
+gk_STKBowed_level init 0
+gk_Droner_partial1 init 0.32561552258274906
+gk_Droner_partial2 init 0.1743029512473504
+gk_Droner_partial3 init 0.4769280939181477
+gk_Droner_partial4 init 0.205609000489157
+gk_Droner_partial5 init 0.18473830099461927
+gk_Droner_level init -35.17854231208218
+gk_Sweeper_britel init 0.36328061307679765
+gk_Sweeper_briteh init 1.5320397847709115
+gk_Sweeper_britels init 0.17544431762595794
+gk_Sweeper_britehs init 0.6763411054948638
+gk_Sweeper_level init -14.829610304907874
+gk_Buzzer_harmonics init 5
+gk_Buzzer_level init 10
+gk_Shiner_level init 5
+gk_Blower_grainDensity init 132.3332789825534
+gk_Blower_grainDuration init 0.2854231208217838
+gk_Blower_grainAmplitudeRange init 174.0746779716289
+gk_Blower_grainFrequencyRange init 62.82406652535464
+gk_Blower_level init 2
+gk_ZakianFlute_level init 25.125628140703512
+gk_PianoOutPianoteq_level init -44.04858959726072
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -765,9 +819,9 @@ extern "C" int score_generator(CSOUND *csound) {
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
     auto g1 = [&chordsForTimes, &modality](const Cursor &pen_, int depth, csound::Score &score) {
         Cursor pen = pen_;
-        if (depth >= 4) {
-            ///pen.chord = pen.chord.T(4);
-            pen.chord = pen.chord.T(-1.);
+        if (depth >= 3) {
+            pen.chord = pen.chord.T(1);
+            ///pen.chord = pen.chord.T(-1.);
             chordsForTimes[pen.note.getTime()] = pen.chord;
         }
         pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (0 - 5);
@@ -789,7 +843,7 @@ extern "C" int score_generator(CSOUND *csound) {
         //~ if ((depth + base_level) == 6) {
              //~ pen.chord = pen.chord.Q(3, modality);
         //~ }
-        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (1000 + 1);
+        pen.note[csound::Event::TIME] = (pen.note[csound::Event::TIME] * .5) + (1000 + 2);
         pen.note[csound::Event::KEY] = (pen.note[csound::Event::KEY] * .75) - .25  ;
         pen.note[csound::Event::VELOCITY] =  std::cos(pen.note[csound::Event::TIME]);                    
         return pen;

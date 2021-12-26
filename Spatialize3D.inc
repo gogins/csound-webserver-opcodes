@@ -9,17 +9,6 @@ Many thanks to Jan Jacob Hofmann for his advanced Csound
 spatialization system (http://www.sonicarchitecture.de/), 
 which inspired this work.
 
-The available apeaker rigs are:
-
- 0 Ambisonic stereo with minimal distance cues
- (possibly the best choice for efficiency in live performance).
- 1 Ambisonic binaural with HRTF decoding (periphonic, a suitable choice
-   for checking in stereophonic studio work).
- 2 Ambisonic quadraphonic.
- 3 Ambisonic pentaphonic or 5.0 (might work for 5.1, omit .1)
- 4 Ambisonic octaphonic.
- 5 Ambisonic cubic (periphonic, probably the best choice for concerts).
-
 Please note the coordinate conventions. The listener is always the origin.
 In this system, spatial locations are passed to the spatialize opcode in
 Cartesian coordinates. These are the same as those used in physics:
@@ -38,18 +27,7 @@ Ambisonics uses degrees but physics uses radians.
 -- elevation or phi is angle above or below the x-y plane. (Note that
    inclination, also called polar angle, would be angle away from the
    zenith pole.)
-
-
-; Global parameters that can be re-defined in the orchestra header.
-
-gk_Spatialize_Verbose chnexport "gk_Spatialize_Verbose", 3 ;  0
-gk_BformatDecoder_SpeakerRig chnexport "gk_BformatDecoder_SpeakerRig", 3 ;  5
-gk_Spatialize_SpeakerRigRadius chnexport "gk_Spatialize_SpeakerRigRadius", 3 ;  5.
-
-gk_Spatialize_Verbose init 0
-gk_BformatDecoder_SpeakerRig init 5
-gk_Spatialize_SpeakerRigRadius init 5.0
-
+}}
 
 opcode distance, k, kkk
 kx, ky, kz xin
@@ -106,12 +84,14 @@ kelevation = kelevation * 57.295779513
 xout kangle, kelevation, kdistance
 endop
 
-; Zero distance blows this up.
-gk_DopplerByDistance_Mach init 340.29
+/**
+ * The local speed of sound in meters per second.
+ */
+gi_Spatialize3D_Mach init 340.29
 opcode DopplerByDistance, a, ak
 asignal, kdistance xin
 ; ashifted doppler asource, ksourceposition, kmicposition [, isoundspeed, ifiltercutoff]
-adopplered doppler asignal, kdistance, 0, i(gk_DopplerByDistance_Mach), 6
+adopplered doppler asignal, kdistance, 0, i(gi_Spatialize3D_Mach), 6
 xout adopplered
 endop
 
@@ -235,19 +215,64 @@ endop
 
 /**
  * Spatializes a one channel audio signal to 3 dimensions using Ambisonic 
- * panning with movement, Doppler effects, and distance cues. The output is 
- * sent directly to Csound's audio output.
+ * panning with movement, Doppler effects, and distance cues. 
  *
  * Spatialize3D a_signal, k_x, k_y, k_z
  *
+ * -- x runs from ahead to behind.
+ * -- y runs from left to right. This is the same as stereo pan.
+ * -- z runs from below to above.
+ *
+ * The spatialized audio is sent as an a-rate array of 1 to 8 channels
+ * directly to Csound's audio output. The nchnls variable should be 
+ * set in the orchestra header to match the speaker rig (see below).
+ *
  * Much of the configuration for this opcode is of necessity contained in 
  * global variables, so that instances of the panner can share room data, etc.
+ *
+ * Room parameters are set by 54 numbers in a global function table:
+ *
+ * 0 -- Early reflection recursion depth (0 is the sound source, 1 is the 
+ *      first reflection etc.). The number of echoes for four walls (front,  
+ *      back, right, left) is: N = (2 * R + 2) * R. If all six walls are 
+ *      enabled: N = (((4 * R + 6) * R + 8) * R) / 3.
+ * 1 -- Late reflection recursion depth (not used by spat3d). 
+ * 2 -- imdel for spat3d. Overrides opcode parameter if non-negative.
+ * 3 -- irlen for spat3dt. Overrides opcode parameter if non-negative.
+ * 4 -- idist value (not used by spat3d).
+ * 5 -- Random seed (0 - 65535), -1 seeds from current time.
+ * 6 through 53 define up to 6 walls --
+ *           (w = 6: ceil, w = 14: floor, w = 22: front, w = 30: back, 
+ *           w = 38: right, w = 46: left).
+ * w + 0	-- Enable reflections from this wall (0: no, 1: yes).
+ * w + 1	-- Wall distance from listener (in meters).
+ * w + 2	-- Randomization of wall distance (0 - 1) (in units of 1 / 
+ *           (wall distance)).
+ * w + 3	-- Reflection level (-1 - 1).
+ * w + 4	-- Parametric equalizer frequency in Hz.
+ * w + 5	-- Parametric equalizer level (1.0: no filtering).
+ * w + 6	-- Parametric equalizer Q (0.7071: no resonance).
+ * w + 7	-- Parametric equalizer mode (0: peak EQ, 1: low shelf, 
+ *           2: high shelf).
  */
- 
-gi_Spatialize3D_room_table ftgen
+gi_Spatialize3D_room_table ftgen 1, 0, 64, -2,                                               \                                       
+/*  depth1  depth2  max delay  ir length  idist  seed                               */ \
+		3,      0,      -1,        0,         0,     123,                                  \
+/*  used   distance  random  reflection  eq hz   eq level  eq q  eq mode            */ \
+		1,     21.982,   0.05,   0.87,       4000.0, 0.6,      0.7,  2,      /* ceiling */ \
+		1,      1.753,   0.05,   0.87,       3500.0, 0.5,      0.7,  2,      /* floor   */ \
+		1,     15.220,   0.05,   0.87,       5000.0, 0.8,      0.7,  2,      /* front   */ \
+		1,      9.317,   0.05,   0.87,       5000.0, 0.8,      0.7,  2,      /* back    */ \
+		1,     17.545,   0.05,   0.87,       5000.0, 0.8,      0.7,  2,      /* right   */ \
+		1,     12.156,   0.05,   0.87,       5000.0, 0.8,      0.7,  2       /* left    */
 gi_Spatialize3D_unit_circle_radius init 1
+gi_Spatialize3D_mode init 0
 gi_Spatialize3D_oversampling init 2
 /**
+ * The available speaker rigs are as follows. For users monitoring on 
+ * headphones, rig 31 is optimal; for live audio in a hall, 
+ * rigs 2 through 6 are useful; 5 is suitable for movie theaters, and 
+ * 4 or 5 are optimal. 
  *  1. Stereo -- L(90), R(-90).
  *  2. Quad -- FL(45), BL(135), BR(-135), FR(-45). This is a first-order 
  *     decode.
@@ -269,11 +294,62 @@ gi_Spatialize3D_oversampling init 2
  *     configuration, and then applies head-related transfer function filters.
  */
 gi_Spatialize3D_speaker_rig init 31
+/**
+ * 0 -- Dual decoder (velocity and energy decoders using dual-band splitting),
+ *      the default.
+ * 1 -- Velocity decoder.
+ * 2 -- Energy decoder.
+ */
+gi_Spatialize3D_decoder init 0
+/**
+ * Band splitter crossover frequency for dual decoders.
+ */
+gi_Spatialize3D_crossover_hz init 400
+/**
+ * 0 -- Energy (the default).
+ * 1 -- RMS.
+ * 2 -- Amplitude.
+ */
+gi_Spatialize3D_decoder_mix init 0
+/**
+ * Head-related transfer function data files for the left and right ears.
+ * These files are specific to sampling rates. The default is for 
+ * sr = 48000.
+ */
+gS_Spatialize3D_hrtf_left init "hrtf-48000-left.dat"
+gS_Spatialize3D_hrtf_right init "hrtf-48000-right.dat"
 
-
-opcode Spatialize3D,,akkk
-bsignal[] init 
+opcode Spatialize3D, 0, akkk
+a_spatialized[] init nchnls
 a_signal, k_x, k_y, k_z xin
-bsignal
+ab_signal[] init 4
+i_r table 0, gi_Spatialize3D_room_table
+i_ceiling table 7, gi_Spatialize3D_room_table
+;prints "i_ceiling: %9.4f\n", i_ceiling
+i_floor table 15, gi_Spatialize3D_room_table
+i_front  table 23, gi_Spatialize3D_room_table
+i_back table 31, gi_Spatialize3D_room_table
+i_right table 39, gi_Spatialize3D_room_table
+i_left table 47, gi_Spatialize3D_room_table
+i_h = i_ceiling + i_floor
+i_d = i_front + i_back
+i_w = i_right + i_left
+i_distance = sqrt(i_w * i_w + i_h * i_h + i_d * i_d)
+prints "i_distance:         %9.4f\n", i_distance
+k_distance = sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
+i_maximum_delay = ((i_r + 1) * i_distance / gi_Spatialize3D_Mach) * 2
+prints "i_maximum_delay:    %9.4f\n", i_maximum_delay
+i_minimum_distance = (gi_Spatialize3D_Mach * 18) / sr
+prints "i_minimum_distance: %9.4f\n", i_minimum_distance
+a_w, a_x, a_y, a_z spat3d a_signal, k_x, k_y, k_z, gi_Spatialize3D_unit_circle_radius, gi_Spatialize3D_room_table, 3, i_maximum_delay, gi_Spatialize3D_oversampling
+ab_signal[0] = a_w
+ab_signal[1] = a_x
+ab_signal[2] = a_y
+ab_signal[3] = a_z
+a_spatialized bformdec2 gi_Spatialize3D_speaker_rig, ab_signal, gi_Spatialize3D_decoder, i_distance, gi_Spatialize3D_crossover_hz, gi_Spatialize3D_decoder_mix, gS_Spatialize3D_hrtf_right, gS_Spatialize3D_hrtf_left
+if k_distance < i_minimum_distance then
+  prints "too close to listener: p1: %9.4f i_minimum_distance: %9.4f k_distance: %9.4f\n", p1, i_minimum_distance, k_distance
+endif
+out a_spatialized
 endop
 
