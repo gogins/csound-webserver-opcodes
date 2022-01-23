@@ -21,7 +21,7 @@ It's a lot, but it makes for a very powerful computer music system.
 
 </CsLicense>
 <CsOptions>
--m0 -d -odac:plughw:2,0
+-m0 -d -odac:plughw:1,0
 </CsOptions>
 <CsInstruments>
 
@@ -198,7 +198,7 @@ class ClangInvokableBase : public ClangInvokable {
         void warn(const char *format,...)
         {
             if(csound) {
-                if(csound->GetMessageLevel(csound) & WARNMSG) {
+                if(csound->GetMessageLevel(csound) & CS_WARNMSG) {
                     va_list args;
                     va_start(args, format);
                     csound->MessageV(csound, CSOUNDMSG_WARNING, format, args);
