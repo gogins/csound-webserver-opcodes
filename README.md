@@ -1,34 +1,34 @@
-# webkit-opcodes
+# csound-webserver
 ![GitHub All Releases (total)](https://img.shields.io/github/downloads/gogins/webkit2-opcodes/total.svg)<br>
 
 Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
-The WebKit opcodes embed the WebKitGTK Web browser and its JavaScript runtime 
-into Csound as a set of opcodes. They enable a Csound orchestra to include 
-HTML5 code, including JavaScript code; to open one or more browser windows 
-during the Csound performance; to open Internet resources during the Csound 
-performance; to control Csound's performance via a JavaScript JSON-RPC proxy 
-for the Csound instance; or to install and/or execute JavaScript in the 
-context of a Web page from C++ or Csound orchestra code.
+The csound_webserver opcodes embed a Web server into the csound performance, 
+serve an XMLHttpRequest interface to the running instance of Csound, and 
+optionally serve an HTML page from the embedded Web server. That page can be 
+embedded into the Csound orchestra code, or it can be a regular HTML file.
+
+The opcodes also will optionally open an external Web brower to run the 
+served HTML page.
+
+The main purpose of these opcodes is to define user interfaces, generate 
+scores or control performances using JavaScript, and otherwise use all of the 
+many, many capabilities of standard Web browsers in the context of a Csound 
+performance.
+
+These opcodes have been developed to overcome various shortcomings that became 
+apparent in csound-extended-node (need for external configuration to run 
+pieces) and webkit-opcodes (lack of consistency between Apple's WebKit and 
+GTK's WebKit).
 
 These are the opcodes: 
 ```
-i_webkit_handle webkit_create [i_rpc_port [, i_diagnostics_enabled]]
-webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
-webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [i, fullscreen]
-i_result webkit_run_javascript i_webkit_handle, S_javascript_code
+i_webserver_handle webserver_create [i_rpc_port [, i_diagnostics_enabled]]
+webserver_open_uri i_webserver_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
+webserver_open_html i_webserver_handle, S_window_title, S_html, S_base_uri, i_width, i_height [i, fullscreen]
 ```
-There is a public "C" function that does exactly the same thing as the 
-`webkit_run_javascript` opcode, and has exactly the same name:
-```
-extern "C" void webkit_run_javascript(int browser_handle, std::string javascript_code);
-```
-This is provided for the use of score generators and other code written in C++ that run 
-in the Csound performance using the Clang opcodes (a just-in-time C++ compiler for 
-csound).
-
 In addition, the following JavaScript interface can be used from the 
 JavaScript context of a Web page opened by these opcodes. To do this, include 
 the `csound.js` script in the body of your HTML code. As far as possible, the 
