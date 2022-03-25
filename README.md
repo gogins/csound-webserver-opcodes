@@ -5,17 +5,16 @@ Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
-The csound_webserver opcodes embed a Web server into the csound performance, 
-serve an XMLHttpRequest interface to the running instance of Csound, and 
-optionally serve an HTML page from the embedded Web server. That page can be 
-embedded into the Csound orchestra code, or it can be a regular HTML file.
+The csound_webserver opcodes embed an internal Web server into the Csound 
+performance, provide an XMLHttpRequest interface to the running instance of 
+Csound, and optionally serve an HTML page from the embedded Web server. That 
+page can be embedded into the Csound orchestra code, or it can be a regular 
+HTML file that refers to other resources. The opcodes optionally will open an 
+standard external Web browser to run the served HTML page.
 
-The opcodes also will optionally open an external Web brower to run the 
-served HTML page.
-
-The main purpose of these opcodes is to define user interfaces, generate 
-scores or control performances using JavaScript, and otherwise use all of the 
-many, many capabilities of standard Web browsers in the context of a Csound 
+The purpose of these opcodes is to define user interfaces, generate scores, or 
+control performances using JavaScript, and otherwise use all of the 
+many, many capabilities of standard Web browsers in the context of the Csound 
 performance.
 
 These opcodes have been developed to overcome various shortcomings that became 
@@ -29,10 +28,9 @@ i_webserver_handle webserver_create [i_rpc_port [, i_diagnostics_enabled]]
 webserver_open_uri i_webserver_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
 webserver_open_html i_webserver_handle, S_window_title, S_html, S_base_uri, i_width, i_height [i, fullscreen]
 ```
-In addition, the following JavaScript interface can be used from the 
-JavaScript context of a Web page opened by these opcodes. To do this, include 
-the `csound.js` script in the body of your HTML code. As far as possible, the 
-methods of this interface are the same as that in `csound.hpp`:
+The following JavaScript interface can be used from the JavaScript context of 
+a Web page opened by these opcodes. As far as possible, the methods of this 
+interface are the same as that in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
