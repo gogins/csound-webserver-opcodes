@@ -10,7 +10,7 @@ performance, implement a JSON-RPC interface to the running instance of
 Csound, and optionally serve a Web page from the embedded Web server. That 
 page can be embedded into the Csound orchestra code, or it can be a regular 
 HTML file that refers to other resources. The opcodes will optionally run a
-standard external Web browser to open the served HTML page.
+standard external Web browser to open the served HTML page or other resources.
 
 The purpose of these opcodes is to enable the user to define user interfaces, 
 generate scores, or control performances using JavaScript, and otherwise use 
@@ -119,7 +119,7 @@ internal Web server keeps running until the end of the Csound performance.
 internal Web server. The Web server's base URI plus the named resource 
 should form a valid URL.
 
-Please note, pages opened with this opcode will not have access to Csound 
+Please note, Web page opened with this opcode will not have access to Csound 
 unless the body of those pages includes the `csound.js` script for the Csound 
 proxy. That will not normally be the case for Web pages from the Internet. 
 Thus, `webserver_open_resource` is primarily useful for opening Internet 
@@ -139,7 +139,7 @@ Web server. This name, when appended to the base URI of the Web server,
 should form a valid, loadable URI.
 
 *S_browser_command* - The name of a Web browser that should immediately open 
-the named resource. This pfield is optional, and will default to Safari on 
+the named resource. This parameter is optional, and will default to Safari on 
 macOS, Firefox on Linux, and Edge on Windows. The browser name can be 
 continued with browser-specific command-line options, e.g. to resize the 
 browser window.
@@ -182,10 +182,10 @@ browser window.
 
 ## Performance
 
-The resource is opened by the Web browser in a separate process, and 
-can remain open for the duration of the Csound performance. JavaScript running 
-in the context of that resource can call many Csound API methods from a global 
-`csound` object, using JSON-RPC.
+The Web page or other resource is opened by the Web browser in a separate 
+process, and can remain open for the duration of the Csound performance. 
+JavaScript running in the context of that resource can call many Csound API 
+methods from a global `csound` object, using JSON-RPC.
 
 # Installation
 
