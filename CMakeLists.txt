@@ -54,7 +54,7 @@ set_target_properties(csound_webserver PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${BUILD_LIB_DIR}
     ARCHIVE_OUTPUT_DIRECTORY ${BUILD_LIB_DIR}
     )
-target_include_directories(csound_webserver 
+target_include_directories(csound_webserver PUBLIC 
     "." 
     "${CMAKE_SOURCE_DIR}/csound/interfaces"
     "${CMAKE_SOURCE_DIR}/csound/include")

@@ -4,7 +4,6 @@
 #include <OpcodeBase.hpp>
 #include <cstdio>
 #include <ctime>
-#include <ctime>
 #include <queue>
 #include <thread>
 #include <map>
@@ -14,307 +13,36 @@ namespace csound_webserver {
     
     class CsoundWebserver;
     
-    typedef csound::heap_object_manager_t<CsoundWebserver> webkits;
+    typedef csound::heap_object_manager_t<CsoundWebserver> webservers;
     
-    /**
-     * This class implements the skeleton of the Csound proxy using an
-     * instance of Csound and a network connector provided by the opcodes.
-     *
-     * Because the Csound proxy is created by opcodes that exist only during 
-     * the Csound performance, all Csound API methods for creating or 
-     * destroying Csound, or for starting or stopping the Csound performance, 
-     * have had to be omitted.
-     *
-     * In addition, Ajax (XMLHttpRequest) is used rather than WebSockets 
-     * because Ajax is synchronous (request/response) which fits the use here, 
-     * whereas WebSockets are asynchronous. Making them synchronous is 
-     * possible, but then where are we?    
-     */
-    struct CsoundServer : public CsoundSkeleton {
-        std::shared_ptr<Csound> csound;
-        CsoundServer(std::shared_ptr<Csound> csound_, jsonrpc::AbstractServerConnector &connector) : csound(csound_), CsoundSkeleton(connector) {
-            std::fprintf(stderr, "CsoundServer::CsoundServer: csound: %p connector: %p\n", csound.get(), &connector);
-        };
-        virtual ~CsoundServer() {}
-        int CompileCsdText(const std::string& csd_text) override {
-            int result = csound->CompileCsdText(csd_text.c_str());
-            return result;
-        }
-        int CompileOrc(const std::string& orc_code) override {
-            int result = csound->CompileOrc(orc_code.c_str());
-            return result;
-        }
-        MYFLT EvalCode(const std::string& orc_code) override {
-            MYFLT value = csound->CompileOrc(orc_code.c_str());
-            return value;
-        }
-        double Get0dBFS() override {
-            MYFLT value = csound->Get0dBFS();
-            return value;
-        }
-        Json::Value GetAudioChannel(const std::string& channel_name) override {
-            auto ksmps = csound->GetKsmps();
-            std::vector<MYFLT> buffer(ksmps);
-            csound->GetAudioChannel(channel_name.c_str(), &buffer.front());
-            Json::Value value(Json::arrayValue);
-            value.resize(ksmps);
-            for(int i = 0; i < ksmps; ++i) {
-                value[i] = buffer[i];
-            }
-            return value;
-        }
-        double GetControlChannel(const std::string& channel_name) override {
-            MYFLT value = csound->GetControlChannel(channel_name.c_str());
-            return value;
-        }
-        bool GetDebug() override {
-            bool value = csound->GetDebug();
-            return value;
-        }
-        int GetKsmps() override {
-            int value = csound->GetKsmps();
-            return value;
-        }
-        int GetNchnls() override {
-            int value = csound->GetNchnls();
-            return value;
-        }
-        int GetNchnlsInput() override {
-            int value = csound->GetNchnlsInput();
-            return value;
-        }
-        double GetScoreOffsetSeconds() override {
-            MYFLT value = csound->GetScoreOffsetSeconds();
-            return value;
-        }
-        double GetScoreTime() override {
-            MYFLT value = csound->GetScoreTime();
-            return value;
-        }
-        std::string GetStringChannel(const std::string &channel_name) override {
-            char buffer[0x500];
-            csound->GetStringChannel(channel_name.c_str(), buffer);
-            return buffer;
-        }
-        int GetSr() override {
-            int value = csound->GetSr();
-            return value;
-        }
-        int InputMessage(const std::string &sco_text) override {
-            int result = OK;
-            csound->InputMessage(sco_text.c_str());
-            return result;
-        }
-        bool IsScorePending() override {
-            bool value = csound->IsScorePending();
-            return value;
-        }
-        void Message(const std::string& message) override {
-            csound->Message(message.c_str());
-        }
-        int ReadScore(const std::string& sco_code) override {
-            int result = csound->ReadScore(sco_code.c_str());
-            return result;
-        }
-        int RewindScore() override {
-            int result = OK;
-            csound->RewindScore();
-            return result;
-        }
-        // Does nothing at this time.
-        int ScoreEvent(const std::string& opcode_code, const Json::Value& pfields) override {
-            int result = OK;
-            return result;
-        }
-        //~ int SetAudioChannel(const std::string& channel_name, const Json::Value& channel_value) override {
-        //~ int result = OK;
-        //~ std::vector<MYFLT> buffer;
-        //~ auto ksmps = csound->GetKsmps();
-        //~ for (int i = 0; i < ksmps; ++i) {
-        //~ buffer.push_back(channel_value[i].asDouble());
-        //~ }
-        //~ csound->SetAudioChannel(channel_name.c_str(), buffer.data());
-        //~ return result;
-        //~ }
-        bool SetDebug(bool enabled) override {
-            bool result = false;
-            csound->SetDebug(enabled);
-            return result;
-        }
-        int SetControlChannel(const std::string& channel_name, double channel_value) override {
-            int result = OK;
-            csound->SetControlChannel(channel_name.c_str(), channel_value);
-            return result;
-        }
-        // Does nothing at this time.
-        int SetMessageCallback(const Json::Value& callback)  override {
-            int result = OK;
-            return result;
-        }
-        int SetScoreOffsetSeconds(double seconds) override {
-            int result = OK;
-            csound->SetScoreOffsetSeconds(seconds);
-            return result;
-        }
-        int SetScorePending(bool pending) override {
-            int result = OK;
-            csound->SetScorePending(pending);
-            return result;
-        }
-        int SetStringChannel(const std::string& channel_name, const std::string& channel_value) override {
-            int result;
-            csound->SetStringChannel(channel_name.c_str(), (char *)channel_value.c_str());
-            return result;
-        }
-        int TableLength(int table_number) override {
-            auto result = csound->TableLength(table_number);
-            return result;
-        }
-        double TableGet(int index, int table_number) override {
-            auto result = csound->TableGet(index, table_number);
-            return result;
-        }
-        int TableSet(int index, int table_number, double value) override {
-            int result = OK;
-            csound->TableSet(index, table_number, value);
-            return result;
-        }
-    };
 
     static bool diagnostics_enabled = true;
 
     struct CsoundWebserver {
         std::shared_ptr<Csound> csound;
-        std::shared_ptr<jsonrpc::HttpServer> network_server;
-        std::shared_ptr<CsoundServer> csound_server;
         int rpc_port = 8383;
         bool load_finished = false;
         std::queue<std::string> script_queue;
         CsoundWebserver(CSOUND *csound_, int rpc_port_) {
-            gtk_init(nullptr, nullptr);
             csound = std::shared_ptr<Csound>(new Csound(csound_));
             if(rpc_port_ != -1) {
                 rpc_port = rpc_port_;
             }
-            network_server = std::shared_ptr<jsonrpc::HttpServer>(new jsonrpc::HttpServer(rpc_port));
-            csound_server = std::shared_ptr<CsoundServer>(new CsoundServer(csound, *network_server));
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::CsoundWebserver: network_server: Starting to listen on rpc_port_: %d\n", rpc_port_);
-            network_server->StartListening();
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::CsoundWebserver: network_server: Now listening on rpc_port_: %d...\n", rpc_port_);
         }
         virtual ~CsoundWebserver() {
             using namespace std::chrono_literals; 
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver...\n");
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver: stop listening...\n");
-            network_server->StopListening();
-            std::this_thread::sleep_for(2s);
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver: try to close Web view...\n");
-            webkit_web_view_try_close (web_view);
-            std::this_thread::sleep_for(2s);
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver: terminate Web process...\n");
-            webkit_web_view_terminate_web_process(web_view);
-            std::this_thread::sleep_for(2s);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver.\n");
         }
         static std::unique_ptr<CsoundWebserver> create(CSOUND *csound_, int rpc_channel_) {
             std::unique_ptr<CsoundWebserver> result(new CsoundWebserver(csound_, rpc_channel_));
             return result;
         }
-        virtual void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_event) {
-            const char *provisional_uri = nullptr;
-            const char *redirected_uri = nullptr;
-            const char *loaded_uri = nullptr;
-            switch(load_event) {
-                case WEBKIT_LOAD_STARTED:
-                    /* New load, we have now a provisional URI */
-                    provisional_uri = webkit_web_view_get_uri(web_view);
-                    /* Here we could start a spinner or update the
-                     * location bar with the provisional URI */
-                    if(diagnostics_enabled) {
-                        std::fprintf(stderr, "WebKitCsound::web_view_load_changed: web_view: %p load_event: %d.\n", web_view, load_event);
-                    }
-                    break;
-                case WEBKIT_LOAD_REDIRECTED:
-                    redirected_uri = webkit_web_view_get_uri(web_view);
-                    if(diagnostics_enabled) {
-                        std::fprintf(stderr, "WebKitCsound::web_view_load_changed: web_view: %p load_event: %d.\n", web_view, load_event);
-                    }
-                    break;
-                case WEBKIT_LOAD_COMMITTED:
-                    /* The load is being performed. Current URI is
-                     * the final one and it won't change unless a new
-                     * load is requested or a navigation within the
-                     * same page is performed */
-                    loaded_uri = webkit_web_view_get_uri(web_view);
-                    break;
-                case WEBKIT_LOAD_FINISHED:
-                    load_finished = true;
-                    if(diagnostics_enabled) {
-                        std::fprintf(stderr, "WebKitCsound::web_view_load_finished: web_view: %p load_event: %d.\n", web_view, load_event);
-                    }
-                    break;
-            }
-        }
-        static void web_view_load_changed_(WebKitWebView *web_view,
-            WebKitLoadEvent load_event,
-            gpointer user_data) {
-            ((CsoundWebserver *)user_data)->web_view_load_changed(web_view, load_event);
-        }
-        virtual int open(const char *window_title, int width, int height, bool fullscreen) {
-            int result = OK;
-            main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-            gtk_window_set_title(GTK_WINDOW(main_window), window_title);
-            gtk_window_set_default_size(GTK_WINDOW(main_window), width, height);
-            if (fullscreen == true) {
-                gtk_window_fullscreen(GTK_WINDOW(main_window));
-            }
-            web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
-            g_signal_connect(web_view, "load_changed", G_CALLBACK(&CsoundWebserver::web_view_load_changed_), this);
-            webkit_settings = webkit_web_view_get_settings(web_view);
-            webkit_settings_set_enable_javascript(webkit_settings, true);
-            webkit_settings_set_enable_webgl(webkit_settings, true);
-            webkit_settings_set_enable_webaudio(webkit_settings, true);
-            webkit_settings_set_media_playback_requires_user_gesture(webkit_settings, false);
-            webkit_settings_set_enable_write_console_messages_to_stdout(webkit_settings, true);
-            webkit_settings_set_enable_media_stream(webkit_settings, true);
-            webkit_settings_set_enable_mediasource(webkit_settings, true);
-            webkit_settings_set_enable_media_capabilities(webkit_settings, true);
-            webkit_settings_set_enable_fullscreen(webkit_settings, true);
-            webkit_settings_set_enable_developer_extras(webkit_settings, true);
-            // TODO: See if these two are really a good idea.
-            webkit_settings_set_allow_file_access_from_file_urls(webkit_settings, true);
-            webkit_settings_set_allow_universal_access_from_file_urls(webkit_settings, true);
-            webkit_context = webkit_web_view_get_context(web_view);
-            gtk_container_add(GTK_CONTAINER(main_window), GTK_WIDGET(web_view));
-            gtk_widget_grab_focus(GTK_WIDGET(web_view));
-            gtk_widget_show_all(main_window);
-            return result;
-        }
         virtual void load_uri(const char *uri) {          
-            webkit_web_view_load_uri(web_view, uri);
+            ///webkit_web_view_load_uri(web_view, uri);
         }
         virtual void load_html(const char *content, const char *base_uri) {
-            webkit_web_view_load_html(web_view, content, base_uri);
-        }
-        void web_view_javascript_finished(GObject *object, GAsyncResult *result) {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::run_javascript_callback...\n");
-            WebKitJavascriptResult *js_result = nullptr;
-            GError *error = nullptr;
-            js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error);
-            if(!js_result) {
-                g_warning("CsoundWebserver::run_javascript_callback: js_result: %p: message: %s", js_result, error->message);
-                g_error_free(error);
-                return;
-            }
-            auto jsc_value = webkit_javascript_result_get_js_value(js_result);
-            if (!(jsc_value_is_undefined(jsc_value) || jsc_value_is_null(jsc_value))) {
-                gchar *str_value = jsc_value_to_string(jsc_value);
-                if (diagnostics_enabled) g_print("CsoundWebserver::run_javascript_callback: value: %s\n", str_value);
-            }
-            webkit_javascript_result_unref(js_result);
-        }
-        static void web_view_javascript_finished_(GObject *object, GAsyncResult *result, gpointer user_data) {
-            ((CsoundWebserver *)user_data)->web_view_javascript_finished(object, result);
+            ///webkit_web_view_load_html(web_view, content, base_uri);
         }
         virtual int run_javascript(std::string javascript_code) {
             int result = OK;
@@ -322,20 +50,6 @@ namespace csound_webserver {
             return result;
         }
         virtual void handle_events() {
-            while (g_main_context_pending(NULL) == TRUE) {
-                // Data race if this does not block?
-                g_main_context_iteration(NULL, FALSE);
-                ///std::this_thread::sleep_for(std::chrono::100us);
-            }
-            if (load_finished == true) {
-                while (script_queue.empty() == false) {
-                    auto javascript_code = script_queue.front();
-                    script_queue.pop();
-                    if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::run_javascript: code: \"%s\"\n", javascript_code.c_str());
-                    webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(web_view), javascript_code.c_str(), nullptr, web_view_javascript_finished_, this);
-                }
-            }
-        }
     };
 
     class webkit_create : public csound::OpcodeBase<webkit_create> {
@@ -350,7 +64,7 @@ namespace csound_webserver {
                 int rpc_port = *i_rpc_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
                 CsoundWebserver *webkit = CsoundWebserver::create(csound, rpc_port).release();
-                int handle = webkits::instance().handle_for_object(csound, webkit);
+                int handle = webservers::instance().handle_for_object(csound, webkit);
                 *i_browser_handle = static_cast<MYFLT>(handle);
                 return result;
             }
@@ -377,7 +91,7 @@ namespace csound_webserver {
                 int i_width = *i_width_;
                 int i_height = *i_height_;
                 bool i_fullscreen = *i_fullscreen_;
-                browser = webkits::instance().object_for_handle(csound, i_browser_handle);
+                browser = webservers::instance().object_for_handle(csound, i_browser_handle);
                 browser->open(S_window_title, i_width, i_height, i_fullscreen);
                 log(csound, "webkit_open_uri::init: uri: %s\n", S_uri);
                 browser->load_uri(S_uri);
@@ -412,7 +126,7 @@ namespace csound_webserver {
                 int i_width = *i_width_;
                 int i_height = *i_height_;
                 bool i_fullscreen = *i_fullscreen_;
-                browser = webkits::instance().object_for_handle(csound, i_browser_handle);
+                browser = webservers::instance().object_for_handle(csound, i_browser_handle);
                 browser->open(S_window_title, i_width, i_height, i_fullscreen);
                 log(csound, "webkit_open_html::init: title: %s\n", S_window_title);
                 browser->load_html(S_html, S_base_uri);
@@ -422,21 +136,6 @@ namespace csound_webserver {
                 int result = OK;
                 browser->handle_events();
                 return OK;
-            }
-    };
-
-    class webkit_run_javascript : public csound::OpcodeBase<webkit_run_javascript> {
-        public:
-            // INPUTS
-            MYFLT *i_browser_handle_;
-            STRINGDAT *S_javascript_code_;
-            int init(CSOUND *csound) {
-                int result = OK;
-                int i_browser_handle = static_cast<int>(*i_browser_handle_);
-                auto browser = webkits::instance().object_for_handle(csound, i_browser_handle);
-                char *javascript_code = S_javascript_code_->data;
-                result = browser->run_javascript(javascript_code);
-                return result;
             }
     };
 
@@ -454,29 +153,6 @@ namespace csound_webserver {
  * interface to the invoking instance of Csound.
  */
 extern "C" {
-    
-    using namespace std::chrono_literals; 
-    /**
-     * Make the browsers accessible to other C++ modules in LLVM.
-     * Tries waiting for browsers that are still in process of creation.
-    */
-    static void webkit_run_javascript_routine(CSOUND *csound, int browser_handle, std::string javascript_code)
-    {
-       for (int sleep_i = 0; sleep_i < 2000; ++sleep_i) {
-            auto browser = webkit_opcodes::webkits::instance().object_for_handle(csound, browser_handle);
-            if (browser != nullptr) {
-                browser->run_javascript(javascript_code);
-                std::fprintf(stderr, "webkit_execute_routine: executed.\n");
-                return;
-            }
-            std::this_thread::sleep_for(10ms);
-        }
-        std::fprintf(stderr, "webkit_execute_routine: Error: no browser for handle %d!\n", browser_handle);
-    }
-    static std::thread *execute_thread;
-    PUBLIC void webkit_run_javascript(CSOUND *csound, int browser_handle, std::string javascript_code) {
-        execute_thread = new std::thread(&webkit_run_javascript_routine, csound, browser_handle, javascript_code);
-    };
     
     PUBLIC int csoundModuleInit_webkit_opcodes(CSOUND *csound) {
         std::fprintf(stderr, "csoundModuleInit_webkit_opcodes...\n");
@@ -524,7 +200,7 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleDestroy_webkit_opcodes(CSOUND *csound) {
-        webkit_opcodes::webkits::instance().module_destroy(csound);
+        webkit_opcodes::webservers::instance().module_destroy(csound);
         return OK;
     }
 
