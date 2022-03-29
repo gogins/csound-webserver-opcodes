@@ -46,8 +46,6 @@ message(STATUS "SHARE_INSTALL_DIR:              ${SHARE_INSTALL_DIR}")
 message(STATUS "CMAKE_INSTALL_PREFIX:           ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "CPACK_PACKAGING_INSTALL_PREFIX: ${CPACK_PACKAGING_INSTALL_PREFIX}")
 
-add_subdirectory(drogon)
-
 add_library(csound_webserver SHARED csound_webserver.cpp)
 set_target_properties(csound_webserver PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${BUILD_BIN_DIR}
@@ -56,6 +54,8 @@ set_target_properties(csound_webserver PROPERTIES
     )
 target_include_directories(csound_webserver PUBLIC 
     "." 
+    "${CMAKE_SOURCE_DIR}/json-rpc-cxx/include"
+    "${CMAKE_SOURCE_DIR}/json-rpc-cxx/vendor"
     "${CMAKE_SOURCE_DIR}/csound/interfaces"
     "${CMAKE_SOURCE_DIR}/csound/include")
 if(APPLE)

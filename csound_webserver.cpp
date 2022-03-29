@@ -8,69 +8,65 @@
 #include <thread>
 #include <map>
 #include <memory>
+#include <cpp-httplib/httplib.h>
+#include <jsonrpccxx/server.hpp>
 
 namespace csound_webserver {
     
-    class CsoundWebserver;
+    class CsoundWebServer;
     
-    typedef csound::heap_object_manager_t<CsoundWebserver> webservers;
+    typedef csound::heap_object_manager_t<CsoundWebServer> webservers;
     
-
     static bool diagnostics_enabled = true;
 
-    struct CsoundWebserver {
-        std::shared_ptr<Csound> csound;
-        int rpc_port = 8383;
+    struct CsoundWebServer {
+        ///std::shared_ptr<Csound> csound;
+        int port = 8080;
+        httplib::Server server;
         bool load_finished = false;
-        std::queue<std::string> script_queue;
-        CsoundWebserver(CSOUND *csound_, int rpc_port_) {
-            csound = std::shared_ptr<Csound>(new Csound(csound_));
-            if(rpc_port_ != -1) {
-                rpc_port = rpc_port_;
+        CsoundWebServer(CSOUND *csound_, int port_) {
+            ///csound = std::shared_ptr<Csound>(new Csound(csound_));
+            if(port_ != -1) {
+                port = port_;
             }
+            server.listen("0.0.0.0", port);
         }
-        virtual ~CsoundWebserver() {
+        virtual ~CsoundWebServer() {
             using namespace std::chrono_literals; 
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver...\n");
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebserver::~CsoundWebserver.\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
-        static std::unique_ptr<CsoundWebserver> create(CSOUND *csound_, int rpc_channel_) {
-            std::unique_ptr<CsoundWebserver> result(new CsoundWebserver(csound_, rpc_channel_));
+        static std::unique_ptr<CsoundWebServer> create(CSOUND *csound_, int rpc_channel_) {
+            std::unique_ptr<CsoundWebServer> result(new CsoundWebServer(csound_, rpc_channel_));
             return result;
         }
         virtual void load_uri(const char *uri) {          
-            ///webkit_web_view_load_uri(web_view, uri);
+            ///csound_webserver_web_view_load_uri(web_view, uri);
         }
         virtual void load_html(const char *content, const char *base_uri) {
-            ///webkit_web_view_load_html(web_view, content, base_uri);
+            ///csound_webserver_web_view_load_html(web_view, content, base_uri);
         }
-        virtual int run_javascript(std::string javascript_code) {
-            int result = OK;
-            script_queue.push(javascript_code);
-            return result;
-        }
-        virtual void handle_events() {
     };
 
-    class webkit_create : public csound::OpcodeBase<webkit_create> {
+    class csound_webserver_create : public csound::OpcodeBase<csound_webserver_create> {
         public:
             // OUTPUTS
             MYFLT *i_browser_handle;
             // INPUTS
-            MYFLT *i_rpc_port;
+            MYFLT *i_port;
             MYFLT *i_diagnostics_enabled;
             int init(CSOUND *csound) {
                 int result = OK;
-                int rpc_port = *i_rpc_port;
+                int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
-                CsoundWebserver *webkit = CsoundWebserver::create(csound, rpc_port).release();
+                CsoundWebServer *webkit = CsoundWebServer::create(csound, port).release();
                 int handle = webservers::instance().handle_for_object(csound, webkit);
                 *i_browser_handle = static_cast<MYFLT>(handle);
                 return result;
             }
     };
 
-    class webkit_open_uri : public csound::OpcodeBase<webkit_open_uri> {
+    class csound_webserver_open_resource : public csound::OpcodeBase<csound_webserver_open_resource> {
         public:
             // OUTPUTS
             // INPUTS
@@ -81,9 +77,9 @@ namespace csound_webserver {
             MYFLT *i_height_;
             MYFLT *i_fullscreen_;
             // STATE
-            CsoundWebserver *browser;
+            CsoundWebServer *browser;
             int init(CSOUND *csound) {
-                log(csound, "webkit_open_uri::init: this: %p\n", this);
+                log(csound, "csound_webserver_open_resource::init: this: %p\n", this);
                 int result = OK;
                 int i_browser_handle = *i_browser_handle_;
                 char *S_window_title = S_window_title_->data;
@@ -92,49 +88,38 @@ namespace csound_webserver {
                 int i_height = *i_height_;
                 bool i_fullscreen = *i_fullscreen_;
                 browser = webservers::instance().object_for_handle(csound, i_browser_handle);
-                browser->open(S_window_title, i_width, i_height, i_fullscreen);
-                log(csound, "webkit_open_uri::init: uri: %s\n", S_uri);
+                ///browser->open(S_window_title, i_width, i_height, i_fullscreen);
+                log(csound, "csound_webserver_open_resource::init: uri: %s\n", S_uri);
                 browser->load_uri(S_uri);
                 return result;
             }
             int kontrol(CSOUND *csound) {
                 int result = OK;
-                browser->handle_events();
+                ///browser->handle_events();
                 return OK;
             }
     };
 
-    class webkit_open_html : public csound::OpcodeBase<webkit_open_html> {
+    class csound_webserver_open_html : public csound::OpcodeBase<csound_webserver_open_html> {
         public:
             // OUTPUTS
             // INPUTS
             MYFLT *i_browser_handle_;
-            STRINGDAT *S_window_title_;
-            STRINGDAT *S_html_;
-            STRINGDAT *S_base_uri_;
-            MYFLT *i_width_;
-            MYFLT *i_height_;
-            MYFLT *i_fullscreen_;
+            STRINGDAT *S_html_text_;
             // STATE
-            CsoundWebserver *browser;
+            CsoundWebServer *browser;
             int init(CSOUND *csound) {
                 int result = OK;
                 int i_browser_handle = static_cast<int>(*i_browser_handle_);
-                char *S_window_title = S_window_title_->data;
-                char *S_html = S_html_->data;
-                char *S_base_uri = S_base_uri_->data;
-                int i_width = *i_width_;
-                int i_height = *i_height_;
-                bool i_fullscreen = *i_fullscreen_;
+                char *S_html = S_html_text_->data;
                 browser = webservers::instance().object_for_handle(csound, i_browser_handle);
-                browser->open(S_window_title, i_width, i_height, i_fullscreen);
-                log(csound, "webkit_open_html::init: title: %s\n", S_window_title);
-                browser->load_html(S_html, S_base_uri);
+                ///browser->open(S_window_title, i_width, i_height, i_fullscreen);
+                ///browser->load_html(S_html, S_base_uri);
                 return result;
             }
             int kontrol(CSOUND *csound) {
                 int result = OK;
-                browser->handle_events();
+                ///browser->handle_events();
                 return OK;
             }
     };
@@ -142,65 +127,49 @@ namespace csound_webserver {
 };
 
 /**
- * Here is the syntax for all the WebKit opcodes:
- *
- * i_webkit_handle webkit_create [, i_rpc_port [, i_diagnostics_enabled]]
- * webkit_open_uri i_webkit_handle, S_window_title, S_uri, i_width, i_height [, i_fullscreen]
- * webkit_open_html i_webkit_handle, S_window_title, S_html, S_base_uri, i_width, i_height [, i_fullscreen]
- * webkit_run_javascript i_webkit_handle, S_javascript_code [, i_asynchronous]
- *
- * In addition, each Web page opened by these opcodes has a JavaScript
- * interface to the invoking instance of Csound.
+ * i_webserver_handle webserver_create S_base_uri, i_port [, i_diagnostics_enabled]
+ * webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
+ * webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
  */
 extern "C" {
     
-    PUBLIC int csoundModuleInit_webkit_opcodes(CSOUND *csound) {
-        std::fprintf(stderr, "csoundModuleInit_webkit_opcodes...\n");
+    PUBLIC int csoundModuleInit_csound_webserver(CSOUND *csound) {
+        std::fprintf(stderr, "csoundModuleInit_csound_webserver...\n");
         int status = csound->AppendOpcode(csound,
-                (char *)"webkit_create",
-                sizeof(webkit_opcodes::webkit_create),
+                (char *)"csound_webserver_create",
+                sizeof(csound_webserver::csound_webserver_create),
                 0,
                 1,
                 (char *)"i",
-                (char *)"jo",
-                (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_create::init_,
+                (char *)"Sjo",
+                (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_create::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
         status += csound->AppendOpcode(csound,
-                (char *)"webkit_open_uri",
-                sizeof(webkit_opcodes::webkit_open_uri),
+                (char *)"csound_webserver_open_resource",
+                sizeof(csound_webserver::csound_webserver_open_resource),
                 0,
                 3,
                 (char *)"",
-                (char *)"iSSiio",
-                (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_uri::init_,
-                (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_uri::kontrol_,
+                (char *)"iSS",
+                (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_resource::init_,
+                (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_resource::kontrol_,
                 (int (*)(CSOUND*,void*)) 0);
         status += csound->AppendOpcode(csound,
-                (char *)"webkit_open_html",
-                sizeof(webkit_opcodes::webkit_open_html),
+                (char *)"csound_webserver_open_html",
+                sizeof(csound_webserver::csound_webserver_open_html),
                 0,
                 3,
                 (char *)"",
-                (char *)"iSSSiio",
-                (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_html::init_,
-                (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_open_html::kontrol_,
-                (int (*)(CSOUND*,void*)) 0);
-        status += csound->AppendOpcode(csound,
-                (char *)"webkit_run_javascript",
-                sizeof(webkit_opcodes::webkit_run_javascript),
-                0,
-                1,
-                (char *)"",
-                (char *)"iS",
-                (int (*)(CSOUND*,void*)) webkit_opcodes::webkit_run_javascript::init_,
-                (int (*)(CSOUND*,void*)) 0,
+                (char *)"iSS",
+                (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_html::init_,
+                (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_html::kontrol_,
                 (int (*)(CSOUND*,void*)) 0);
         return status;
     }
 
-    PUBLIC int csoundModuleDestroy_webkit_opcodes(CSOUND *csound) {
-        webkit_opcodes::webservers::instance().module_destroy(csound);
+    PUBLIC int csoundModuleDestroy_csound_webserver(CSOUND *csound) {
+        csound_webserver::webservers::instance().module_destroy(csound);
         return OK;
     }
 
@@ -210,11 +179,11 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleInit(CSOUND *csound) {
-        return csoundModuleInit_webkit_opcodes(csound);
+        return csoundModuleInit_csound_webserver(csound);
     }
 
     PUBLIC int csoundModuleDestroy(CSOUND *csound) {
-        return csoundModuleDestroy_webkit_opcodes(csound);
+        return csoundModuleDestroy_csound_webserver(csound);
     }
 #endif
 }
