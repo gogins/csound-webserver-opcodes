@@ -21,14 +21,17 @@ namespace csound_webserver {
 
     struct CsoundWebServer {
         ///std::shared_ptr<Csound> csound;
+        std::string base_uri;
         int port = 8080;
         httplib::Server server;
         bool load_finished = false;
-        CsoundWebServer(CSOUND *csound_, int port_) {
+        CsoundWebServer(CSOUND *csound_, const std::string &base_uri_, int port_) {
             ///csound = std::shared_ptr<Csound>(new Csound(csound_));
+            base_uri = base_uri_;
             if(port_ != -1) {
                 port = port_;
             }
+            server.set_mount_point("/", base_uri.c_str());
             server.listen("0.0.0.0", port);
         }
         virtual ~CsoundWebServer() {
@@ -36,11 +39,11 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
-        static std::unique_ptr<CsoundWebServer> create(CSOUND *csound_, int rpc_channel_) {
-            std::unique_ptr<CsoundWebServer> result(new CsoundWebServer(csound_, rpc_channel_));
+        static std::unique_ptr<CsoundWebServer> create(CSOUND *csound_, const std::string &base_uri_, int rpc_channel_) {
+            std::unique_ptr<CsoundWebServer> result(new CsoundWebServer(csound_, base_uri_, rpc_channel_));
             return result;
         }
-        virtual void load_uri(const char *uri) {          
+        virtual void load_resource(const char *uri) {          
             ///csound_webserver_web_view_load_uri(web_view, uri);
         }
         virtual void load_html(const char *content, const char *base_uri) {
@@ -54,12 +57,14 @@ namespace csound_webserver {
             MYFLT *i_browser_handle;
             // INPUTS
             MYFLT *i_port;
+            STRINGDAT *S_uri;
             MYFLT *i_diagnostics_enabled;
             int init(CSOUND *csound) {
                 int result = OK;
+                std::string base_uri_ = S_uri->data;
                 int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
-                CsoundWebServer *webkit = CsoundWebServer::create(csound, port).release();
+                CsoundWebServer *webkit = CsoundWebServer::create(csound, base_uri_, port).release();
                 int handle = webservers::instance().handle_for_object(csound, webkit);
                 *i_browser_handle = static_cast<MYFLT>(handle);
                 return result;
@@ -71,31 +76,23 @@ namespace csound_webserver {
             // OUTPUTS
             // INPUTS
             MYFLT *i_browser_handle_;
-            STRINGDAT *S_window_title_;
             STRINGDAT *S_uri_;
-            MYFLT *i_width_;
-            MYFLT *i_height_;
-            MYFLT *i_fullscreen_;
             // STATE
-            CsoundWebServer *browser;
+            CsoundWebServer *server;
             int init(CSOUND *csound) {
                 log(csound, "csound_webserver_open_resource::init: this: %p\n", this);
                 int result = OK;
                 int i_browser_handle = *i_browser_handle_;
-                char *S_window_title = S_window_title_->data;
                 char *S_uri = S_uri_->data;
-                int i_width = *i_width_;
-                int i_height = *i_height_;
-                bool i_fullscreen = *i_fullscreen_;
-                browser = webservers::instance().object_for_handle(csound, i_browser_handle);
-                ///browser->open(S_window_title, i_width, i_height, i_fullscreen);
+                server = webservers::instance().object_for_handle(csound, i_browser_handle);
+                ///server->open(S_window_title, i_width, i_height, i_fullscreen);
                 log(csound, "csound_webserver_open_resource::init: uri: %s\n", S_uri);
-                browser->load_uri(S_uri);
+                server->load_resource(S_uri);
                 return result;
             }
             int kontrol(CSOUND *csound) {
                 int result = OK;
-                ///browser->handle_events();
+                ///server->handle_events();
                 return OK;
             }
     };
@@ -107,19 +104,19 @@ namespace csound_webserver {
             MYFLT *i_browser_handle_;
             STRINGDAT *S_html_text_;
             // STATE
-            CsoundWebServer *browser;
+            CsoundWebServer *server;
             int init(CSOUND *csound) {
                 int result = OK;
                 int i_browser_handle = static_cast<int>(*i_browser_handle_);
                 char *S_html = S_html_text_->data;
-                browser = webservers::instance().object_for_handle(csound, i_browser_handle);
-                ///browser->open(S_window_title, i_width, i_height, i_fullscreen);
-                ///browser->load_html(S_html, S_base_uri);
+                server = webservers::instance().object_for_handle(csound, i_browser_handle);
+                ///server->open(S_window_title, i_width, i_height, i_fullscreen);
+                ///server->load_html(S_html, S_base_uri);
                 return result;
             }
             int kontrol(CSOUND *csound) {
                 int result = OK;
-                ///browser->handle_events();
+                ///server->handle_events();
                 return OK;
             }
     };
@@ -141,7 +138,7 @@ extern "C" {
                 0,
                 1,
                 (char *)"i",
-                (char *)"Sjo",
+                (char *)"Sio",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_create::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
