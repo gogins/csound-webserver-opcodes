@@ -22,25 +22,33 @@ namespace csound_webserver {
     struct CsoundWebServer {
         ///std::shared_ptr<Csound> csound;
         std::string base_uri;
-        int port = 8080;
+        int port;
         httplib::Server server;
-        bool load_finished = false;
+        std::thread *listener_thread;
         CsoundWebServer(CSOUND *csound_, const std::string &base_uri_, int port_) {
-            ///csound = std::shared_ptr<Csound>(new Csound(csound_));
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             base_uri = base_uri_;
             if(port_ != -1) {
                 port = port_;
             }
             server.set_mount_point("/", base_uri.c_str());
-            server.listen("0.0.0.0", port);
-        }
+            listener_thread = new std::thread(&CsoundWebServer::listen, this);
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
+       }
         virtual ~CsoundWebServer() {
-            using namespace std::chrono_literals; 
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
+            server.stop();
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
-        static std::unique_ptr<CsoundWebServer> create(CSOUND *csound_, const std::string &base_uri_, int rpc_channel_) {
-            std::unique_ptr<CsoundWebServer> result(new CsoundWebServer(csound_, base_uri_, rpc_channel_));
+        virtual void listen() {
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...");
+            // Was "0.0.0.0" for all interfaces -- for security we limit this 
+            // to localhost.
+            server.listen("localhost", port);
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen.");
+        }
+        static std::unique_ptr<CsoundWebServer> create(CSOUND *csound_, const std::string &base_uri_, int port_) {
+            std::unique_ptr<CsoundWebServer> result(new CsoundWebServer(csound_, base_uri_, port_));
             return result;
         }
         virtual void load_resource(const char *uri) {          
@@ -56,12 +64,12 @@ namespace csound_webserver {
             // OUTPUTS
             MYFLT *i_browser_handle;
             // INPUTS
+            STRINGDAT *S_base_uri;
             MYFLT *i_port;
-            STRINGDAT *S_uri;
             MYFLT *i_diagnostics_enabled;
             int init(CSOUND *csound) {
                 int result = OK;
-                std::string base_uri_ = S_uri->data;
+                std::string base_uri_ = S_base_uri->data;
                 int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
                 CsoundWebServer *webkit = CsoundWebServer::create(csound, base_uri_, port).release();
@@ -133,7 +141,7 @@ extern "C" {
     PUBLIC int csoundModuleInit_csound_webserver(CSOUND *csound) {
         std::fprintf(stderr, "csoundModuleInit_csound_webserver...\n");
         int status = csound->AppendOpcode(csound,
-                (char *)"csound_webserver_create",
+                (char *)"webserver_create",
                 sizeof(csound_webserver::csound_webserver_create),
                 0,
                 1,
@@ -143,7 +151,7 @@ extern "C" {
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
         status += csound->AppendOpcode(csound,
-                (char *)"csound_webserver_open_resource",
+                (char *)"webserver_open_resource",
                 sizeof(csound_webserver::csound_webserver_open_resource),
                 0,
                 3,
@@ -153,7 +161,7 @@ extern "C" {
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_resource::kontrol_,
                 (int (*)(CSOUND*,void*)) 0);
         status += csound->AppendOpcode(csound,
-                (char *)"csound_webserver_open_html",
+                (char *)"webserver_open_html",
                 sizeof(csound_webserver::csound_webserver_open_html),
                 0,
                 3,
