@@ -5,8 +5,8 @@ Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
-The csound_webserver opcodes embed an internal Web server into the Csound 
-performance, implement a JSON-RPC interface to the running instance of 
+The csound_webserver opcodes embed a _local_, internal Web server into the 
+Csound performance, implement a JSON-RPC interface to the running instance of 
 Csound, and optionally serve a Web page from the embedded Web server. That 
 page can be embedded into the Csound orchestra code, or it can be a regular 
 HTML file that refers to other resources. The opcodes will optionally run a
@@ -24,7 +24,7 @@ WebKit), and CsoundQt-html5 (HTML not always available in release packages).
 
 These are the opcodes: 
 ```
-i_webserver_handle webserver_create S_base_uri, i_port [, i_diagnostics_enabled]
+i_webserver_handle webserver_create S_base_directory, i_port [, i_diagnostics_enabled]
 webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
 webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
 ```
@@ -80,23 +80,28 @@ correct order.
 # webserver_create
 
 `webserver_create` - Creates and runs an instance of the internal Web server 
-embedded into the Csound performance.
+embedded into the Csound performance. This is a _local_ Web server that always 
+runs on `localhost`. That is because audio input and output are via Csound and 
+not via WebAudio, and for reasons of security. These limitations may change in 
+future versions.
 
 ## Description
 
 Creates an instance an instance of the internal Web server embedded 
-into the Csound performance. The embedded Web server can 
-serve any resources located in its base URI.
+into the Csound performance. The embedded Web server, which runs on 
+`localhost`, can serve any resources located in its base directory, as well as 
+remote resources.
 
 ## Syntax
 ```
-i_webserver_handle webserver_create S_base_uri [, i_port [, i_diagnostics_enabled]]
+i_webserver_handle webserver_create S_base_directory [, i_port [, i_diagnostics_enabled]]
 
 ```
 ## Initialization
 
-*S_base_uri* - The base URI of the embedded Web server. Any resources made 
-available by the Web server must be relative to this base URI.
+*S_base_directory* - The base direcctory of the embedded Web server. Any 
+local resources made available by the Web server must be relative to this base 
+directory.
 
 *i_port* - The number of a port on `localhost` that the internal Web server 
 will listen on. Usually 8080 will work.
@@ -105,7 +110,7 @@ will listen on. Usually 8080 will work.
 printed; if non-0, diagnostic messages are printed.
 
 *i_webserver_handle* - Returns a handle to the newly created internal Web 
-server. The other csound_webserver opcodes must take such a handle as their 
+server. The other Webserver opcodes must take such a handle as their 
 first parameter. 
 
 ## Performance
@@ -116,7 +121,7 @@ internal Web server keeps running until the end of the Csound performance.
 # webserver_open_resource
 
 `webserver_open_resource` - Makes the named resource available from the 
-internal Web server. The Web server's base URI plus the named resource 
+internal Web server. The Web server's origin plus the named resource 
 should form a valid URL.
 
 Please note, Web page opened with this opcode will not have access to Csound 
@@ -157,7 +162,7 @@ object, using JSON-RPC.
 `webserver_open_html` - Makes the specified text available from the 
 internal Web server. Normally, this text is a complete HTML page that can 
 contain scripts and hyperlinks. The text is served relative to the base 
-URI of the internal Web server.
+directory of the internal Web server.
 
 HTML pages opened with this opcode have injected into them the `csound.js` 
 script for the Csound proxy. 
