@@ -20,18 +20,25 @@ namespace csound_webserver {
     static bool diagnostics_enabled = true;
 
     struct CsoundWebServer {
-        ///std::shared_ptr<Csound> csound;
-        std::string base_uri;
+        // All resources are served relative to the server's base directory.
+        std::string base_dir;
+        // All resources are identified by appending their name or path to the 
+        // origin.
+        std::string origin;
         int port;
         httplib::Server server;
         std::thread *listener_thread;
-        CsoundWebServer(CSOUND *csound_, const std::string &base_uri_, int port_) {
+        CsoundWebServer(CSOUND *csound_, const std::string &base_dir_, int port_) {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
-            base_uri = base_uri_;
+            base_dir = base_dir_;
             if(port_ != -1) {
                 port = port_;
+            } else {
+                port = 8080;
             }
-            server.set_mount_point("/", base_uri.c_str());
+            server.set_mount_point("/", base_dir.c_str());
+            origin = "http://localhost:" + std::to_string(port);
+            csound_->Message(csound_, "CsoundWebServer: origin: %s\n", origin.c_str());
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
        }
