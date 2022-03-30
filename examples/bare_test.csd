@@ -13,6 +13,8 @@ ksmps = 100
 
 i_webserver webserver_create "/Users/michaelgogins/csound-webserver/examples", 8080, 1 
 
+webserver_open_resource i_webserver, "webkit_example.csd", "open"
+
 </CsInstruments>
 <CsScore>
 f 0 120
