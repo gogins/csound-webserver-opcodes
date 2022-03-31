@@ -21,48 +21,59 @@ namespace csound_webserver {
 
     struct CsoundWebServer {
         // All resources are served relative to the server's base directory.
-        std::string base_dir;
-        // All resources are identified by appending their name or path to the 
+        std::string base_directory;
+        // All resources are identified by appending their path to the 
         // origin.
         std::string origin;
         int port;
         httplib::Server server;
         std::thread *listener_thread;
-        CsoundWebServer(CSOUND *csound_, const std::string &base_dir_, int port_) {
+        CsoundWebServer() {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
-            base_dir = base_dir_;
-            if(port_ != -1) {
-                port = port_;
-            } else {
-                port = 8080;
-            }
-            server.set_mount_point("/", base_dir.c_str());
-            origin = "http://localhost:" + std::to_string(port);
-            csound_->Message(csound_, "CsoundWebServer: origin: %s\n", origin.c_str());
-            listener_thread = new std::thread(&CsoundWebServer::listen, this);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
-       }
+        }
         virtual ~CsoundWebServer() {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
             server.stop();
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
         virtual void listen() {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...\n");
             // Was "0.0.0.0" for all interfaces -- for security we limit this 
             // to localhost.
             server.listen("localhost", port);
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen.");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen.\n");
         }
-        static std::unique_ptr<CsoundWebServer> create(CSOUND *csound_, const std::string &base_uri_, int port_) {
-            std::unique_ptr<CsoundWebServer> result(new CsoundWebServer(csound_, base_uri_, port_));
-            return result;
+        static CsoundWebServer *create(CSOUND *csound_, const std::string &base_directory_, int port_) {
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create...\n");
+            auto webserver = new CsoundWebServer();
+            webserver->base_directory = base_directory_;
+            if(webserver->port != -1) {
+                webserver->port = port_;
+            } else {
+                webserver->port = 8080;
+            }
+            webserver->server.set_mount_point("/", webserver->base_directory.c_str());
+            webserver->origin = "http://localhost:" + std::to_string(webserver->port);
+            csound_->Message(csound_, "CsoundWebServer: origin: %s\n", webserver->origin.c_str());
+            webserver->listener_thread = new std::thread(&CsoundWebServer::listen, webserver);
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create.\n");
+            return webserver;
         }
-        virtual void load_resource(const char *uri) {          
-            ///csound_webserver_web_view_load_uri(web_view, uri);
+        virtual void open_resource(const std::string &resource, const std::string &browser) {          
+            std::string url = resource;
+            // Origin:
+            // `http://host:port`
+            // Complete URL:            
+            // `http://host:port[[/resource_path][.extension]]`
+            // NOTE: The _filesystem_ base directory is mapped to: `origin/`.
+            if ((url.find("http://") == 0 && url.find("https://") == 0)) {
+                url = origin + "/" + resource;
+            }
+            std::string command = browser + " " + url;
+            std::system(command.c_str());
         }
-        virtual void load_html(const char *content, const char *base_uri) {
-            ///csound_webserver_web_view_load_html(web_view, content, base_uri);
+        virtual void open_html(const std::string &html_text, const std::string &browser) {
         }
     };
 
@@ -79,7 +90,7 @@ namespace csound_webserver {
                 std::string base_uri_ = S_base_uri->data;
                 int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
-                CsoundWebServer *server = CsoundWebServer::create(csound, base_uri_, port).release();
+                auto server = CsoundWebServer::create(csound, base_uri_, port);
                 int handle = webservers::instance().handle_for_object(csound, server);
                 *i_server_handle = static_cast<MYFLT>(handle);
                 return result;
@@ -100,13 +111,10 @@ namespace csound_webserver {
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;
-                server = webservers::instance().object_for_handle(csound, i_server_handle);
-                std::string url = server->origin + "/" + resource;
                 std::string browser = S_browser->data;
-                std::string command = browser + " " + url;
-                std::system(command.c_str());
-                ///server->open(S_window_title, i_width, i_height, i_fullscreen);
-                log(csound, "csound_webserver_open_resource::init: url: %s\n", url.c_str());
+                server = webservers::instance().object_for_handle(csound, i_server_handle);
+                server->open_resource(resource, browser);
+                log(csound, "csound_webserver_open_resource::init.\n");
                 return result;
             }
             int kontrol(CSOUND *csound) {

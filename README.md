@@ -121,8 +121,10 @@ internal Web server keeps running until the end of the Csound performance.
 # webserver_open_resource
 
 `webserver_open_resource` - Makes the named resource available from the 
-internal Web server. The Web server's origin plus the named resource 
-should form a valid URL.
+internal Web server. If the named resource is not a complete URL, which 
+enables the use of an external resource from the Internet, then the URL 
+is formed by appending the resource name to the Web server's origin, e.g. 
+`http://localhost:8080/` + `resource.html`.
 
 Please note, Web page opened with this opcode will not have access to Csound 
 unless the body of those pages includes the `csound.js` script for the Csound 
@@ -141,7 +143,8 @@ webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
 
 *S_resource* - The name of an Internet resource to be served by the internal 
 Web server. This name, when appended to the base URI of the Web server, 
-should form a valid, loadable URI.
+should form a valid, loadable URI. A complete URL, e.g. for resources from 
+the Internet, can also be used.
 
 *S_browser_command* - The name of a Web browser that should immediately open 
 the named resource. This parameter is optional, and will default to Safari on 
