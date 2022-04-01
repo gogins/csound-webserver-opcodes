@@ -146,11 +146,11 @@ Web server. This name, when appended to the base URI of the Web server,
 should form a valid, loadable URI. A complete URL, e.g. for resources from 
 the Internet, can also be used.
 
-*S_browser_command* - The name of a Web browser that should immediately open 
-the named resource. This parameter is optional, and will default to Safari on 
-macOS, Firefox on Linux, and Edge on Windows. The browser name can be 
-continued with browser-specific command-line options, e.g. to resize the 
-browser window.
+*S_browser_command* - The text of a command that should immediately open the
+the named resource in a standard Web browser. This parameter is optional, and 
+will default to `open` on macOS, which usually defaults to Safari; to 
+`xdg-open` on Linux, which usually defaults to Firefox; and `start` on 
+Windows, which usually defaults to Edge. 
 
 ## Performance
 
