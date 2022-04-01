@@ -18,7 +18,7 @@ function Csound(url) {
         
         $.ajax({
             type: "POST",
-            url: url,
+            url: url + "/" + method,
             data: JSON.stringify(request),
             success: function (response) {
                 if (methodCall) {

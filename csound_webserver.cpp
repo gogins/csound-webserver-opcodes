@@ -104,11 +104,12 @@ namespace csound_webserver {
             origin = "http://localhost:" + std::to_string(port);
             csound->Message(csound_, "CsoundWebServer: origin: %s\n", origin.c_str());
             // Add JSON-RPC skeletons...
-            server.Post("/CompileCsdText", [&](const httplib::Request request, httplib::Response &response) {
+            server.Post("/CompileCsdText", [&](const httplib::Request &request, httplib::Response &response) {
                 int result = OK;
                 std::fprintf(stderr, "/CompileCsdText...\n");
                 //result = csound->CompileCsdText(csound, "boo");
                 response.set_content(std::to_string(result), "text/plain");
+                response.status = 201;
             });
             // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
