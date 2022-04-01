@@ -30,7 +30,7 @@ webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
 ```
 The following JavaScript interface can be used from the JavaScript context of 
 a Web page opened by these opcodes. As far as possible, the methods of this 
-interface are the same as that in `csound.hpp`:
+interface are the same as those in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
@@ -63,19 +63,16 @@ TableLength
 TableSet
 ```
 
-For the `webserver_open_html` opcode, the stubs for this interface are 
-injected into the HTML `<head>` element.
-
-For the `webserver_open_resource` opcode, any Web page must include the 
-`csound.js` script in the HTML `<head>` element.
-
-Naturally, all Csound API methods that destroy or create Csound, start 
-or stop the performance, or configure Csound's audio or MIDI input or output 
-drivers have had to be omitted from this interface.
+Any Web page that needs to communicate with the running instance of Csound 
+must include the `csound.js` script in the HTML `<head>` element.
 
 Please note, these methods are asynchronous. You may need to use the JSON-RPC 
 callbacks to obtain results, perhaps using promises to keep the results in the 
 correct order.
+
+Naturally, all Csound API methods that destroy or create Csound, start 
+or stop the performance, or configure Csound's audio or MIDI input or output 
+drivers have had to be omitted from this interface.
 
 # webserver_create
 

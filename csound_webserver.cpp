@@ -4,6 +4,7 @@
 #include <OpcodeBase.hpp>
 #include <cstdio>
 #include <ctime>
+#include <iostream>
 #include <queue>
 #include <thread>
 #include <map>
@@ -24,6 +25,40 @@ namespace csound_webserver {
     
     static bool diagnostics_enabled = true;
 
+/*  To implement:   
+
+    CompileCsdText
+    CompileOrc
+    EvalCode
+    Get0dBFS
+    GetAudioChannel
+    GetControlChannel
+    GetDebug
+    GetKsmps
+    GetNchnls
+    GetNchnlsInput
+    GetScoreOffsetSeconds
+    GetScoreTime
+    GetSr
+    GetStringChannel
+    InputMessage
+    IsScorePending
+    Message (this is the only asynchronous method)
+    ReadScore
+    RewindScore
+    ScoreEvent
+    SetControlChannel
+    SetDebug
+    SetMessageCallback
+    SetScoreOffsetSeconds
+    SetScorePending
+    SetStringChannel
+    TableGet
+    TableLength
+    TableSet    
+    
+*/
+
     struct CsoundWebServer {
         // All resources are served relative to the server's base directory.
         std::string base_directory;
@@ -33,6 +68,7 @@ namespace csound_webserver {
         int port;
         httplib::Server server;
         std::thread *listener_thread;
+        CSOUND *csound;
         CsoundWebServer() {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
@@ -49,20 +85,38 @@ namespace csound_webserver {
             server.listen("localhost", port);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen.\n");
         }
+        virtual void create_(CSOUND *csound_, const std::string &base_directory_, int port_) {
+            csound = csound_;
+            base_directory = base_directory_;
+            if(port != -1) {
+                port = port_;
+            } else {
+                port = 8080;
+            }
+            if (diagnostics_enabled) {
+                server.set_logger([] (const auto& req, const auto& res) {
+                    std::fprintf(stderr, "Request:  method: %s path: %s body: %s\n", req.method.c_str(), req.path.c_str(), req.body.c_str());
+                    std::fprintf(stderr, "Response: reason: %s body: %s\n", res.reason.c_str(), res.body.c_str());
+                });
+            }
+            server.set_base_dir(base_directory.c_str());
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create: base_directory: %s\n", base_directory.c_str());
+            origin = "http://localhost:" + std::to_string(port);
+            csound->Message(csound_, "CsoundWebServer: origin: %s\n", origin.c_str());
+            // Add JSON-RPC skeletons...
+            server.Post("/CompileCsdText", [&](const httplib::Request request, httplib::Response &response) {
+                int result = OK;
+                std::fprintf(stderr, "/CompileCsdText...\n");
+                //result = csound->CompileCsdText(csound, "boo");
+                response.set_content(std::to_string(result), "text/plain");
+            });
+            // ...and start listening in a separate thread.
+            listener_thread = new std::thread(&CsoundWebServer::listen, this);
+        }
         static CsoundWebServer *create(CSOUND *csound_, const std::string &base_directory_, int port_) {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create...\n");
             auto webserver = new CsoundWebServer();
-            webserver->base_directory = base_directory_;
-            if(webserver->port != -1) {
-                webserver->port = port_;
-            } else {
-                webserver->port = 8080;
-            }
-            webserver->server.set_base_dir(webserver->base_directory.c_str());
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create: base_directory: %s\n", webserver->base_directory.c_str());
-            webserver->origin = "http://localhost:" + std::to_string(webserver->port);
-            csound_->Message(csound_, "CsoundWebServer: origin: %s\n", webserver->origin.c_str());
-            webserver->listener_thread = new std::thread(&CsoundWebServer::listen, webserver);
+            webserver->create_(csound_, base_directory_, port_);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create.\n");
             return webserver;
         }
