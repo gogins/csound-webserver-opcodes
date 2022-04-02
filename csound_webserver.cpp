@@ -11,6 +11,7 @@
 #include <memory>
 #include <cpp-httplib/httplib.h>
 #include <jsonrpccxx/server.hpp>
+#include <CsoundRuntimeInterface.hpp>
 
 namespace csound_webserver {
     
@@ -25,51 +26,6 @@ namespace csound_webserver {
     
     static bool diagnostics_enabled = true;
 
-/** 
- * The `csdl.h` header deliberately omits many API methods (ghastly mistake),
- * so we re-declare all the methods we need here. These also have to be 
- * defined here by introspecting the Csound shared library. 
- */
- 
- 
- 
- extern "C" {
-
-/*
-    Do this by a template function taking the type of the Csound API function.
-    
-    CompileCsdText
-    CompileOrc
-    EvalCode
-    Get0dBFS
-    GetAudioChannel
-    GetControlChannel
-    GetDebug
-    GetKsmps
-    GetNchnls
-    GetNchnlsInput
-    GetScoreOffsetSeconds
-    GetScoreTime
-    GetSr
-    GetStringChannel
-    InputMessage
-    IsScorePending
-    Message (this is the only asynchronous method)
-    ReadScore
-    RewindScore
-    ScoreEvent
-    SetControlChannel
-    SetDebug
-    SetMessageCallback
-    SetScoreOffsetSeconds
-    SetScorePending
-    SetStringChannel
-    TableGet
-    TableLength
-    TableSet    
-    
-*/
-}
     /**
      * First the Csound method is called, then this function creates the 
      * JSON-RPC response from the JSON-RPC request and the return value of the 
@@ -96,6 +52,7 @@ namespace csound_webserver {
         httplib::Server server;
         std::thread *listener_thread;
         CSOUND *csound;
+        csound::CsoundRuntimeInterface Csound;
         CsoundWebServer() {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
@@ -114,6 +71,7 @@ namespace csound_webserver {
         }
         virtual void create_(CSOUND *csound_, const std::string &base_directory_, int port_) {
             csound = csound_;
+            Csound.initialize(csound);
             base_directory = base_directory_;
             if(port != -1) {
                 port = port_;
@@ -137,13 +95,29 @@ namespace csound_webserver {
                 std::fprintf(stderr, "/CompileCsdText...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto csd_text = json_request["params"]["csd_text"].get<std::string>();
-                static void *csound_handle;
-                auto result = csound->OpenLibrary(&csound_handle, nullptr);
-                //csoundCompileCsdText(csound, csd_text.c_str());
-                int (*CompileCsdText)(CSOUND *, const char *) = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(csound_handle, "csoundCompileCsdText");
-                result = CompileCsdText(csound, csd_text.c_str());
-                create_json_response(json_request, response, (long) CompileCsdText);
+                auto result = Csound.CompileCsdText(csd_text.c_str());
+                create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/CompileOrc", [&](const httplib::Request &request, httplib::Response &response) {
+                std::fprintf(stderr, "/CompileOrc...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto orc_code = json_request["params"]["orc_code"].get<std::string>();
+                auto result = Csound.CompileOrc(orc_code.c_str());
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/CompileOrc: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/EvalCode", [&](const httplib::Request &request, httplib::Response &response) {
+                std::fprintf(stderr, "/EvalCode...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto orc_code = json_request["params"]["orc_code"].get<std::string>();
+                auto result = Csound.EvalCode(orc_code.c_str());
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
                 response.status = 201;
             });

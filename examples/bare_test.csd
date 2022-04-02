@@ -42,14 +42,14 @@ Hello, world, from Csound's internal Web server, with embedded HTML and RPC to C
 document.write("\\norigin: " + origin);
 csound = new Csound(origin);
 var onSuccess = function(id, response) {
-    document.write("\\nid: " + id + " response:" + response);
+    console.log("\\nid: " + id + " response:" + response);
     return response;
 };
 var onError = function(id, error) {
-    document.write("\\nid: " + id + " error:" + error);
+    console.log("\\nid: " + id + " error:" + error);
     return error;
 }
-csound.CompileCsdText("prints \\"Hi from RPC!\\n\\"", onSuccess, onError);
+csound.EvalCode("prints \\"Hi from the browser via JSON-RPC!\\"\\n\\n", onSuccess, onError);
 </script>
 </body>
 </html>
