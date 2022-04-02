@@ -10,7 +10,6 @@
 #include <map>
 #include <memory>
 #include <cpp-httplib/httplib.h>
-#include <jsonrpccxx/server.hpp>
 #include <csound_runtime_interface.hpp>
 
 namespace csound_webserver {

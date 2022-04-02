@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(csound_webserver)
+project(csound_webserver_opcodes)
 
 include(ExternalProject)
 
@@ -12,6 +12,7 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "csound-webserver")
 include_directories(".")
 include_directories("${CMAKE_SOURCE_DIR}/csound/interfaces")
 include_directories("${CMAKE_SOURCE_DIR}/csound/include")
+include_directories("${CMAKE_SOURCE_DIR}/json/single_include")
 
 set(APIVERSION "6.0")
 set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/local-linux")
@@ -54,8 +55,7 @@ set_target_properties(csound_webserver PROPERTIES
     )
 target_include_directories(csound_webserver PUBLIC 
     "." 
-    "${CMAKE_SOURCE_DIR}/json-rpc-cxx/include"
-    "${CMAKE_SOURCE_DIR}/json-rpc-cxx/vendor"
+    "${CMAKE_SOURCE_DIR}/json/single_include/nlohmann"
     "${CMAKE_SOURCE_DIR}/csound/interfaces"
     "${CMAKE_SOURCE_DIR}/csound/include")
 if(APPLE)

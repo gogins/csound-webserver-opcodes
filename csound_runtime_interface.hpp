@@ -1,6 +1,7 @@
 #pragma once
 
 #include <csdl.h>
+#include <nlohmann/json.hpp>
 
 namespace csound {
 
