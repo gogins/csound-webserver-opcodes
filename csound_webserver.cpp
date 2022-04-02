@@ -25,8 +25,19 @@ namespace csound_webserver {
     
     static bool diagnostics_enabled = true;
 
-/*  To implement:   
+/** 
+ * The `csdl.h` header deliberately omits many API methods (ghastly mistake),
+ * so we re-declare all the methods we need here. These also have to be 
+ * defined here by introspecting the Csound shared library. 
+ */
+ 
+ 
+ 
+ extern "C" {
 
+/*
+    Do this by a template function taking the type of the Csound API function.
+    
     CompileCsdText
     CompileOrc
     EvalCode
@@ -58,6 +69,22 @@ namespace csound_webserver {
     TableSet    
     
 */
+}
+    /**
+     * First the Csound method is called, then this function creates the 
+     * JSON-RPC response from the JSON-RPC request and the return value of the 
+     * Csound method.
+     */
+    template<typename T>
+    void create_json_response(const nlohmann::json &json_request, httplib::Response &response, const T &return_value) {
+        nlohmann::json json_response;
+        json_response["jsonrpc"] = "2.0";
+        json_response["id"] = json_request["id"];
+        json_response["method"] = json_request["method"];
+        // This is the JSON-RPC result code.
+        json_response["result"] = std::to_string(return_value);
+        response.set_content(json_response.dump(), "application/json");
+    }
 
     struct CsoundWebServer {
         // All resources are served relative to the server's base directory.
@@ -103,12 +130,21 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create: base_directory: %s\n", base_directory.c_str());
             origin = "http://localhost:" + std::to_string(port);
             csound->Message(csound_, "CsoundWebServer: origin: %s\n", origin.c_str());
-            // Add JSON-RPC skeletons...
+            // Add JSON-RPC skeletons... these are just HTTP APIs that follow 
+            // the JSON-RPC 2.0 wire protocol, so there is no need for a 
+            // second port to carry the RPCs.
             server.Post("/CompileCsdText", [&](const httplib::Request &request, httplib::Response &response) {
-                int result = OK;
                 std::fprintf(stderr, "/CompileCsdText...\n");
-                //result = csound->CompileCsdText(csound, "boo");
-                response.set_content(std::to_string(result), "text/plain");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto csd_text = json_request["params"]["csd_text"].get<std::string>();
+                static void *csound_handle;
+                auto result = csound->OpenLibrary(&csound_handle, nullptr);
+                //csoundCompileCsdText(csound, csd_text.c_str());
+                int (*CompileCsdText)(CSOUND *, const char *) = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(csound_handle, "csoundCompileCsdText");
+                result = CompileCsdText(csound, csd_text.c_str());
+                create_json_response(json_request, response, (long) CompileCsdText);
+                if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
                 response.status = 201;
             });
             // ...and start listening in a separate thread.

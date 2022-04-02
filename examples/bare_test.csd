@@ -49,7 +49,7 @@ var onError = function(id, error) {
     document.write("\\nid: " + id + " error:" + error);
     return error;
 }
-csound.CompileCsdText("2 + 2", onSuccess, onError);
+csound.CompileCsdText("prints \\"Hi from RPC!\\n\\"", onSuccess, onError);
 </script>
 </body>
 </html>
