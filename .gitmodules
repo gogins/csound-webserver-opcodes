@@ -1,0 +1,3 @@
+[submodule "csound"]
+	path = csound
+	url = https://github.com/csound/csound.git
