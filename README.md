@@ -66,9 +66,10 @@ TableSet
 Any Web page that needs to communicate with the running instance of Csound 
 must include the `csound.js` script in the HTML `<head>` element.
 
-Please note, these methods are asynchronous. You may need to use the JSON-RPC 
-callbacks to obtain results, perhaps using promises to keep the results in the 
-correct order.
+Please note, these methods are asynchronous, and all methods that return 
+values are declared `async` so that that they can either be called 
+asynchronously, or called synchronously using `await` inside an `async` 
+function.
 
 Naturally, all Csound API methods that destroy or create Csound, start 
 or stop the performance, or configure Csound's audio or MIDI input or output 
@@ -123,7 +124,7 @@ enables the use of an external resource from the Internet, then the URL
 is formed by appending the resource name to the Web server's origin, e.g. 
 `http://localhost:8080/` + `resource.html`.
 
-Please note, Web page opened with this opcode will not have access to Csound 
+Please note, Web pages opened with this opcode will not have access to Csound 
 unless the body of those pages includes the `csound.js` script for the Csound 
 proxy. That will not normally be the case for Web pages from the Internet. 
 Thus, `webserver_open_resource` is primarily useful for opening Internet 
@@ -164,8 +165,12 @@ internal Web server. Normally, this text is a complete HTML page that can
 contain scripts and hyperlinks. The text is served relative to the base 
 directory of the internal Web server.
 
-HTML pages opened with this opcode have injected into them the `csound.js` 
-script for the Csound proxy. 
+Please note, Web pages opened with this opcode will not have access to Csound 
+unless the body of those pages includes the `csound.js` script for the Csound 
+proxy. That will not normally be the case for Web pages from the Internet. 
+
+The code in `csound.js` can also be embedded in a `<script>` element of the 
+Web page.
 
 ## Syntax
 
