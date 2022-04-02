@@ -17,9 +17,10 @@ namespace csound {
         /**
          * Functions from the Csound library.
          */
-        int (*CompileCsdText_)(CSOUND *, const char *);
-        int (*CompileOrc_)(CSOUND *, const char *);
-        MYFLT (*EvalCode_)(CSOUND *, const char *);
+        int (*csoundCompileCsdText_)(CSOUND *, const char *);
+        int (*csoundCompileOrc_)(CSOUND *, const char *);
+        MYFLT (*csoundEvalCode_)(CSOUND *, const char *);
+        MYFLT (*csoundGet0dBFS_)(CSOUND *);
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -30,21 +31,26 @@ namespace csound {
             // against the running program (Csound usually) and its loaded 
             // dependencies (which must include the Csound library).
             int result = csound->OpenLibrary(&library_handle, nullptr);
-            CompileCsdText_ = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundCompileCsdText");
-            CompileOrc_ = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundCompileOrc");
-            EvalCode_ = (MYFLT (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundEvalCode");
+            csoundCompileCsdText_ = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundCompileCsdText");
+            csoundCompileOrc_ = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundCompileOrc");
+            csoundEvalCode_ = (MYFLT (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundEvalCode");
+            csoundGet0dBFS_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
-            int result = CompileCsdText_(csound, csd_text);
+            int result = csoundCompileCsdText_(csound, csd_text);
             return result;
         }
         virtual int CompileOrc(const char *orc_text) {
-            int result = CompileOrc_(csound, orc_text);
+            int result = csoundCompileOrc_(csound, orc_text);
             return result;
         }
         virtual MYFLT EvalCode(const char *orc_code) {
-            MYFLT result = EvalCode_(csound, orc_code);
+            MYFLT result = csoundEvalCode_(csound, orc_code);
+            return result;
+        }
+        virtual MYFLT Get0dBFS() {
+            MYFLT result = csoundGet0dBFS_(csound);
             return result;
         }
     };

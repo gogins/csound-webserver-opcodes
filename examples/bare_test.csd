@@ -9,7 +9,7 @@ A very basic test of the Csound webserver opcodes.
 sr = 48000
 nchnls = 2
 ksmps = 100
-0dbfs = 2
+0dbfs = 10
 
 i_webserver webserver_create "/Users/michaelgogins/csound-webserver/examples/", 8080, 1 
 
@@ -37,22 +37,43 @@ gS_html_rpc init {{
 <head>
 </head>
 <body>
-Hello, world, from Csound's internal Web server, with embedded HTML and RPC to Csound!
+<p>
+Hello, World, from Csound's internal Web server, with embedded HTML and RPC to Csound!
+</p>
+<textarea id='log_textarea' cols=80 rows=25>
+</textarea>
 <script>
-document.write("\\norigin: " + origin);
+function console_log(message) {
+    var log_textarea = document.getElementById("log_textarea");
+    var existing = log_textarea.value;
+    log_textarea.value = existing + message;
+    log_textarea.scrollTop = log_textarea.scrollHeight;   
+};
+console.log = console_log;
+console.log("origin: " + origin);
 csound = new Csound(origin);
 var onSuccess = function(id, response) {
-    console.log("\\nid: " + id + " response:" + response);
+    console.info("\\nid: " + id + " response:" + response);
     return response;
 };
 var onError = function(id, error) {
-    console.log("\\nid: " + id + " error:" + error);
+    console.info("\\nid: " + id + " error:" + error);
     return error;
-}
-csound.EvalCode("prints \\"Hi from the browser via JSON-RPC!\\"\\n\\n", onSuccess, onError);
+};
+
+csound.EvalCode("prints \\"Hello from the browser (" + navigator.userAgent + ") via JSON-RPC!\\"\\n\\n", onSuccess, onError);
+csound.Get0dBFS(onSuccess, onError);
+// All Csound functions that return values are declared async. Here's how to 
+// synchronously wait for the return value. Any number of `await` calls can be 
+// made inside the anonymous async function.
+(async () => {
+    let zdbfs = await csound.Get0dBFS(onSuccess, onError);
+    console.log("\\n0dBFS: " + zdbfs);
+})();
 </script>
 </body>
 </html>
+}
 }}
 
 webserver_open_html i_webserver, gS_html_rpc, "open"

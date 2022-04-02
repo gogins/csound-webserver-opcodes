@@ -11,7 +11,7 @@
 #include <memory>
 #include <cpp-httplib/httplib.h>
 #include <jsonrpccxx/server.hpp>
-#include <CsoundRuntimeInterface.hpp>
+#include <csound_runtime_interface.hpp>
 
 namespace csound_webserver {
     
@@ -118,6 +118,15 @@ namespace csound_webserver {
                 auto result = Csound.EvalCode(orc_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/Get0dBFS", [&](const httplib::Request &request, httplib::Response &response) {
+                std::fprintf(stderr, "/Get0dBFS...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto result = Csound.Get0dBFS();
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
                 response.status = 201;
             });
