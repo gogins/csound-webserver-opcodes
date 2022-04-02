@@ -10,7 +10,9 @@ Csound performance, implement a JSON-RPC interface to the running instance of
 Csound, and optionally serve a Web page from the embedded Web server. That 
 page can be embedded into the Csound orchestra code, or it can be a regular 
 HTML file that refers to other resources. The opcodes will optionally run a
-standard external Web browser to open the served HTML page or other resources.
+standard external Web browser to open the served HTML page or other resources. 
+This behaves more or less as though Csound had embedded within it a complete 
+Web browser.
 
 The purpose of these opcodes is to enable the user to define user interfaces, 
 generate scores, or control performances using JavaScript, and otherwise use 
@@ -167,10 +169,8 @@ directory of the internal Web server.
 
 Please note, Web pages opened with this opcode will not have access to Csound 
 unless the body of those pages includes the `csound.js` script for the Csound 
-proxy. That will not normally be the case for Web pages from the Internet. 
-
-The code in `csound.js` can also be embedded in a `<script>` element of the 
-Web page.
+proxy. The code in `csound.js` can also be embedded in a `<script>` element 
+of the Web page.
 
 ## Syntax
 
@@ -182,13 +182,14 @@ webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
 `webserver_create`.
 
 *S_html_text* - The complete text for the resource to be served; normally, 
-this is a regular HTML page and contain anything that such a page contains.
+this is a regular HTML page and can contain anything that such a page 
+contains.
 
-*S_browser_command* - The name of a Web browser that should immediately open 
-the resource. This parameter is optional, and will default to Safari on 
-macOS, Firefox on Linux, and Edge on Windows. The browser name can be 
-continued with browser-specific command-line options, e.g. to resize the 
-browser window.
+*S_browser_command* - The text of a command that should immediately open the
+the named resource in a standard Web browser. This parameter is optional, and 
+will default to `open` on macOS, which usually defaults to Safari; to 
+`xdg-open` on Linux, which usually defaults to Firefox; and to `start` on 
+Windows, which usually defaults to Edge. 
 
 ## Performance
 
