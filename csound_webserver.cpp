@@ -3,6 +3,7 @@
 #include <csound.hpp>
 #include <OpcodeBase.hpp>
 #include <cstdio>
+#include <cstdarg>
 #include <ctime>
 #include <iostream>
 #include <queue>
@@ -133,7 +134,7 @@ namespace csound_webserver {
             server.Post("/GetAudioChannel", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["channel_name"].get<std::string>();              
+                auto channel_name = json_request["params"]["channel_name"].get<std::string>();              
                 auto ksmps = csound->GetKsmps(csound);
                 std::vector<MYFLT> buffer(ksmps);
                 Csound.GetAudioChannel(channel_name.c_str(), &buffer.front());
@@ -145,7 +146,7 @@ namespace csound_webserver {
             server.Post("/GetControlChannel", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetControlChannel...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["channel_name"].get<std::string>();    
+                auto channel_name = json_request["params"]["channel_name"].get<std::string>();    
                 int err;          
                 auto result = Csound.GetControlChannel(channel_name.c_str(), &err);
                 create_json_response(json_request, response, result);
@@ -220,7 +221,49 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
-            // ...and start listening in a separate thread.
+            server.Post("/GetStringChannel", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/GetStringChannel...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
+                char buffer[0x500];     
+                Csound.GetStringChannel(channel_name.c_str(), buffer);
+                create_json_response(json_request, response, buffer);
+                if (diagnostics_enabled) std::fprintf(stderr, "/GetStringChannel: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/InputMessage", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto sco_code = json_request["params"]["sco_code"].get<std::string>();     
+                Csound.InputMessage(sco_code.c_str());
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/IsScorePending", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto result = Csound.IsScorePending();
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/Message", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/Message...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto message = json_request["params"]["message"].get<std::string>();     
+                if (diagnostics_enabled) std::fprintf(stderr, "/Message: message: %s\n", message.c_str());
+                Csound.Message(message.c_str());
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/Message: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            
+           // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
         }
         static CsoundWebServer *create(CSOUND *csound_, const std::string &base_directory_, int port_) {

@@ -70,6 +70,7 @@ csound.Get0dBFS(onSuccess, onError);
     let zdbfs = await csound.Get0dBFS(onSuccess, onError);
     console.log("\\n0dBFS: " + zdbfs);
 })();
+csound.Message("This message is from the embedded HTML.\\n");
 </script>
 </body>
 </html>

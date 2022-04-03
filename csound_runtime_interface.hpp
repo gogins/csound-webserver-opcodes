@@ -31,6 +31,11 @@ namespace csound {
         MYFLT (*csoundGetScoreOffsetSeconds_)(CSOUND *);
         MYFLT (*csoundGetScoreTime_)(CSOUND *);
         MYFLT (*csoundGetSr_)(CSOUND *);
+        void (*csoundGetStringChannel_)(CSOUND *csound, const char *name, char *string);
+        void (*csoundInputMessage_)(CSOUND *, const char *sco_text);
+        int (*csoundIsScorePending_)(CSOUND *);
+        void (*csoundMessage_)(CSOUND *, const char *format, ...);
+
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -54,6 +59,10 @@ namespace csound {
             csoundGetScoreOffsetSeconds_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGetScoreOffsetSeconds");
             csoundGetScoreTime_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGetScoreTime");
             csoundGetSr_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGetSr");
+            csoundGetStringChannel_ = (void (*)(CSOUND *, const char *, char *)) csound->GetLibrarySymbol(library_handle, "csoundGetStringChannel");
+            csoundInputMessage_ = (void (*)(CSOUND *, const char *sco_text)) csound->GetLibrarySymbol(library_handle, "csoundInputMessage");
+            csoundIsScorePending_ = (int (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundIsScorePending");
+            csoundMessage_ = (void (*)(CSOUND *, const char *format, ...)) csound->GetLibrarySymbol(library_handle, "csoundMessage");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -107,13 +116,22 @@ namespace csound {
             MYFLT result = csoundGetSr_(csound);
             return result;
         }
+        virtual void GetStringChannel(const char *name, char *buffer) {
+            csoundGetStringChannel_(csound, name, buffer);
+        }
+        virtual void InputMessage(const char *sco_code) {
+            csoundInputMessage_(csound, sco_code);
+        }
+        virtual int IsScorePending() {
+            int result = csoundIsScorePending_(csound);
+            return result;
+        }
+        virtual void Message(const char *message_) {
+            csoundMessage_(csound, message_);
+        }
         
     };
 /*
-    GetSr
-    GetStringChannel
-    InputMessage
-    IsScorePending
     Message
     ReadScore
     RewindScore
