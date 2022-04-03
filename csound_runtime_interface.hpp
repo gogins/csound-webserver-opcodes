@@ -132,7 +132,7 @@ namespace csound {
             csoundMessage_(csound, message_);
         }
         virtual int ReadScore(const char *sco_code) {
-            int result = csoundReadScoire_(csound, sco_code);
+            int result = csoundReadScore_(csound, sco_code);
             return result;
         }
         
