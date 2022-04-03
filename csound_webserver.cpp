@@ -31,13 +31,14 @@ namespace csound_webserver {
      * Csound method.
      */
     template<typename T>
-    void create_json_response(const nlohmann::json &json_request, httplib::Response &response, const T &return_value) {
+    void create_json_response(const nlohmann::json &json_request, httplib::Response &response, const T &return_value_) {
         nlohmann::json json_response;
         json_response["jsonrpc"] = "2.0";
         json_response["id"] = json_request["id"];
         json_response["method"] = json_request["method"];
-        // This is the JSON-RPC result code.
-        json_response["result"] = std::to_string(return_value);
+        nlohmann::json return_value(return_value_);
+        json_response["result"] = return_value;
+        if (diagnostics_enabled) std::fprintf(stderr, "json_response: %s\n", json_response.dump().c_str());
         response.set_content(json_response.dump(), "application/json");
     }
 
@@ -125,6 +126,18 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto result = Csound.Get0dBFS();
                 create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/GetAudioChannel", [&](const httplib::Request &request, httplib::Response &response) {
+                std::fprintf(stderr, "/Get0dBFS...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto channel_name = json_request["channel_name"].get<std::string>();              
+                auto ksmps = csound->GetKsmps(csound);
+                std::vector<MYFLT> buffer(ksmps);
+                Csound.GetAudioChannel(channel_name.c_str(), &buffer.front());
+                create_json_response(json_request, response, buffer);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
                 response.status = 201;
@@ -285,7 +298,7 @@ extern "C" {
                 (char *)"webserver_open_resource",
                 sizeof(csound_webserver::csound_webserver_open_resource),
                 0,
-                3,
+                1,
                 (char *)"",
                 (char *)"iSS",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_resource::init_,
@@ -295,7 +308,7 @@ extern "C" {
                 (char *)"webserver_open_html",
                 sizeof(csound_webserver::csound_webserver_open_html),
                 0,
-                3,
+                1,
                 (char *)"",
                 (char *)"iSS",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_html::init_,

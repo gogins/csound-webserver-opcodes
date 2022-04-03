@@ -11,7 +11,7 @@ nchnls = 2
 ksmps = 100
 0dbfs = 10
 
-i_webserver webserver_create "/Users/michaelgogins/csound-webserver/examples/", 8080, 1 
+i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1 
 
 webserver_open_resource i_webserver, "bare_test.html", "open"
 

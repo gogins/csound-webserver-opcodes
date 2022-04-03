@@ -6,7 +6,7 @@
 namespace csound {
 
     /**
-     * This creates a C++ interface to a _running_ instance of Csound. The 
+     * This provides a C++ interface to a _running_ instance of Csound. The 
      * interface includes many Csound API methods that have (wrongly, in my 
      * view) been omitted from `csdl.h`. Only those API methods that make 
      * sense during the Csound performance are included, and not all of 
@@ -22,6 +22,7 @@ namespace csound {
         int (*csoundCompileOrc_)(CSOUND *, const char *);
         MYFLT (*csoundEvalCode_)(CSOUND *, const char *);
         MYFLT (*csoundGet0dBFS_)(CSOUND *);
+        void (*csoundGetAudioChannel_)(CSOUND *csound, const char *, MYFLT *);
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -36,6 +37,7 @@ namespace csound {
             csoundCompileOrc_ = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundCompileOrc");
             csoundEvalCode_ = (MYFLT (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundEvalCode");
             csoundGet0dBFS_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
+            csoundGetAudioChannel_ = (void (*)(CSOUND *csound, const char *, MYFLT *)) csound->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -54,12 +56,11 @@ namespace csound {
             MYFLT result = csoundGet0dBFS_(csound);
             return result;
         }
+        virtual void GetAudioChannel(const char *name, MYFLT *audio_buffer) {
+            csoundGetAudioChannel_(csound, name, audio_buffer);
+        }
     };
         /*
-    CompileCsdText
-    CompileOrc
-    EvalCode
-    Get0dBFS
     GetAudioChannel
     GetControlChannel
     GetDebug
