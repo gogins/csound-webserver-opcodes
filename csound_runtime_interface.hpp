@@ -23,7 +23,7 @@ namespace csound {
         MYFLT (*csoundEvalCode_)(CSOUND *, const char *);
         MYFLT (*csoundGet0dBFS_)(CSOUND *);
         void (*csoundGetAudioChannel_)(CSOUND *csound, const char *, MYFLT *);
-        MYFLT (*csoundGetControlChannel_)(CSOUND *csound, const char *name, int *err);
+        MYFLT (*csoundGetControlChannel_)(CSOUND *csound, const char *name, int *);
         int (*csoundGetDebug_)(CSOUND *);
         uint32_t (*csoundGetKsmps_)(CSOUND *);
         uint32_t (*csoundGetNchnls_)(CSOUND *);
@@ -31,10 +31,11 @@ namespace csound {
         MYFLT (*csoundGetScoreOffsetSeconds_)(CSOUND *);
         MYFLT (*csoundGetScoreTime_)(CSOUND *);
         MYFLT (*csoundGetSr_)(CSOUND *);
-        void (*csoundGetStringChannel_)(CSOUND *csound, const char *name, char *string);
-        void (*csoundInputMessage_)(CSOUND *, const char *sco_text);
+        void (*csoundGetStringChannel_)(CSOUND *csound, const char *name, char *);
+        void (*csoundInputMessage_)(CSOUND *, const char *);
         int (*csoundIsScorePending_)(CSOUND *);
         void (*csoundMessage_)(CSOUND *, const char *format, ...);
+        int (*csoundReadScore_)(CSOUND *, const char *);
 
         /** 
          * Stores a pointer to Csound and obtains 
@@ -60,9 +61,10 @@ namespace csound {
             csoundGetScoreTime_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGetScoreTime");
             csoundGetSr_ = (MYFLT (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundGetSr");
             csoundGetStringChannel_ = (void (*)(CSOUND *, const char *, char *)) csound->GetLibrarySymbol(library_handle, "csoundGetStringChannel");
-            csoundInputMessage_ = (void (*)(CSOUND *, const char *sco_text)) csound->GetLibrarySymbol(library_handle, "csoundInputMessage");
+            csoundInputMessage_ = (void (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundInputMessage");
             csoundIsScorePending_ = (int (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundIsScorePending");
             csoundMessage_ = (void (*)(CSOUND *, const char *format, ...)) csound->GetLibrarySymbol(library_handle, "csoundMessage");
+            csoundReadScore_ = (int (*)(CSOUND *csound, const char *)) csound->GetLibrarySymbol(library_handle, "csoundReadScore");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -129,10 +131,13 @@ namespace csound {
         virtual void Message(const char *message_) {
             csoundMessage_(csound, message_);
         }
+        virtual int ReadScore(const char *sco_code) {
+            int result = csoundReadScoire_(csound, sco_code);
+            return result;
+        }
         
     };
 /*
-    Message
     ReadScore
     RewindScore
     ScoreEvent

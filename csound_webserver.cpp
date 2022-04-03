@@ -255,14 +255,23 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto message = json_request["params"]["message"].get<std::string>();     
-                if (diagnostics_enabled) std::fprintf(stderr, "/Message: message: %s\n", message.c_str());
                 Csound.Message(message.c_str());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
                 response.status = 201;
             });
-            
+             server.Post("/ReadScore", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto sco_code = json_request["params"]["sco_code"].get<std::string>();     
+                auto result = Csound.ReadScore(sco_code.c_str());
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+           
            // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
         }
