@@ -79,7 +79,7 @@ namespace csound {
             csoundSetControlChannel_ = (void (*)(CSOUND *, const char *, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
             csoundSetDebug_ = (void (*)(CSOUND *, int )) csound->GetLibrarySymbol(library_handle, "csoundSetDebug");
             csoundSetScoreOffsetSeconds_ = (void (*)(CSOUND *, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
-            csoundSetScorePending_ = (void (*)(CSOUND *, int)) csound->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
+            csoundSetScorePending_ = (void (*)(CSOUND *, int)) csound->GetLibrarySymbol(library_handle, "csoundSetScorePending");
             csoundTableGet_ = (MYFLT (*)(CSOUND *, int, int)) csound->GetLibrarySymbol(library_handle, "csoundTableGet");
             csoundTableLength_ = (int (*)(CSOUND *, int)) csound->GetLibrarySymbol(library_handle, "csoundTableLength");
             csoundTableSet_ = (int (*)(CSOUND *, int, int, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundTableSet");
@@ -189,11 +189,5 @@ namespace csound {
     };
 /* TODO:
     SetMessageCallback
-*/
-/*
-    TableGet
-    TableLength
-    TableSet    
-*/
-    
+*/    
 }

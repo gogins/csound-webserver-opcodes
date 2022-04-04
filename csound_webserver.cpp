@@ -215,7 +215,7 @@ namespace csound_webserver {
             server.Post("/GetSr", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetScoreTime();
+                auto result = Csound.GetSr();
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
