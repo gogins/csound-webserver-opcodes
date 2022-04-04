@@ -343,8 +343,40 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
-           
-           // ...and start listening in a separate thread.
+            server.Post("/TableGet", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/TableGet...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto table_number = json_request["params"]["table_number"].get<int>();     
+                auto index = json_request["params"]["index"].get<int>();
+                MYFLT result = Csound.TableGet(table_number, index);
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/TableGet: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/TableLength", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/TableLength...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto table_number = json_request["params"]["table_number"].get<int>();     
+                int result = Csound.TableLength(table_number);
+                create_json_response(json_request, response, result);
+                if (diagnostics_enabled) std::fprintf(stderr, "/TableLength: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/TableSet", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/TableSet...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto table_number = json_request["params"]["table_number"].get<int>();     
+                auto index = json_request["params"]["table_number"].get<int>();     
+                auto  value = json_request["params"]["table_number"].get<MYFLT>();     
+                Csound.TableSet(table_number, index, value);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/TableSet: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
         }
         static CsoundWebServer *create(CSOUND *csound_, const std::string &base_directory_, int port_) {

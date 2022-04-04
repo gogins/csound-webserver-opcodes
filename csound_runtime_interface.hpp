@@ -43,6 +43,9 @@ namespace csound {
         void (*csoundSetScoreOffsetSeconds_)(CSOUND *, MYFLT);        
         void (*csoundSetScorePending_)(CSOUND *, int);
         void (*csoundSetStringChannel_)(CSOUND *, const char *, char *);
+        MYFLT (*csoundTableGet_)(CSOUND *, int, int);
+        int (*csoundTableLength_)(CSOUND *, int);
+        int (*csoundTableSet_)(CSOUND *, int, int, MYFLT);
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -77,6 +80,9 @@ namespace csound {
             csoundSetDebug_ = (void (*)(CSOUND *, int )) csound->GetLibrarySymbol(library_handle, "csoundSetDebug");
             csoundSetScoreOffsetSeconds_ = (void (*)(CSOUND *, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
             csoundSetScorePending_ = (void (*)(CSOUND *, int)) csound->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
+            csoundTableGet_ = (MYFLT (*)(CSOUND *, int, int)) csound->GetLibrarySymbol(library_handle, "csoundTableGet");
+            csoundTableLength_ = (int (*)(CSOUND *, int)) csound->GetLibrarySymbol(library_handle, "csoundTableLength");
+            csoundTableSet_ = (int (*)(CSOUND *, int, int, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundTableSet");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -164,18 +170,27 @@ namespace csound {
             csoundSetScoreOffsetSeconds_(csound, score_time);
         }
         virtual void SetScorePending(int pending) {
-            csoundSetScorePending(csound, pending);
+            csoundSetScorePending_(csound, pending);
         }
         virtual void SetStringChannel(const char *channel_name, char *channel_value) {
             csoundSetStringChannel_(csound, channel_name, channel_value);
         }
-        
+        virtual MYFLT TableGet(int table_number, int index) {
+            MYFLT result = csoundTableGet_(csound, table_number, index);
+            return result;
+        }
+        virtual int TableLength(int table_number) {
+            MYFLT result = csoundTableLength_(csound, table_number);
+            return result;
+        }
+        virtual void TableSet(int table_number, int index, MYFLT value) {
+            csoundTableSet_(csound, table_number, index,  value);
+        }
     };
 /* TODO:
     SetMessageCallback
 */
 /*
-    SetStringChannel
     TableGet
     TableLength
     TableSet    
