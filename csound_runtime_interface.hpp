@@ -36,7 +36,8 @@ namespace csound {
         int (*csoundIsScorePending_)(CSOUND *);
         void (*csoundMessage_)(CSOUND *, const char *format, ...);
         int (*csoundReadScore_)(CSOUND *, const char *);
-
+        void (*csoundRewindScore_)(CSOUND *);
+        int (*csoundScoreEvent_)(CSOUND *,char, const MYFLT *, long);
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -64,7 +65,9 @@ namespace csound {
             csoundInputMessage_ = (void (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundInputMessage");
             csoundIsScorePending_ = (int (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundIsScorePending");
             csoundMessage_ = (void (*)(CSOUND *, const char *format, ...)) csound->GetLibrarySymbol(library_handle, "csoundMessage");
-            csoundReadScore_ = (int (*)(CSOUND *csound, const char *)) csound->GetLibrarySymbol(library_handle, "csoundReadScore");
+            csoundReadScore_ = (int (*)(CSOUND *, const char *)) csound->GetLibrarySymbol(library_handle, "csoundReadScore");
+            csoundRewindScore_ = (void (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundRewindScore");
+            csoundScoreEvent_ = (int (*)(CSOUND *,char, const MYFLT *, long)) csound->GetLibrarySymbol(library_handle, "csoundScoreEvent");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -135,11 +138,16 @@ namespace csound {
             int result = csoundReadScore_(csound, sco_code);
             return result;
         }
+        virtual void RewindScore() {
+            csoundRewindScore_(csound);
+        }
+        virtual int ScoreEvent(char opcode_code, std::vector<MYFLT> &pfields) {
+            int result = csoundScoreEvent_(csound, opcode_code, &pfields[0], pfields.size());
+            return result;
+        }
         
     };
 /*
-    ReadScore
-    RewindScore
     ScoreEvent
     SetControlChannel
     SetDebug

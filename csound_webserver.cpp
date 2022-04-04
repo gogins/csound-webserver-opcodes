@@ -271,6 +271,26 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
+             server.Post("/RewindScore", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                Csound.RewindScore();
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/ScoreEvent", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto opcode_code = json_request["params"]["opcode_code"].get<char>();     
+                auto pfields = json_request["params"]["pfields"].get<std::vector<MYFLT> >(); 
+                Csound.ScoreEvent(opcode_code, pfields);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
            
            // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
