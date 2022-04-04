@@ -38,7 +38,8 @@ namespace csound {
         int (*csoundReadScore_)(CSOUND *, const char *);
         void (*csoundRewindScore_)(CSOUND *);
         int (*csoundScoreEvent_)(CSOUND *,char, const MYFLT *, long);
-        void (*csoundSetControlChannel)(CSOUND *, const char *, MYFLT);
+        void (*csoundSetControlChannel_)(CSOUND *, const char *, MYFLT);
+        void (*csoundSetDebug_)(CSOUND *, int debug);
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -70,6 +71,7 @@ namespace csound {
             csoundRewindScore_ = (void (*)(CSOUND *)) csound->GetLibrarySymbol(library_handle, "csoundRewindScore");
             csoundScoreEvent_ = (int (*)(CSOUND *,char, const MYFLT *, long)) csound->GetLibrarySymbol(library_handle, "csoundScoreEvent");
             csoundSetControlChannel_ = (void (*)(CSOUND *, const char *, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
+            csoundSetDebug_ = (void (*)(CSOUND *, int )) csound->GetLibrarySymbol(library_handle, "csoundSetDebug");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -147,14 +149,15 @@ namespace csound {
             int result = csoundScoreEvent_(csound, opcode_code, &pfields[0], pfields.size());
             return result;
         }
-        virtual int SetControlChannel(const char *channel_name, MYFLT channel_value) {
-            int result = csoundSetControlChannel_(csound, channel_name, channel_value);
-            return result;
+        virtual void SetControlChannel(const char *channel_name, MYFLT channel_value) {
+            csoundSetControlChannel_(csound, channel_name, channel_value);
+        }
+        virtual void SetDebug(int enabled) {
+            csoundSetDebug_(csound, enabled);
         }
         
     };
 /*
-    SetControlChannel
     SetDebug
     SetMessageCallback
     SetScoreOffsetSeconds

@@ -291,14 +291,24 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
-            server.Post("/SetChannelValue", [&](const httplib::Request &request, httplib::Response &response) {
-                if (diagnostics_enabled) std::fprintf(stderr, "/SetChannelValue...\n");
+            server.Post("/SetControlChannel", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["params"]["channel_nane"].get<std::string>();     
+                auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
                 auto channel_value = json_request["params"]["channel_value"].get<MYFLT>(); 
-                Csound.SetChannelValue(channel_name, channel_value);
+                Csound.SetControlChannel(channel_name.c_str(), channel_value);
                 create_json_response(json_request, response, OK);
-                if (diagnostics_enabled) std::fprintf(stderr, "/SetChannelValue: response: %s\n", response.body.c_str());
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/SetDebug", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto enabled = json_request["params"]["enabled"].get<int>();     
+                Csound.SetDebug(enabled);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
                 response.status = 201;
             });
