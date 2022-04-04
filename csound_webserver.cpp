@@ -312,6 +312,37 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
+            server.Post("/SetScoreOffsetSeconds", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto score_time = json_request["params"]["score_time"].get<MYFLT>();     
+                Csound.SetScoreOffsetSeconds(score_time);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/SetScorePending", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto pending = json_request["params"]["pending"].get<int>();     
+                Csound.SetScorePending(pending);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
+            server.Post("/SetStringChannel", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
+                auto channel_value = json_request["params"]["channel_value"].get<std::string>();
+                Csound.SetStringChannel(channel_name.c_str(), const_cast<char *>(channel_value.c_str()));
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetStringChannel: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
            
            // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);

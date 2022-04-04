@@ -40,6 +40,9 @@ namespace csound {
         int (*csoundScoreEvent_)(CSOUND *,char, const MYFLT *, long);
         void (*csoundSetControlChannel_)(CSOUND *, const char *, MYFLT);
         void (*csoundSetDebug_)(CSOUND *, int debug);
+        void (*csoundSetScoreOffsetSeconds_)(CSOUND *, MYFLT);        
+        void (*csoundSetScorePending_)(CSOUND *, int);
+        void (*csoundSetStringChannel_)(CSOUND *, const char *, char *);
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -72,6 +75,8 @@ namespace csound {
             csoundScoreEvent_ = (int (*)(CSOUND *,char, const MYFLT *, long)) csound->GetLibrarySymbol(library_handle, "csoundScoreEvent");
             csoundSetControlChannel_ = (void (*)(CSOUND *, const char *, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
             csoundSetDebug_ = (void (*)(CSOUND *, int )) csound->GetLibrarySymbol(library_handle, "csoundSetDebug");
+            csoundSetScoreOffsetSeconds_ = (void (*)(CSOUND *, MYFLT)) csound->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
+            csoundSetScorePending_ = (void (*)(CSOUND *, int)) csound->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
@@ -155,13 +160,21 @@ namespace csound {
         virtual void SetDebug(int enabled) {
             csoundSetDebug_(csound, enabled);
         }
+        virtual void SetScoreOffsetSeconds(MYFLT score_time) {
+            csoundSetScoreOffsetSeconds_(csound, score_time);
+        }
+        virtual void SetScorePending(int pending) {
+            csoundSetScorePending(csound, pending);
+        }
+        virtual void SetStringChannel(const char *channel_name, char *channel_value) {
+            csoundSetStringChannel_(csound, channel_name, channel_value);
+        }
         
     };
-/*
-    SetDebug
+/* TODO:
     SetMessageCallback
-    SetScoreOffsetSeconds
-    SetScorePending
+*/
+/*
     SetStringChannel
     TableGet
     TableLength
