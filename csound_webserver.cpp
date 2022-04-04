@@ -291,6 +291,17 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
+            server.Post("/SetChannelValue", [&](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetChannelValue...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto channel_name = json_request["params"]["channel_nane"].get<std::string>();     
+                auto channel_value = json_request["params"]["channel_value"].get<MYFLT>(); 
+                Csound.SetChannelValue(channel_name, channel_value);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetChannelValue: response: %s\n", response.body.c_str());
+                // This is the HTTP result code.
+                response.status = 201;
+            });
            
            // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
