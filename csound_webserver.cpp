@@ -494,7 +494,6 @@ namespace csound_webserver {
                 return result;
             }
     };
-
 };
 
 /**
