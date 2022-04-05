@@ -14,11 +14,7 @@
 #include <csound_runtime_interface.hpp>
 
 namespace csound_webserver {
-    
-    class CsoundWebServer;
-    
-    typedef csound::heap_object_manager_t<CsoundWebServer> webservers;
-    
+        
     static std::mutex &get_mutex() {
         static std::mutex mutex_;
         return mutex_;
@@ -432,7 +428,9 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text.\n");
         }
     };
-
+    
+    typedef csound::heap_object_manager_t<CsoundWebServer> webservers;
+    
     class csound_webserver_create : public csound::OpcodeBase<csound_webserver_create> {
         public:
             // OUTPUTS
