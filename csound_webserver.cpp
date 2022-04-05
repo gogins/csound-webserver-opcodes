@@ -133,7 +133,7 @@ namespace csound_webserver {
                 auto channel_name = json_request["params"]["channel_name"].get<std::string>();              
                 auto ksmps = csound->GetKsmps(csound);
                 std::vector<MYFLT> buffer(ksmps);
-                Csound.GetAudioChannel(channel_name.c_str(), &buffer.front());
+                Csound.GetAudioChannel(channel_name.c_str(), &buffer[0]);
                 create_json_response(json_request, response, buffer);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -222,7 +222,7 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
                 char buffer[0x500];     
-                Csound.GetStringChannel(channel_name.c_str(), buffer);
+                Csound.GetStringChannel(channel_name.c_str(), &buffer[0]);
                 create_json_response(json_request, response, buffer);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetStringChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
