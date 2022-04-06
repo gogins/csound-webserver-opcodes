@@ -447,7 +447,7 @@ namespace csound_webserver {
         }
     };
     
-    typedef ::csound::heap_object_manager_t<CsoundWebServer> webservers;
+    typedef csound::heap_object_manager_t<csound_webserver::CsoundWebServer> webservers;
     
     class csound_webserver_create : public csound::OpcodeBase<csound_webserver_create> {
         public:
