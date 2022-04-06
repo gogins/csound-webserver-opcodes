@@ -435,10 +435,6 @@ namespace csound_webserver {
     
     typedef csound::heap_object_manager_t<csound_webserver::CsoundWebServer> webservers;
     
-    csound::heap_object_manager_t<csound_webserver::CsoundWebServer> &instance() {
-        return webservers::instance();
-    }
-    
     class csound_webserver_create : public csound::OpcodeBase<csound_webserver_create> {
         public:
             // OUTPUTS
