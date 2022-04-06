@@ -219,6 +219,7 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
+            /*
             server.Post("/GetStringChannel", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetStringChannel...\n");
                 auto json_request = nlohmann::json::parse(request.body);
@@ -230,6 +231,7 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
+            */
             server.Post("/InputMessage", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage...\n");
                 auto json_request = nlohmann::json::parse(request.body);
