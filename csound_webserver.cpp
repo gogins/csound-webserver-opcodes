@@ -548,6 +548,7 @@ extern "C" {
     }
 
 #ifndef INIT_STATIC_MODULES
+
     PUBLIC int csoundModuleCreate(CSOUND *csound) {
         return OK;
     }
@@ -559,6 +560,7 @@ extern "C" {
     PUBLIC int csoundModuleDestroy(CSOUND *csound) {
         return csoundModuleDestroy_csound_webserver(csound);
     }
+    
 #endif
 }
 
