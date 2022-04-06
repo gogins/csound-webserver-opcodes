@@ -67,6 +67,7 @@ jobs:
           git checkout csound6
           git pull
           cd ..
+          pwd
           echo "Finished updating all git submodules."
           echo "Trying to find csdl.h..."
           find /home/runner -name "csdl.h" -ls 2>/dev/null
