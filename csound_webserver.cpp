@@ -127,18 +127,20 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
+            /*
             server.Post("/GetAudioChannel", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto channel_name = json_request["params"]["channel_name"].get<std::string>();              
                 auto ksmps = csound->GetKsmps(csound);
                 std::vector<MYFLT> buffer(ksmps);
-                csound->GetAudioChannel(csound, channel_name.c_str(), &buffer.front());
+                csound.GetAudioChannel(channel_name.c_str(), &buffer.front());
                 create_json_response(json_request, response, buffer);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
                 response.status = 201;
             });
+            */
             server.Post("/GetControlChannel", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetControlChannel...\n");
                 auto json_request = nlohmann::json::parse(request.body);
