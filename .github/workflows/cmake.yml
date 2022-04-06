@@ -42,12 +42,12 @@ jobs:
           git submodule update --init --recursive
           git submodule status --recursive
           sudo -k
-          echo "Finished updating all git submodules."
           cd csound
           git branch
           git checkout csound6
           git pull
           cd ..
+          echo "Finished updating all git submodules."
           echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -62,6 +62,11 @@ jobs:
           git submodule update --init --recursive
           git submodule status --recursive
           sudo -k
+          cd csound
+          git branch
+          git checkout csound6
+          git pull
+          cd ..
           echo "Finished updating all git submodules."
           echo "Trying to find csdl.h..."
           find /home/runner -name "csdl.h" -ls 2>/dev/null
@@ -76,6 +81,11 @@ jobs:
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
+          cd csound
+          git branch
+          git checkout csound6
+          git pull
+          cd ..
           echo "Finished updating all git submodules."
           # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
