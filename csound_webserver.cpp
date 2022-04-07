@@ -13,6 +13,11 @@
 #include <cpp-httplib/httplib.h>
 #include <csound_runtime_interface.hpp>
 
+#define XSTR(x) STR(x)
+#define STR(x) #x
+
+#pragma message "__cplusplus is defined as: " XSTR(__cplusplus) 
+
 namespace csound_webserver {
         
     static std::mutex &get_mutex() {
