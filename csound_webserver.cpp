@@ -21,6 +21,86 @@ namespace csound_webserver {
     }
     
     static bool diagnostics_enabled = true;
+    
+    class CsoundWebServer;
+    
+    template<typename O> class heep_object_manager_t {
+    private:
+        std::map<CSOUND *, std::vector<O*>> objects_;
+        std::recursive_mutex mutex;
+        heep_object_manager_t(){};
+        ~heep_object_manager_t(){};
+    public:
+        static heep_object_manager_t &instance() {
+            static heep_object_manager_t singleton;
+            return singleton;
+        }
+        std::map<CSOUND *, std::vector<O*>> &objects() {
+            std::lock_guard<std::recursive_mutex> lock(mutex);
+            return objects_;
+        }
+        /**
+         * Returns a list of pointers to all objects allocated for this
+         * instance of Csound.
+         */
+        std::vector<O*> &objects_for_csound(CSOUND *csound) {
+            std::lock_guard<std::recursive_mutex> lock(mutex);
+            auto &objects_for_csound_ = objects()[csound];
+            return objects_for_csound_;
+        }
+        /**
+         * Returns the handle for the object; if the object has not yet been
+         * stored, inserts it into the list of object pointers for this
+         * instance of Csound; otherwise, returns the handle of the stored
+         * object pointer.
+         */
+        int handle_for_object(CSOUND *csound, O *object) {
+            std::lock_guard<std::recursive_mutex> lock(mutex);
+            auto &objects_for_csound_ = objects_for_csound(csound);
+            auto iterator = std::find(objects_for_csound_.begin(), objects_for_csound_.end(), object);
+            if (iterator == objects_for_csound_.end()) {
+                int handle = objects_for_csound_.size();
+                objects_for_csound_.push_back(object);
+                 if (diagnostics_enabled) std::fprintf(stderr, "heep_object_manager_t::handle_for_object %p: new object handle: %d (of %ld)\n", object, handle, objects_for_csound_.size());
+                return handle;
+            } else {
+                int handle = static_cast<int>(iterator - objects_for_csound_.begin());
+                 if (diagnostics_enabled) std::fprintf(stderr, "heep_object_manager_t::handle_for_object: existing object handle: %d\n", handle);
+                return handle;
+            }
+        }
+        /**
+         * Returns the object pointer for the handle;
+         * if the object pointer has not been stored by
+         * handle, returns a null pointer.
+         */
+        O *object_for_handle(CSOUND *csound, int handle) {
+            std::lock_guard<std::recursive_mutex> lock(mutex);
+            auto &objects_for_csound_ = objects_for_csound(csound);
+            if (handle >= objects_for_csound_.size()) {
+                return nullptr;
+            }
+            O *object = objects_for_csound_[handle];
+            if (diagnostics_enabled) std::fprintf(stderr, "heep_object_manager_t::object_for_handle: %p %d (of %ld)\n", object, handle, objects_for_csound_.size());
+            return object;
+        }
+        /**
+         * First destroys all objects created by the calling
+         * instance of Csound, then destroys the list of
+         * object pointers for this instance of Csound.
+         */
+        void module_destroy(CSOUND *csound) {
+            std::lock_guard<std::recursive_mutex> lock(mutex);
+            auto &objects_for_csound_ = objects_for_csound(csound);
+            for (int i = 0, n = objects_for_csound_.size(); i < n; ++i) {
+                delete objects_for_csound_[i];
+                objects_for_csound_[i] = nullptr;
+            }
+            objects_for_csound_.clear();
+            objects().erase(csound);
+        }
+};
+
 
     /**
      * First the Csound method is called, then this function creates the 
@@ -434,7 +514,7 @@ namespace csound_webserver {
                 int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
                 auto server = CsoundWebServer::create(csound, base_uri_, port);
-                int handle = csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().handle_for_object(csound, server);
+                int handle = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().handle_for_object(csound, server);
                 *i_server_handle = static_cast<MYFLT>(handle);
                 return result;
             }
@@ -455,7 +535,7 @@ namespace csound_webserver {
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;
                 std::string browser = S_browser->data;
-                server = csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
+                server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
                 server->open_resource(resource, browser);
                 log(csound, "csound_webserver_open_resource::init.\n");
                 return result;
@@ -477,7 +557,7 @@ namespace csound_webserver {
                 int i_server_handle = *i_server_handle_;
                 std::string html_text = S_html_text_->data;
                 std::string browser = S_browser->data;
-                server = csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
+                server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
                 server->open_html(html_text, browser);
                 log(csound, "csound_webserver_open_html::init.\n");
                 return result;
@@ -528,7 +608,7 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleDestroy_csound_webserver(CSOUND *csound) {
-        csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().module_destroy(csound);
+        csound_webserver::heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().module_destroy(csound);
         return OK;
     }
 
