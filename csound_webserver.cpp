@@ -419,11 +419,7 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text.\n");
         }
     };
-    
-    typedef csound::heap_object_manager_t<csound_webserver::CsoundWebServer> webservers;
-    // Dummy for Windows.
-    webservers webservers_;
-    
+        
     class csound_webserver_create : public csound::OpcodeBase<csound_webserver_create> {
         public:
             // OUTPUTS
@@ -438,7 +434,7 @@ namespace csound_webserver {
                 int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
                 auto server = CsoundWebServer::create(csound, base_uri_, port);
-                int handle = webservers::instance().handle_for_object(csound, server);
+                int handle = csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().handle_for_object(csound, server);
                 *i_server_handle = static_cast<MYFLT>(handle);
                 return result;
             }
@@ -459,7 +455,7 @@ namespace csound_webserver {
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;
                 std::string browser = S_browser->data;
-                server = webservers::instance().object_for_handle(csound, i_server_handle);
+                server = csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
                 server->open_resource(resource, browser);
                 log(csound, "csound_webserver_open_resource::init.\n");
                 return result;
@@ -481,7 +477,7 @@ namespace csound_webserver {
                 int i_server_handle = *i_server_handle_;
                 std::string html_text = S_html_text_->data;
                 std::string browser = S_browser->data;
-                server = webservers::instance().object_for_handle(csound, i_server_handle);
+                server = csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
                 server->open_html(html_text, browser);
                 log(csound, "csound_webserver_open_html::init.\n");
                 return result;
@@ -532,7 +528,7 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleDestroy_csound_webserver(CSOUND *csound) {
-        csound_webserver::webservers::instance().module_destroy(csound);
+        csound::heap_object_manager_t<csound_webserver::CsoundWebServer>::instance().module_destroy(csound);
         return OK;
     }
 
