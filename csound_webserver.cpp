@@ -13,11 +13,6 @@
 #include <cpp-httplib/httplib.h>
 #include <csound_runtime_interface.hpp>
 
-#define XSTR(x) STR(x)
-#define STR(x) #x
-
-#pragma message "__cplusplus is defined as: " XSTR(__cplusplus) 
-
 namespace csound_webserver {
         
     static std::mutex &get_mutex() {
@@ -224,19 +219,6 @@ namespace csound_webserver {
                 // This is the HTTP result code.
                 response.status = 201;
             });
-            /*
-            server.Post("/GetStringChannel", [&](const httplib::Request &request, httplib::Response &response) {
-                if (diagnostics_enabled) std::fprintf(stderr, "/GetStringChannel...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
-                char buffer[0x500];     
-                Csound.GetStringChannel(channel_name.c_str(), &buffer[0]);
-                create_json_response(json_request, response, buffer);
-                if (diagnostics_enabled) std::fprintf(stderr, "/GetStringChannel: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
-                response.status = 201;
-            });
-            */
             server.Post("/InputMessage", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage...\n");
                 auto json_request = nlohmann::json::parse(request.body);
@@ -439,6 +421,8 @@ namespace csound_webserver {
     };
     
     typedef csound::heap_object_manager_t<csound_webserver::CsoundWebServer> webservers;
+    // Dummy for Windows.
+    webservers webservers_;
     
     class csound_webserver_create : public csound::OpcodeBase<csound_webserver_create> {
         public:
