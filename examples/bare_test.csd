@@ -11,11 +11,12 @@ nchnls = 2
 ksmps = 100
 0dbfs = 10
 
-i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+// i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 0
 
-webserver_open_resource i_webserver, "bare_test.html", "open"
+webserver_open_resource i_webserver, "bare_test.html", "xdg-open"
 
-webserver_open_resource i_webserver, "https://csound.com/docs/manual/indexframes.html", "open"
+webserver_open_resource i_webserver, "https://csound.com/docs/manual/indexframes.html", "xdg-open"
 
 gS_html init {{
 <html>
@@ -27,7 +28,7 @@ Hello, world, from Csound's internal Web server, with embedded HTML!
 </html>
 }}
 
-webserver_open_html i_webserver, gS_html, "open"
+webserver_open_html i_webserver, gS_html, "xdg-open"
 
 gS_html_rpc init {{
 <html>

@@ -24,6 +24,19 @@ namespace csound_webserver {
     
     class CsoundWebServer;
     
+    static std::string default_browser() {
+        #if defined(_WIN64)
+            return "start";
+        #endif
+        #if defined(__linux__)
+            return "xdg-open";
+        #endif
+        #if defined(macintosh)
+            return "open";
+        #endif
+        return "Shell open command for browser is undefined.\n";
+    }
+    
     template<typename O> class heep_object_manager_t {
     private:
         std::map<CSOUND *, std::vector<O*>> objects_;
