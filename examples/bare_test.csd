@@ -3,16 +3,20 @@
 A very basic test of the Csound webserver opcodes.
 </CsLicense>
 <CsOptions>
+-d -m165 -odac0
 </CsOptions>
--m165 -odac0
 <CsInstruments>
 sr = 48000
 nchnls = 2
 ksmps = 100
-0dbfs = 10
+// Doesn't work in this context:
+// 0dbfs = 5
+// Multiply final output by:
+gi_1odbfs init (1. / 5.)
+print gi_1odbfs
 
 // i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1
-i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 1
+i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 0
 
 webserver_open_resource i_webserver, "bare_test.html", "xdg-open"
 
@@ -34,10 +38,6 @@ Hello, World, from Csound's internal Web server, with embedded HTML and JSON-RPC
 <textarea id='orc' cols=80 rows=25 style="visibility:hidden;">
 ; Coded by Hans Mikelson October 1999
 
-sr      =        44100                      ; Sample rate
-kr      =        4410                       ; Kontrol rate
-ksmps   =        10                         ; Samples/Kontrol period
-nchnls  =        2                          ; Normal stereo
         zakinit  50,50                      ; May need this later
 
 ;---------------------------------------------------------
@@ -68,7 +68,7 @@ ayf    =         .1/(.1+ayi*ayi)     ; Sort of a square pulse wave at this point
 
 asig   oscili    1, ifqc*kpbnd, 1    ; Sine oscillator with pitch bend
 
-       outs      ayf*iamp*asig*kdclk*ipanl, ayf*iamp*asig*kdclk*ipanr ;Output the sound
+       outs      gi_1odbfs*ayf*iamp*asig*kdclk*ipanl, gi_1odbfs*ayf*iamp*asig*kdclk*ipanr ;Output the sound
 
        endin
 </textarea>
@@ -86,7 +86,7 @@ f13 0 1025 -5  .75 256 1  256 1   256 .5 257 1
 f14 0 1025 -5  2   256 .5 256 1   256 1  257 2
 f15 0 1025 -5  1   256 2  256 2   256 2  257 2
 
-t 0 20
+;t 0 20
 
 ;    Sta     Dur  Amp    Pitch  Pan  PlsFqc WahRate  WahTable  PtchBend
 i1   0       16   8000   7.06   .5   80     .5       20        13
@@ -137,10 +137,10 @@ var onError = function(id, error) {
 
 webserver_open_html i_webserver, gS_html_rpc, "xdg-open"
 
-prints "Now starting to run..."
+prints "Csound performance is starting...\\n"
 
 </CsInstruments>
 <CsScore>
-f 0 360
+f 0 30
 </CsScore>
 </CsoundSynthesizer>

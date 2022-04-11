@@ -7,8 +7,8 @@ http://michaelgogins.tumblr.com
 
 The csound_webserver opcodes embed a _local_, internal Web server into the 
 Csound performance, implement a JSON-RPC interface to the running instance of 
-Csound, and optionally serve a Web page from the embedded Web server. That 
-page can be embedded into the Csound orchestra code, or it can be a regular 
+Csound, and optionally serve Web pages from the embedded Web server. Such 
+pages can be embedded into the Csound orchestra code, or they can be a regular 
 HTML file that refers to other resources. The opcodes will optionally run a
 standard external Web browser to open the served HTML page or other resources. 
 This behaves more or less as though Csound had embedded within it a complete 
@@ -68,10 +68,13 @@ TableSet
 Any Web page that needs to communicate with the running instance of Csound 
 must include the `csound.js` script in the HTML `<head>` element.
 
-Please note, these methods are asynchronous, and all methods that return 
+Please note, these methods are asynchronous, but all methods that return 
 values are declared `async` so that that they can either be called 
 asynchronously, or called synchronously using `await` inside an `async` 
 function.
+
+Also note, each webserver opcode can in general host any number of 
+Web pages, _but only one Web page that embeds `csound.js`_.
 
 Naturally, all Csound API methods that destroy or create Csound, start 
 or stop the performance, or configure Csound's audio or MIDI input or output 
@@ -147,10 +150,10 @@ should form a valid, loadable URI. A complete URL, e.g. for resources from
 the Internet, can also be used.
 
 *S_browser_command* - The text of a command that should immediately open the
-the named resource in a standard Web browser. This parameter is optional, and 
-will default to `open` on macOS, which usually defaults to Safari; to 
-`xdg-open` on Linux, which usually defaults to Firefox; and `start` on 
-Windows, which usually defaults to Edge. 
+named resource in a standard Web browser. This parameter should normally be 
+`open` on macOS, which usually defaults to Safari; `xdg-open` on Linux, which 
+usually defaults to Firefox; or `start` on Windows, which usually defaults to 
+Edge. 
 
 ## Performance
 
@@ -169,8 +172,9 @@ directory of the internal Web server.
 
 Please note, Web pages opened with this opcode will not have access to Csound 
 unless the body of those pages includes the `csound.js` script for the Csound 
-proxy. The code in `csound.js` can also be embedded in a `<script>` element 
-of the Web page.
+proxy. 
+
+Also note, only one such page can be hosted by any single webserver opcode.
 
 ## Syntax
 
@@ -186,10 +190,10 @@ this is a regular HTML page and can contain anything that such a page
 contains.
 
 *S_browser_command* - The text of a command that should immediately open the
-the named resource in a standard Web browser. This parameter is optional, and 
-will default to `open` on macOS, which usually defaults to Safari; to 
-`xdg-open` on Linux, which usually defaults to Firefox; and to `start` on 
-Windows, which usually defaults to Edge. 
+named resource in a standard Web browser. This parameter should normally be 
+`open` on macOS, which usually defaults to Safari; `xdg-open` on Linux, which 
+usually defaults to Firefox; or `start` on Windows, which usually defaults to 
+Edge. 
 
 ## Performance
 

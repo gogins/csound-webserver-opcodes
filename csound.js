@@ -1,7 +1,12 @@
 /**
- * All methods that return values are declared "async" so that they can be 
- * called either asynchronously or synchronously.
+ * This class provides a JSON-RPC interface to an already running instance of 
+ * a csound_webserver opcode, and thus to Csound itself.
+ *
+ * All methods are "async" so they can be called either asynchronously or 
+ * synchronously.
  */
+const diagnostics_enabled = false;
+
 class Csound {
     constructor(url) {
         this.url = url;
@@ -23,12 +28,13 @@ class Csound {
               params: parameters
             })
         };    
-        console.log("\nfetch_request:\n" + JSON.stringify(fetch_request) + "\n");
+        if (diagnostics_enabled == true) console.log("\nfetch_request:\n" + JSON.stringify(fetch_request) + "\n");
         const jsonrpc_response = await fetch(fetch_url, fetch_request);
-        console.log("\jsonrpc_response:\n" + JSON.stringify(jsonrpc_response) + "\n");
-        const jayson = await jsonrpc_response.json();
-        console.log("\jayson:\n" + JSON.stringify(jayson) + "\n");
-        return jayson;
+        if (diagnostics_enabled == true) console.log("\jsonrpc_response:\n" + JSON.stringify(jsonrpc_response) + "\n");
+        const jsonrpc_result = await jsonrpc_response.json();
+        if (diagnostics_enabled == true) console.log("\jsonrpc_result:\n" + jsonrpc_result.result + "\n");
+        // Returns not the JSON of the result, but the _value_ of the result.
+        return jsonrpc_result.result;
     }
     async CompileCsdText(csd_text, callbackSuccess, callbackError) {
         var params = {csd_text : csd_text};
