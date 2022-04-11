@@ -11,24 +11,12 @@ nchnls = 2
 ksmps = 100
 0dbfs = 10
 
-// i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
-i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 0
+// i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1
+i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 1
 
 webserver_open_resource i_webserver, "bare_test.html", "xdg-open"
 
 webserver_open_resource i_webserver, "https://csound.com/docs/manual/indexframes.html", "xdg-open"
-
-gS_html init {{
-<html>
-<head>
-</head>
-<body>
-Hello, world, from Csound's internal Web server, with embedded HTML!
-</body>
-</html>
-}}
-
-webserver_open_html i_webserver, gS_html, "xdg-open"
 
 gS_html_rpc init {{
 <html>
@@ -39,7 +27,7 @@ gS_html_rpc init {{
 </head>
 <body>
 <p>
-Hello, World, from Csound's internal Web server, with embedded HTML and RPC to Csound!
+Hello, World, from Csound's internal Web server, with embedded HTML and JSON-RPC!
 </p>
 <textarea id='log_textarea' cols=80 rows=25>
 </textarea>
@@ -128,15 +116,14 @@ var onError = function(id, error) {
     console.info("\\nid: " + id + " error:" + error);
     return error;
 };
-csound.EvalCode("prints \\"Hello from the browser (" + navigator.userAgent + ") via JSON-RPC!\\"\\n\\n", onSuccess, onError);
-csound.Get0dBFS(onSuccess, onError);
 // All Csound functions that return values are declared async. Here's how to 
 // synchronously wait for the return value. Any number of `await` calls can be 
 // made inside the anonymous async function.
 (async () => {
+    //let i_result = await csound.EvalCode("return 2.5\\n", onSuccess, onError);
     let zdbfs = await csound.Get0dBFS(onSuccess, onError);
-    console.log("\\n0dBFS is: " + zdbfs);
-    csound.Message("This message is from the embedded HTML.\\n");
+    console.log("\\n0dBFS returned: " + zdbfs);
+    await csound.Message("This message is from the embedded HTML.\\n");
     var orc = document.getElementById('orc').value;
     await csound.CompileOrc(orc);
     var sco = document.getElementById('sco').value;
@@ -148,12 +135,12 @@ csound.Get0dBFS(onSuccess, onError);
 }
 }}
 
-webserver_open_html i_webserver, gS_html_rpc, "open"
+webserver_open_html i_webserver, gS_html_rpc, "xdg-open"
 
 prints "Now starting to run..."
 
 </CsInstruments>
 <CsScore>
-f 0 120
+f 0 360
 </CsScore>
 </CsoundSynthesizer>

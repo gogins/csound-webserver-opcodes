@@ -50,8 +50,8 @@ namespace csound {
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
          */
-        virtual int initialize(CSOUND *csound_) {
-            csound_ = csound_;
+        virtual int initialize(CSOUND *csound__) {
+            csound_ = csound__;
             // A null library path indicates that symbols should be resolved 
             // from the running program (Csound usually) and its loaded 
             // dependencies (which must include the Csound library).
@@ -94,7 +94,9 @@ namespace csound {
             return result;
         }
         virtual MYFLT EvalCode(const char *orc_code) {
+            if (diagnostics_enabled) fprintf(stderr, "Csound.EvalCode: csound: %p orc_code: %s\n", csound_, orc_code);
             MYFLT result = csoundEvalCode_(csound_, orc_code);
+            if (diagnostics_enabled) fprintf(stderr, "Csound.EvalCode: result: %f\n", result);
             return result;
         }
         virtual MYFLT Get0dBFS() {
