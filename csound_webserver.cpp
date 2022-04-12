@@ -550,7 +550,7 @@ namespace csound_webserver {
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_resource::init: this: %p\n", this);
+                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p\n", this);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;

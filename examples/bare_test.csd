@@ -15,12 +15,14 @@ ksmps = 100
 gi_1odbfs init (1. / 5.)
 print gi_1odbfs
 
+gS_open init "open"
+
 // i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1
 i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 0
 
-webserver_open_resource i_webserver, "bare_test.html", "xdg-open"
+webserver_open_resource i_webserver, "bare_test.html", gS_open
 
-webserver_open_resource i_webserver, "https://csound.com/docs/manual/indexframes.html", "xdg-open"
+webserver_open_resource i_webserver, "https://csound.com/docs/manual/indexframes.html", gS_open
 
 gS_html_rpc init {{
 <html>
@@ -135,7 +137,7 @@ var onError = function(id, error) {
 }
 }}
 
-webserver_open_html i_webserver, gS_html_rpc, "xdg-open"
+webserver_open_html i_webserver, gS_html_rpc, gS_open
 
 prints "Csound performance is starting...\\n"
 
