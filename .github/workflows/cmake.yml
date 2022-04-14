@@ -55,6 +55,8 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          # Run Doxygen.
+          doxygen
           
       - name: Build on Linux
         if: runner.os == 'Linux'
@@ -76,6 +78,8 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          # Run Doxygen.
+          doxygen
         
       - name: Build on Windows
         if: runner.os == 'Windows'
@@ -95,6 +99,8 @@ jobs:
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           dir ${{github.workspace}}/build/Release
+          # Run Doxygen.
+          doxygen
           
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
@@ -134,7 +140,7 @@ jobs:
             LICENSE
             README.md
             *.csd
-            build/Release/cxx_opcodes.dll
+            ${{github.workspace}}/build/*.dll
 
 
 

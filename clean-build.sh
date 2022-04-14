@@ -14,6 +14,10 @@ echo "Configuring..."
 cmake .. -DCMAKE_PREFIX_PATH=/usr/local:/usr
 echo "Building..."
 make
+cd ..
+echo "Documenting..."
+doxygen
+cd build
 echo "Packaging..."
 cpack -V
 ls -ll

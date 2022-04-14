@@ -1,4 +1,4 @@
-# csound-webserver
+# csound-webserver {#mainpage}
 ![GitHub All Releases (total)](https://img.shields.io/github/downloads/gogins/csound-webserver/total.svg)<br>
 
 Michael Gogins<br>
