@@ -55,8 +55,6 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-          # Run Doxygen.
-          doxygen
           
       - name: Build on Linux
         if: runner.os == 'Linux'
@@ -78,9 +76,7 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-          # Run Doxygen.
-          doxygen
-        
+         
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
@@ -99,9 +95,18 @@ jobs:
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           dir ${{github.workspace}}/build/Release
-          # Run Doxygen.
-          doxygen
-          
+
+      - name: Doxygen 
+        # You may pin to the exact commit or the version.
+        uses: mattnotmitt/doxygen-action@1.9.3
+        with:
+          # Path to Doxyfile
+          doxyfile-path: ./Doxyfile
+          # Working directory
+          working-directory: .
+          # Generate latex documentation
+          enable-latex: false
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
         with:
