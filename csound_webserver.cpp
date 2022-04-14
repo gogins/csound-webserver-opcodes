@@ -11,7 +11,71 @@
 #include <map>
 #include <memory>
 #include <cpp-httplib/httplib.h>
-#include <csound_jsonrpc_skeleton.hpp>
+#include <nlohmann/json.hpp>
+
+
+extern "C" {
+    typedef int (*csoundCompileCsdText_t)(CSOUND *, const char *);
+    typedef int (*csoundCompileOrc_t)(CSOUND *, const char *);
+    typedef MYFLT (*csoundEvalCode_t)(CSOUND *, const char *);
+    typedef MYFLT (*csoundGet0dBFS_t)(CSOUND *);
+    typedef void (*csoundGetAudioChannel_t)(CSOUND *, const char *, MYFLT *);
+    typedef MYFLT (*csoundGetControlChannel_t)(CSOUND *, const char *, int *);
+    typedef int (*csoundGetDebug_t)(CSOUND *);
+    typedef uint32_t (*csoundGetKsmps_t)(CSOUND *);
+    typedef uint32_t (*csoundGetNchnls_t)(CSOUND *);
+    typedef uint32_t (*csoundGetNchnlsInput_t)(CSOUND *);
+    typedef MYFLT (*csoundGetScoreOffsetSeconds_t)(CSOUND *);
+    typedef MYFLT (*csoundGetScoreTime_t)(CSOUND *);
+    typedef MYFLT (*csoundGetSr_t)(CSOUND *);
+    typedef void (*csoundGetStringChannel_t)(CSOUND *, const char *, char *);
+    typedef void (*csoundInputMessage_t)(CSOUND *, const char *);
+    typedef int (*csoundIsScorePending_t)(CSOUND *);
+    typedef void (*csoundMessage_t)(CSOUND *, const char *, ...);
+    typedef int (*csoundReadScore_t)(CSOUND *, const char *);
+    typedef void (*csoundRewindScore_t)(CSOUND *);
+    typedef int (*csoundScoreEvent_t)(CSOUND *,char, const MYFLT *, long);
+    typedef void (*csoundSetControlChannel_t)(CSOUND *, const char *, MYFLT);
+    typedef void (*csoundSetDebug_t)(CSOUND *, int );
+    typedef void (*csoundSetScoreOffsetSeconds_t)(CSOUND *, MYFLT);
+    typedef void (*csoundSetScorePending_t)(CSOUND *, int);
+    typedef void (*csoundSetStringChannel_t)(CSOUND *, const char *, char *);
+    typedef MYFLT (*csoundTableGet_t)(CSOUND *, int, int);
+    typedef int (*csoundTableLength_t)(CSOUND *, int);
+    typedef int (*csoundTableSet_t)(CSOUND *, int, int, MYFLT);
+    /**
+     * Functions obtained at run time from Csound.
+     */
+    csoundCompileCsdText_t csoundCompileCsdText_;
+    csoundCompileOrc_t csoundCompileOrc_;
+    csoundEvalCode_t csoundEvalCode_;
+    csoundGet0dBFS_t csoundGet0dBFS_;
+    csoundGetAudioChannel_t csoundGetAudioChannel_;
+    csoundGetControlChannel_t csoundGetControlChannel_;
+    csoundGetDebug_t csoundGetDebug_;
+    csoundGetKsmps_t csoundGetKsmps_;
+    csoundGetNchnls_t csoundGetNchnls_;
+    csoundGetNchnlsInput_t csoundGetNchnlsInput_;
+    csoundGetScoreOffsetSeconds_t csoundGetScoreOffsetSeconds_;
+    csoundGetScoreTime_t csoundGetScoreTime_;
+    csoundGetSr_t csoundGetSr_;
+    csoundGetStringChannel_t csoundGetStringChannel_;
+    csoundInputMessage_t csoundInputMessage_;
+    csoundIsScorePending_t csoundIsScorePending_;
+    csoundMessage_t csoundMessage_;
+    csoundReadScore_t csoundReadScore_;
+    csoundRewindScore_t csoundRewindScore_;
+    csoundScoreEvent_t csoundScoreEvent_;
+    csoundSetControlChannel_t csoundSetControlChannel_;
+    csoundSetDebug_t csoundSetDebug_;
+    csoundSetScoreOffsetSeconds_t csoundSetScoreOffsetSeconds_;
+    csoundSetScorePending_t csoundSetScorePending_;
+    csoundSetStringChannel_t csoundSetStringChannel_;
+    csoundTableGet_t csoundTableGet_;
+    csoundTableLength_t csoundTableLength_;
+    csoundTableSet_t csoundTableSet_;
+};
+
 
 namespace csound_webserver {
         
@@ -142,7 +206,7 @@ namespace csound_webserver {
         httplib::Server server;
         std::thread *listener_thread;
         CSOUND *csound;
-        csound::CsoundRuntimeInterface Csound;
+        void *library_handle;
         CsoundWebServer() {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
@@ -159,9 +223,46 @@ namespace csound_webserver {
             server.listen("localhost", port);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen.\n");
         }
+        bool &interface_initialized() {
+            static bool interface_initialized_ = false;
+            return interface_initialized_;
+        }        
         virtual void create_(CSOUND *csound_, const std::string &base_directory_, int port_) {
             csound = csound_;
-            Csound.initialize(csound);
+            // A null library path indicates that symbols should be resolved 
+            // from the running program (Csound usually) and its loaded 
+            // dependencies (which must include the Csound library).
+            int result = csound->OpenLibrary(&library_handle, nullptr);
+            if (interface_initialized() == false) {
+                csoundCompileCsdText_ = (csoundCompileCsdText_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileCsdText");
+                csoundCompileOrc_ = (csoundCompileOrc_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileOrc");
+                csoundEvalCode_ = (csoundEvalCode_t) csound_->GetLibrarySymbol(library_handle, "csoundEvalCode");
+                csoundGet0dBFS_ = (csoundGet0dBFS_t) csound_->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
+                csoundGetAudioChannel_ = (csoundGetAudioChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");///
+                csoundGetControlChannel_ = (csoundGetControlChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetControlChannel");
+                csoundGetDebug_ = (csoundGetDebug_t) csound_->GetLibrarySymbol(library_handle, "csoundGetDebug");
+                csoundGetKsmps_ = (csoundGetKsmps_t) csound_->GetLibrarySymbol(library_handle, "csoundGetKsmps");
+                csoundGetNchnls_ = (csoundGetNchnls_t) csound_->GetLibrarySymbol(library_handle, "csoundGetNchnls");
+                csoundGetNchnlsInput_ = (csoundGetNchnlsInput_t) csound_->GetLibrarySymbol(library_handle, "csoundGetNchnlsInput");
+                csoundGetScoreOffsetSeconds_ = (csoundGetScoreOffsetSeconds_t) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreOffsetSeconds");
+                csoundGetScoreTime_ = (csoundGetScoreTime_t) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreTime");
+                csoundGetSr_ = (csoundGetSr_t) csound_->GetLibrarySymbol(library_handle, "csoundGetSr");
+                csoundGetStringChannel_ = (csoundGetStringChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetStringChannel");
+                csoundInputMessage_ = (csoundInputMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundInputMessage");///
+                csoundIsScorePending_ = (csoundIsScorePending_t) csound_->GetLibrarySymbol(library_handle, "csoundIsScorePending");
+                csoundMessage_ = (csoundMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundMessage");///
+                csoundReadScore_ = (csoundReadScore_t) csound_->GetLibrarySymbol(library_handle, "csoundReadScore");
+                csoundRewindScore_ = (csoundRewindScore_t) csound_->GetLibrarySymbol(library_handle, "csoundRewindScore");///
+                csoundScoreEvent_ = (csoundScoreEvent_t) csound_->GetLibrarySymbol(library_handle, "csoundScoreEvent");///
+                csoundSetControlChannel_ = (csoundSetControlChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
+                csoundSetDebug_ = (csoundSetDebug_t) csound_->GetLibrarySymbol(library_handle, "csoundSetDebug");
+                csoundSetScoreOffsetSeconds_ = (csoundSetScoreOffsetSeconds_t) csound_->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
+                csoundSetScorePending_ = (csoundSetScorePending_t) csound_->GetLibrarySymbol(library_handle, "csoundSetScorePending");
+                csoundTableGet_ = (csoundTableGet_t) csound_->GetLibrarySymbol(library_handle, "csoundTableGet");
+                csoundTableLength_ = (csoundTableLength_t) csound_->GetLibrarySymbol(library_handle, "csoundTableLength");
+                csoundTableSet_ = (csoundTableSet_t) csound_->GetLibrarySymbol(library_handle, "csoundTableSet");
+                interface_initialized() = true;
+            }
             base_directory = base_directory_;
             if(port != -1) {
                 port = port_;
@@ -185,7 +286,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto csd_text = json_request["params"]["csd_text"].get<std::string>();
-                auto result = Csound.CompileCsdText(csd_text.c_str());
+                auto result = csoundCompileCsdText_(csound, csd_text.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -195,7 +296,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileOrc...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto orc_code = json_request["params"]["orc_code"].get<std::string>();
-                auto result = Csound.CompileOrc(orc_code.c_str());
+                auto result = csoundCompileOrc_(csound, orc_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileOrc: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -208,7 +309,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: json_request: %s\n", json_request.dump().c_str());
                 auto orc_code = json_request["params"]["orc_code"].get<std::string>();
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: orc_code: %s\n", orc_code.c_str());
-                auto result = Csound.EvalCode(orc_code.c_str());
+                auto result = csoundEvalCode_(csound, orc_code.c_str());
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: result: %f\n", result);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
@@ -218,7 +319,7 @@ namespace csound_webserver {
             server.Post("/Get0dBFS", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.Get0dBFS();
+                auto result = csoundGet0dBFS_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -232,7 +333,6 @@ namespace csound_webserver {
                 std::vector<MYFLT> result;
                 result.resize(ksmps);
                 MYFLT *buffer = &result.front();
-                ///Csound.GetAudioChannel(channel_name.c_str(), buffer);
                 csoundGetAudioChannel_(csound, channel_name.c_str(), buffer);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel: response: %s\n", response.body.c_str());
@@ -244,7 +344,7 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto channel_name = json_request["params"]["channel_name"].get<std::string>();    
                 int err;          
-                auto result = Csound.GetControlChannel(channel_name.c_str(), &err);
+                auto result = csoundGetControlChannel_(csound, channel_name.c_str(), &err);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetControlChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -257,7 +357,7 @@ namespace csound_webserver {
             server.Post("/GetDebug", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetDebug...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetDebug();
+                auto result = csoundGetDebug_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -266,7 +366,7 @@ namespace csound_webserver {
             server.Post("/GetKsmps", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetKsmps...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetKsmps();
+                auto result = csoundGetKsmps_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetKsmps: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -275,7 +375,7 @@ namespace csound_webserver {
             server.Post("/GetNchnls", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnls...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetNchnls();
+                auto result = csoundGetNchnls_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnls: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -284,7 +384,7 @@ namespace csound_webserver {
             server.Post("/GetNchnlsInput", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnlsInput...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetNchnls_input();
+                auto result = csoundGetNchnlsInput_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnlsInput: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -293,7 +393,7 @@ namespace csound_webserver {
             server.Post("/GetScoreOffsetSeconds", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreOffsetSeconds...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetScoreOffsetSeconds();
+                auto result = csoundGetScoreOffsetSeconds_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreOffsetSeconds: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -302,7 +402,7 @@ namespace csound_webserver {
             server.Post("/GetScoreTime", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreTime...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetScoreTime();
+                auto result = csoundGetScoreTime_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreTime: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -311,7 +411,7 @@ namespace csound_webserver {
             server.Post("/GetSr", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.GetSr();
+                auto result = csoundGetSr_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -330,7 +430,7 @@ namespace csound_webserver {
             server.Post("/IsScorePending", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto result = Csound.IsScorePending();
+                auto result = csoundIsScorePending_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -340,7 +440,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto message = json_request["params"]["message"].get<std::string>();     
-                Csound.Message(message.c_str());
+                csoundMessage_(csound, message.c_str());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -350,7 +450,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto sco_code = json_request["params"]["sco_code"].get<std::string>();     
-                auto result = Csound.ReadScore(sco_code.c_str());
+                auto result = csoundReadScore_(csound, sco_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -359,7 +459,7 @@ namespace csound_webserver {
              server.Post("/RewindScore", [&](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                Csound.RewindScore();
+                csoundRewindScore_(csound);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -370,7 +470,7 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto opcode_code = json_request["params"]["opcode_code"].get<char>();     
                 auto pfields = json_request["params"]["pfields"].get<std::vector<MYFLT> >(); 
-                Csound.ScoreEvent(opcode_code, pfields);
+                csoundScoreEvent_(csound, opcode_code, &pfields.front(), pfields.size());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -381,7 +481,7 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
                 auto channel_value = json_request["params"]["channel_value"].get<MYFLT>(); 
-                Csound.SetControlChannel(channel_name.c_str(), channel_value);
+                csoundSetControlChannel_(csound, channel_name.c_str(), channel_value);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -391,7 +491,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto enabled = json_request["params"]["enabled"].get<int>();     
-                Csound.SetDebug(enabled);
+                csoundSetDebug_(csound, enabled);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -401,7 +501,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto score_time = json_request["params"]["score_time"].get<MYFLT>();     
-                Csound.SetScoreOffsetSeconds(score_time);
+                csoundSetScoreOffsetSeconds_(csound, score_time);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -411,7 +511,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto pending = json_request["params"]["pending"].get<int>();     
-                Csound.SetScorePending(pending);
+                csoundSetScorePending_(csound, pending);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -422,7 +522,7 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto channel_name = json_request["params"]["channel_name"].get<std::string>();     
                 auto channel_value = json_request["params"]["channel_value"].get<std::string>();
-                Csound.SetStringChannel(channel_name.c_str(), const_cast<char *>(channel_value.c_str()));
+                csoundSetStringChannel_(csound, channel_name.c_str(), const_cast<char *>(channel_value.c_str()));
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetStringChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -433,7 +533,7 @@ namespace csound_webserver {
                 auto json_request = nlohmann::json::parse(request.body);
                 auto table_number = json_request["params"]["table_number"].get<int>();     
                 auto index = json_request["params"]["index"].get<int>();
-                MYFLT result = Csound.TableGet(table_number, index);
+                MYFLT result = csoundTableGet_(csound, table_number, index);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableGet: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -443,7 +543,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableLength...\n");
                 auto json_request = nlohmann::json::parse(request.body);
                 auto table_number = json_request["params"]["table_number"].get<int>();     
-                int result = Csound.TableLength(table_number);
+                int result = csoundTableLength_(csound, table_number);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableLength: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
@@ -455,7 +555,7 @@ namespace csound_webserver {
                 auto table_number = json_request["params"]["table_number"].get<int>();     
                 auto index = json_request["params"]["table_number"].get<int>();     
                 auto  value = json_request["params"]["table_number"].get<MYFLT>();     
-                Csound.TableSet(table_number, index, value);
+                csoundTableSet_(csound, table_number, index, value);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableSet: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
