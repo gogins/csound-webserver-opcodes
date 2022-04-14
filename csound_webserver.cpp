@@ -232,7 +232,8 @@ namespace csound_webserver {
                 std::vector<MYFLT> result;
                 result.resize(ksmps);
                 MYFLT *buffer = &result.front();
-                Csound.GetAudioChannel(channel_name.c_str(), buffer);
+                ///Csound.GetAudioChannel(channel_name.c_str(), buffer);
+                Csound.GetAudioChannel("boo", buffer);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel: response: %s\n", response.body.c_str());
                 // This is the HTTP result code.
