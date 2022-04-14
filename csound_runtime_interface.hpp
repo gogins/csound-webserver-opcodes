@@ -22,7 +22,7 @@ namespace csound {
         int (*csoundCompileOrc_)(CSOUND *, const char *);
         MYFLT (*csoundEvalCode_)(CSOUND *, const char *);
         MYFLT (*csoundGet0dBFS_)(CSOUND *);
-        void (*csoundGetAudioChannel_)(CSOUND *, const char *, MYFLT *);
+        int (*csoundGetAudioChannel_)(CSOUND *, const char *, MYFLT *);
         MYFLT (*csoundGetControlChannel_)(CSOUND *, const char *, int *);
         int (*csoundGetDebug_)(CSOUND *);
         uint32_t (*csoundGetKsmps_)(CSOUND *);
@@ -60,7 +60,7 @@ namespace csound {
             csoundCompileOrc_ = (int (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundCompileOrc");
             csoundEvalCode_ = (MYFLT (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundEvalCode");
             csoundGet0dBFS_ = (MYFLT (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
-            csoundGetAudioChannel_ = (void (*)(CSOUND *, const char *, MYFLT *)) csound_->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");///
+            csoundGetAudioChannel_ = (int (*)(CSOUND *, const char *, MYFLT *)) csound_->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");///
             csoundGetControlChannel_ = (MYFLT (*)(CSOUND *, const char *, int *)) csound_->GetLibrarySymbol(library_handle, "csoundGetControlChannel");
             csoundGetDebug_ = (int (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetDebug");
             csoundGetKsmps_ = (uint32_t (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetKsmps");
