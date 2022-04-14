@@ -504,16 +504,22 @@ namespace csound_webserver {
                 unsigned int seed_ = std::time(nullptr);
                 mersenne_twister.seed(seed_);
                 std::snprintf(html_path, 0x500, "csound_webserver_%x.html", mersenne_twister());
-                std::string filepath = base_directory + "/" + html_path;
+                if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_html: html_path: %s.\n", html_path);
+                std::string filepath = base_directory + html_path;
+                if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_html: filepath: %s.\n", filepath.c_str());
                 auto file_ = fopen(filepath.c_str(), "w+");
+                if (file_ == nullptr) {
+                    std::fprintf(stderr, "CsoundWebServer::open_html: fopen returned: %p error: %s\n", file_, std::strerror(errno));
+                }
+                if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_html: file: %p.\n", file_);
                 std::fwrite(html_text.c_str(), html_text.length(), sizeof(html_text[0]), file_);
                 std::fclose(file_);
             }
             std::string url = origin + "/" + html_path;
             std::string command = browser + " " + url;
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text: command: %s\n", command.c_str());
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_html: command: %s\n", command.c_str());
             std::system(command.c_str());
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text.\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_html.\n");
         }
     };
         
@@ -527,6 +533,7 @@ namespace csound_webserver {
             MYFLT *i_diagnostics_enabled;
             int init(CSOUND *csound) {
                 int result = OK;
+                log(csound, "csound_webserver_create::init: this: %p csound: %p\n", this, csound);
                 std::string base_uri_ = S_base_uri->data;
                 int port = *i_port;
                 diagnostics_enabled = *i_diagnostics_enabled;
@@ -550,7 +557,7 @@ namespace csound_webserver {
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p\n", this);
+                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p\n", this, csound);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;
@@ -572,7 +579,7 @@ namespace csound_webserver {
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_html::init: this: %p\n", this);
+                log(csound, "csound_webserver_open_html::init: this: %p csound: %p\n", this, csound);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string html_text = S_html_text_->data;
