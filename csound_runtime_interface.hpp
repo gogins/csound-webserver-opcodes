@@ -4,34 +4,65 @@
 #include <nlohmann/json.hpp>
 
 extern "C" {
-typedef int (*csoundCompileCsdText_t)(CSOUND *, const char *);
-typedef int (*csoundCompileOrc_t)(CSOUND *, const char *);
-typedef MYFLT (*csoundEvalCode_t)(CSOUND *, const char *);
-typedef MYFLT (*csoundGet0dBFS_t)(CSOUND *);
-typedef void (*csoundGetAudioChannel_t)(CSOUND *, const char *, MYFLT *);
-typedef MYFLT (*csoundGetControlChannel_t)(CSOUND *, const char *, int *);
-typedef int (*csoundGetDebug_t)(CSOUND *);
-typedef uint32_t (*csoundGetKsmps_t)(CSOUND *);
-typedef uint32_t (*csoundGetNchnls_t)(CSOUND *);
-typedef uint32_t (*csoundGetNchnlsInput_t)(CSOUND *);
-typedef MYFLT (*csoundGetScoreOffsetSeconds_t)(CSOUND *);
-typedef MYFLT (*csoundGetScoreTime_t)(CSOUND *);
-typedef MYFLT (*csoundGetSr_t)(CSOUND *);
-typedef void (*csoundGetStringChannel_t)(CSOUND *, const char *, char *);
-typedef void (*csoundInputMessage_t)(CSOUND *, const char *);
-typedef int (*csoundIsScorePending_t)(CSOUND *);
-typedef void (*csoundMessage_t)(CSOUND *, const char *, ...);
-typedef int (*csoundReadScore_t)(CSOUND *, const char *);
-typedef void (*csoundRewindScore_t)(CSOUND *);
-typedef int (*csoundScoreEvent_t)(CSOUND *,char, const MYFLT *, long);
-typedef void (*csoundSetControlChannel_t)(CSOUND *, const char *, MYFLT);
-typedef void (*csoundSetDebug_t)(CSOUND *, int );
-typedef void (*csoundSetScoreOffsetSeconds_t)(CSOUND *, MYFLT);
-typedef void (*csoundSetScorePending_t)(CSOUND *, int);
-typedef void (*csoundSetStringChannel_t)(CSOUND *, const char *, char *);
-typedef MYFLT (*csoundTableGet_t)(CSOUND *, int, int);
-typedef int (*csoundTableLength_t)(CSOUND *, int);
-typedef int (*csoundTableSet_t)(CSOUND *, int, int, MYFLT);
+    typedef int (*csoundCompileCsdText_t)(CSOUND *, const char *);
+    typedef int (*csoundCompileOrc_t)(CSOUND *, const char *);
+    typedef MYFLT (*csoundEvalCode_t)(CSOUND *, const char *);
+    typedef MYFLT (*csoundGet0dBFS_t)(CSOUND *);
+    typedef void (*csoundGetAudioChannel_t)(CSOUND *, const char *, MYFLT *);
+    typedef MYFLT (*csoundGetControlChannel_t)(CSOUND *, const char *, int *);
+    typedef int (*csoundGetDebug_t)(CSOUND *);
+    typedef uint32_t (*csoundGetKsmps_t)(CSOUND *);
+    typedef uint32_t (*csoundGetNchnls_t)(CSOUND *);
+    typedef uint32_t (*csoundGetNchnlsInput_t)(CSOUND *);
+    typedef MYFLT (*csoundGetScoreOffsetSeconds_t)(CSOUND *);
+    typedef MYFLT (*csoundGetScoreTime_t)(CSOUND *);
+    typedef MYFLT (*csoundGetSr_t)(CSOUND *);
+    typedef void (*csoundGetStringChannel_t)(CSOUND *, const char *, char *);
+    typedef void (*csoundInputMessage_t)(CSOUND *, const char *);
+    typedef int (*csoundIsScorePending_t)(CSOUND *);
+    typedef void (*csoundMessage_t)(CSOUND *, const char *, ...);
+    typedef int (*csoundReadScore_t)(CSOUND *, const char *);
+    typedef void (*csoundRewindScore_t)(CSOUND *);
+    typedef int (*csoundScoreEvent_t)(CSOUND *,char, const MYFLT *, long);
+    typedef void (*csoundSetControlChannel_t)(CSOUND *, const char *, MYFLT);
+    typedef void (*csoundSetDebug_t)(CSOUND *, int );
+    typedef void (*csoundSetScoreOffsetSeconds_t)(CSOUND *, MYFLT);
+    typedef void (*csoundSetScorePending_t)(CSOUND *, int);
+    typedef void (*csoundSetStringChannel_t)(CSOUND *, const char *, char *);
+    typedef MYFLT (*csoundTableGet_t)(CSOUND *, int, int);
+    typedef int (*csoundTableLength_t)(CSOUND *, int);
+    typedef int (*csoundTableSet_t)(CSOUND *, int, int, MYFLT);
+    /**
+     * Functions obtained at run time from Csound.
+     */
+    csoundCompileCsdText_t csoundCompileCsdText_;
+    csoundCompileOrc_t csoundCompileOrc_;
+    csoundEvalCode_t csoundEvalCode_;
+    csoundGet0dBFS_t csoundGet0dBFS_;
+    csoundGetAudioChannel_t csoundGetAudioChannel_;
+    csoundGetControlChannel_t csoundGetControlChannel_;
+    csoundGetDebug_t csoundGetDebug_;
+    csoundGetKsmps_t csoundGetKsmps_;
+    csoundGetNchnls_t csoundGetNchnls_;
+    csoundGetNchnlsInput_t csoundGetNchnlsInput_;
+    csoundGetScoreOffsetSeconds_t csoundGetScoreOffsetSeconds_;
+    csoundGetScoreTime_t csoundGetScoreTime_;
+    csoundGetSr_t csoundGetSr_;
+    csoundGetStringChannel_t csoundGetStringChannel_;
+    csoundInputMessage_t csoundInputMessage_;
+    csoundIsScorePending_t csoundIsScorePending_;
+    csoundMessage_t csoundMessage_;
+    csoundReadScore_t csoundReadScore_;
+    csoundRewindScore_t csoundRewindScore_;
+    csoundScoreEvent_t csoundScoreEvent_;
+    csoundSetControlChannel_t csoundSetControlChannel_;
+    csoundSetDebug_t csoundSetDebug_;
+    csoundSetScoreOffsetSeconds_t csoundSetScoreOffsetSeconds_;
+    csoundSetScorePending_t csoundSetScorePending_;
+    csoundSetStringChannel_t csoundSetStringChannel_;
+    csoundTableGet_t csoundTableGet_;
+    csoundTableLength_t csoundTableLength_;
+    csoundTableSet_t csoundTableSet_;
 };
 
 namespace csound {
@@ -46,37 +77,10 @@ namespace csound {
     struct CsoundRuntimeInterface {
         CSOUND *csound_;
         void *library_handle;
-        /**
-         * Functions obtained at run time from Csound.
-         */
-        int (*csoundCompileCsdText_)(CSOUND *, const char *);
-        int (*csoundCompileOrc_)(CSOUND *, const char *);
-        MYFLT (*csoundEvalCode_)(CSOUND *, const char *);
-        MYFLT (*csoundGet0dBFS_)(CSOUND *);
-        csoundGetAudioChannel_t csoundGetAudioChannel_;
-        MYFLT (*csoundGetControlChannel_)(CSOUND *, const char *, int *);
-        int (*csoundGetDebug_)(CSOUND *);
-        uint32_t (*csoundGetKsmps_)(CSOUND *);
-        uint32_t (*csoundGetNchnls_)(CSOUND *);
-        uint32_t (*csoundGetNchnlsInput_)(CSOUND *);
-        MYFLT (*csoundGetScoreOffsetSeconds_)(CSOUND *);
-        MYFLT (*csoundGetScoreTime_)(CSOUND *);
-        MYFLT (*csoundGetSr_)(CSOUND *);
-        void (*csoundGetStringChannel_)(CSOUND *, const char *, char *);
-        void (*csoundInputMessage_)(CSOUND *, const char *);
-        int (*csoundIsScorePending_)(CSOUND *);
-        void (*csoundMessage_)(CSOUND *, const char *, ...);
-        int (*csoundReadScore_)(CSOUND *, const char *);
-        void (*csoundRewindScore_)(CSOUND *);
-        int (*csoundScoreEvent_)(CSOUND *,char, const MYFLT *, long);
-        void (*csoundSetControlChannel_)(CSOUND *, const char *, MYFLT);
-        void (*csoundSetDebug_)(CSOUND *, int );
-        void (*csoundSetScoreOffsetSeconds_)(CSOUND *, MYFLT);        
-        void (*csoundSetScorePending_)(CSOUND *, int);
-        void (*csoundSetStringChannel_)(CSOUND *, const char *, char *);
-        MYFLT (*csoundTableGet_)(CSOUND *, int, int);
-        int (*csoundTableLength_)(CSOUND *, int);
-        int (*csoundTableSet_)(CSOUND *, int, int, MYFLT);
+        bool &interface_initialized() {
+            static bool interface_initialized_ = false;
+            return interface_initialized_;
+        }
         /** 
          * Stores a pointer to Csound and obtains 
          * the handle required for looking up functions.
@@ -87,33 +91,36 @@ namespace csound {
             // from the running program (Csound usually) and its loaded 
             // dependencies (which must include the Csound library).
             int result = csound_->OpenLibrary(&library_handle, nullptr);
-            csoundCompileCsdText_ = (int (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundCompileCsdText");
-            csoundCompileOrc_ = (int (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundCompileOrc");
-            csoundEvalCode_ = (MYFLT (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundEvalCode");
-            csoundGet0dBFS_ = (MYFLT (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
-            csoundGetAudioChannel_ = (csoundGetAudioChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");///
-            csoundGetControlChannel_ = (MYFLT (*)(CSOUND *, const char *, int *)) csound_->GetLibrarySymbol(library_handle, "csoundGetControlChannel");
-            csoundGetDebug_ = (int (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetDebug");
-            csoundGetKsmps_ = (uint32_t (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetKsmps");
-            csoundGetNchnls_ = (uint32_t (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetNchnls");
-            csoundGetNchnlsInput_ = (uint32_t (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetNchnlsInput");
-            csoundGetScoreOffsetSeconds_ = (MYFLT (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreOffsetSeconds");
-            csoundGetScoreTime_ = (MYFLT (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreTime");
-            csoundGetSr_ = (MYFLT (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundGetSr");
-            csoundGetStringChannel_ = (void (*)(CSOUND *, const char *, char *)) csound_->GetLibrarySymbol(library_handle, "csoundGetStringChannel");
-            csoundInputMessage_ = (void (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundInputMessage");///
-            csoundIsScorePending_ = (int (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundIsScorePending");
-            csoundMessage_ = (void (*)(CSOUND *, const char *format, ...)) csound_->GetLibrarySymbol(library_handle, "csoundMessage");///
-            csoundReadScore_ = (int (*)(CSOUND *, const char *)) csound_->GetLibrarySymbol(library_handle, "csoundReadScore");
-            csoundRewindScore_ = (void (*)(CSOUND *)) csound_->GetLibrarySymbol(library_handle, "csoundRewindScore");///
-            csoundScoreEvent_ = (int (*)(CSOUND *,char, const MYFLT *, long)) csound_->GetLibrarySymbol(library_handle, "csoundScoreEvent");///
-            csoundSetControlChannel_ = (void (*)(CSOUND *, const char *, MYFLT)) csound_->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
-            csoundSetDebug_ = (void (*)(CSOUND *, int )) csound_->GetLibrarySymbol(library_handle, "csoundSetDebug");
-            csoundSetScoreOffsetSeconds_ = (void (*)(CSOUND *, MYFLT)) csound_->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
-            csoundSetScorePending_ = (void (*)(CSOUND *, int)) csound_->GetLibrarySymbol(library_handle, "csoundSetScorePending");
-            csoundTableGet_ = (MYFLT (*)(CSOUND *, int, int)) csound_->GetLibrarySymbol(library_handle, "csoundTableGet");
-            csoundTableLength_ = (int (*)(CSOUND *, int)) csound_->GetLibrarySymbol(library_handle, "csoundTableLength");
-            csoundTableSet_ = (int (*)(CSOUND *, int, int, MYFLT)) csound_->GetLibrarySymbol(library_handle, "csoundTableSet");
+            if (interface_initialized() == false) {
+                csoundCompileCsdText_ = (csoundCompileCsdText_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileCsdText");
+                csoundCompileOrc_ = (csoundCompileOrc_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileOrc");
+                csoundEvalCode_ = (csoundEvalCode_t) csound_->GetLibrarySymbol(library_handle, "csoundEvalCode");
+                csoundGet0dBFS_ = (csoundGet0dBFS_t) csound_->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
+                csoundGetAudioChannel_ = (csoundGetAudioChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");///
+                csoundGetControlChannel_ = (csoundGetControlChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetControlChannel");
+                csoundGetDebug_ = (csoundGetDebug_t) csound_->GetLibrarySymbol(library_handle, "csoundGetDebug");
+                csoundGetKsmps_ = (csoundGetKsmps_t) csound_->GetLibrarySymbol(library_handle, "csoundGetKsmps");
+                csoundGetNchnls_ = (csoundGetNchnls_t) csound_->GetLibrarySymbol(library_handle, "csoundGetNchnls");
+                csoundGetNchnlsInput_ = (csoundGetNchnlsInput_t) csound_->GetLibrarySymbol(library_handle, "csoundGetNchnlsInput");
+                csoundGetScoreOffsetSeconds_ = (csoundGetScoreOffsetSeconds_t) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreOffsetSeconds");
+                csoundGetScoreTime_ = (csoundGetScoreTime_t) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreTime");
+                csoundGetSr_ = (csoundGetSr_t) csound_->GetLibrarySymbol(library_handle, "csoundGetSr");
+                csoundGetStringChannel_ = (csoundGetStringChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetStringChannel");
+                csoundInputMessage_ = (csoundInputMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundInputMessage");///
+                csoundIsScorePending_ = (csoundIsScorePending_t) csound_->GetLibrarySymbol(library_handle, "csoundIsScorePending");
+                csoundMessage_ = (csoundMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundMessage");///
+                csoundReadScore_ = (csoundReadScore_t) csound_->GetLibrarySymbol(library_handle, "csoundReadScore");
+                csoundRewindScore_ = (csoundRewindScore_t) csound_->GetLibrarySymbol(library_handle, "csoundRewindScore");///
+                csoundScoreEvent_ = (csoundScoreEvent_t) csound_->GetLibrarySymbol(library_handle, "csoundScoreEvent");///
+                csoundSetControlChannel_ = (csoundSetControlChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
+                csoundSetDebug_ = (csoundSetDebug_t) csound_->GetLibrarySymbol(library_handle, "csoundSetDebug");
+                csoundSetScoreOffsetSeconds_ = (csoundSetScoreOffsetSeconds_t) csound_->GetLibrarySymbol(library_handle, "csoundSetScoreOffsetSeconds");
+                csoundSetScorePending_ = (csoundSetScorePending_t) csound_->GetLibrarySymbol(library_handle, "csoundSetScorePending");
+                csoundTableGet_ = (csoundTableGet_t) csound_->GetLibrarySymbol(library_handle, "csoundTableGet");
+                csoundTableLength_ = (csoundTableLength_t) csound_->GetLibrarySymbol(library_handle, "csoundTableLength");
+                csoundTableSet_ = (csoundTableSet_t) csound_->GetLibrarySymbol(library_handle, "csoundTableSet");
+                interface_initialized() = true;
+            }
             return result;
         }
         virtual int CompileCsdText(const char *csd_text) {
