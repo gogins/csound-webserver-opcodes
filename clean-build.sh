@@ -2,6 +2,11 @@
 echo "Creating clean build..."
 git submodule update --init --recursive
 git submodule status --recursive
+cd csound
+git checkout csound6
+git branch
+git pull
+cd ..
 rm -rf build/*
 mkdir -p build
 cd build

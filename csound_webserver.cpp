@@ -11,7 +11,7 @@
 #include <map>
 #include <memory>
 #include <cpp-httplib/httplib.h>
-#include <csound_runtime_interface.hpp>
+#include <csound_jsonrpc_skeleton.hpp>
 
 namespace csound_webserver {
         

@@ -19,10 +19,10 @@ generate scores, or control performances using JavaScript, and otherwise use
 all of the many, many capabilities of standard Web browsers in the context of 
 the Csound performance.
 
-These opcodes have been developed to overcome shortcomings that became 
-apparent in csound-extended-node (need for a package configuration file to run 
-pieces), webkit-opcodes (lack of consistency between Apple's WebKit and GTK's 
-WebKit), and CsoundQt-html5 (HTML not always available in release packages).
+These opcodes were developed to overcome shortcomings that became apparent in 
+csound-extended-node (need for a package configuration file to run pieces), 
+webkit-opcodes (lack of consistency between Apple's WebKit and GTK's WebKit), 
+and CsoundQt-html5 (HTML not always available in release packages).
 
 These are the opcodes: 
 ```
@@ -50,7 +50,7 @@ GetSr
 GetStringChannel
 InputMessage
 IsScorePending
-Message (this is the only asynchronous method)
+Message
 ReadScore
 RewindScore
 ScoreEvent
@@ -66,15 +66,14 @@ TableSet
 ```
 
 Any Web page that needs to communicate with the running instance of Csound 
-must include the `csound.js` script in the HTML `<head>` element.
+must include the `csound_jsonrpc_stub.js` script in the HTML `<head>` element.
 
-Please note, these methods are asynchronous, but all methods that return 
-values are declared `async` so that that they can either be called 
-asynchronously, or called synchronously using `await` inside an `async` 
-function.
+Please note, these methods are asynchronous, but all methods are declared 
+`async` so that that they can either be called asynchronously, or called 
+synchronously using `await` inside an `async` function.
 
-Also note, each webserver opcode can in general host any number of 
-Web pages, _but only one Web page that embeds `csound.js`_.
+Also note, each webserver opcode can in general host any number of Web pages, 
+_but only one Web page that embeds `csound_jsonrpc_stub.js`_.
 
 Naturally, all Csound API methods that destroy or create Csound, start 
 or stop the performance, or configure Csound's audio or MIDI input or output 
@@ -90,10 +89,9 @@ future versions.
 
 ## Description
 
-Creates an instance an instance of the internal Web server embedded 
-into the Csound performance. The embedded Web server, which runs on 
-`localhost`, can serve any resources located in its base directory, as well as 
-remote resources.
+Creates an instance an instance of the internal Web server embedded into the 
+Csound performance. The embedded Web server, which runs on `localhost`, can 
+serve any resources located in its base directory, as well as remote resources.
 
 ## Syntax
 ```
@@ -102,8 +100,8 @@ i_webserver_handle webserver_create S_base_directory [, i_port [, i_diagnostics_
 ```
 ## Initialization
 
-*S_base_directory* - The base direcctory of the embedded Web server. Any 
-local resources made available by the Web server must be relative to this base 
+*S_base_directory* - The base direcctory of the embedded Web server. Any local 
+resources made available by the Web server must be relative to this base 
 directory.
 
 *i_port* - The number of a port on `localhost` that the internal Web server 
@@ -113,8 +111,8 @@ will listen on. Usually 8080 will work.
 printed; if non-0, diagnostic messages are printed.
 
 *i_webserver_handle* - Returns a handle to the newly created internal Web 
-server. The other Webserver opcodes must take such a handle as their 
-first parameter. 
+server. The other Webserver opcodes must take such a handle as their first 
+parameter. 
 
 ## Performance
 
@@ -130,10 +128,10 @@ is formed by appending the resource name to the Web server's origin, e.g.
 `http://localhost:8080/` + `resource.html`.
 
 Please note, Web pages opened with this opcode will not have access to Csound 
-unless the body of those pages includes the `csound.js` script for the Csound 
-proxy. That will not normally be the case for Web pages from the Internet. 
-Thus, `webserver_open_resource` is primarily useful for opening Internet 
-resources such as documentation.
+unless the body of those pages includes the `csound_jsonrpc_stub.js` script 
+for the Csound proxy. That will not normally be the case for Web pages from 
+the Internet. Thus, `webserver_open_resource` is primarily useful for opening 
+Internet resources such as documentation.
 
 ## Syntax
 
@@ -159,20 +157,20 @@ Edge.
 
 The named resource is opened by the named browser in a separate process, and 
 can remain open for the duration of the Csound performance. If the named 
-resource includes the `csound.js` script, JavaScript running in the context 
-of that resource can call many Csound API methods from a global `csound` 
-object, using JSON-RPC.
+resource includes the `csound_jsonrpc_stub.js` script, JavaScript running in 
+the context of that resource can call many Csound API methods from a global 
+`csound` object, using JSON-RPC.
 
 # webserver_open_html
 
-`webserver_open_html` - Makes the specified text available from the 
-internal Web server. Normally, this text is a complete HTML page that can 
-contain scripts and hyperlinks. The text is served relative to the base 
-directory of the internal Web server.
+`webserver_open_html` - Makes the specified text available from the internal 
+Web server. Normally, this text is a complete HTML page that can contain 
+scripts and hyperlinks. The text is served relative to the base directory of 
+the internal Web server.
 
 Please note, Web pages opened with this opcode will not have access to Csound 
-unless the body of those pages includes the `csound.js` script for the Csound 
-proxy. 
+unless the body of those pages includes the `csound_jsonrpc_stub.js` script 
+for the Csound proxy. 
 
 Also note, only one such page can be hosted by any single webserver opcode.
 

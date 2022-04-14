@@ -15,19 +15,19 @@ ksmps = 100
 gi_1odbfs init (1. / 5.)
 print gi_1odbfs
 
-gS_open init "xdg-open"
+gS_open init "open"
 
-// i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1
-i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 1
+i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+//i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 1
 
-webserver_open_resource i_webserver, "bare_test.html", gS_open
+webserver_open_resource i_webserver, "bare-test.html", gS_open
 
 webserver_open_resource i_webserver, "https://csound.com/docs/manual/indexframes.html", gS_open
 
 gS_html_rpc init {{
 <html>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-<script src="csound.js"></script>
+<script src="csound_jsonrpc_stub.js"></script>
 </script>
 <head>
 </head>
@@ -88,8 +88,6 @@ f13 0 1025 -5  .75 256 1  256 1   256 .5 257 1
 f14 0 1025 -5  2   256 .5 256 1   256 1  257 2
 f15 0 1025 -5  1   256 2  256 2   256 2  257 2
 
-;t 0 20
-
 ;    Sta     Dur  Amp    Pitch  Pan  PlsFqc WahRate  WahTable  PtchBend
 i1   0       16   8000   7.06   .5   80     .5       20        13
 i1   8       15   6000   8.00   0    32     .2       21        11
@@ -110,20 +108,12 @@ function console_log(message) {
 console.log = console_log;
 console.log("origin: " + origin);
 csound = new Csound(origin);
-var onSuccess = function(id, response) {
-    console.info("\\nid: " + id + " response:" + response);
-    return response;
-};
-var onError = function(id, error) {
-    console.info("\\nid: " + id + " error:" + error);
-    return error;
-};
-// All Csound functions that return values are declared async. Here's how to 
-// synchronously wait for the return value. Any number of `await` calls can be 
-// made inside the anonymous async function.
+// All Csound functions are declared async. Here's how to synchronously wait 
+// for return values. Any number of `await` calls can be made inside the 
+// anonymous async function.
 (async () => {
-    //let i_result = await csound.EvalCode("return 2.5\\n", onSuccess, onError);
-    let zdbfs = await csound.Get0dBFS(onSuccess, onError);
+    //let i_result = await csound.EvalCode("return 2.5\\n");
+    let zdbfs = await csound.Get0dBFS();
     console.log("\\n0dBFS returned: " + zdbfs);
     await csound.Message("This message is from the embedded HTML.\\n");
     var orc = document.getElementById('orc').value;
@@ -143,6 +133,6 @@ prints "Csound performance is starting...\\n"
 
 </CsInstruments>
 <CsScore>
-f 0 30
+f 0 120ß
 </CsScore>
 </CsoundSynthesizer>
