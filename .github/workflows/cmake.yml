@@ -62,12 +62,12 @@ jobs:
           cd build
           cpack -V
 
-- name: Build on Linux
+      - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
           echo "Installing Doxygen..."
           sudo apt-get update
-          sudo apt-get install doxygen          
+          sudo apt-get install doxygen
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
