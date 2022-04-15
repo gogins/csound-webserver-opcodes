@@ -97,7 +97,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           echo "Installing Doxygen..."
-          choco install doxygen.portable
+          choco install doxygen.install
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
