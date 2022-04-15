@@ -95,19 +95,18 @@ set(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE "ON")
 set(CPACK_GENERATOR TGZ)
 set(CPACK_PACKAGE_CONTACT "${CPACK_DEBIAN_PACKAGE_MAINTAINER}")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
-set(CPACK_PACKAGE_NAME "csound-webserver")
-set(CPACK_PACKAGE_VERSION "1.2.0")
+set(CPACK_PACKAGE_NAME "csound-webserver-opcodes")
+set(CPACK_PACKAGE_VERSION "1.3.0")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 
 set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 set(CPACK_DEBIAN_COMPONENT_INSTALL "ON")   
 #set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_SOURCE_DIR}/DEBIAN/triggers")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "VST features for the sound programming language and library Csound.
- Additional features include running Csound in VST hosts using libCsoundVST.so, and 
- hosting VST 2 plugins in Csound using the csound_webserver opcodes. 
- VST Plugin Interface Technology by Steinberg Media Technologies GmbH. 
- VST is a registered trademark of Steinberg Media Technologies GmbH.")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Local internal Web server with JSON-RPC 
+ interface to running instance of Csound, auto-launch of browser. Simple, 
+ cross-platform opcodes for making HTML5 applications that embed Csound on 
+ localhost.")
 set(CPACK_DEBIAN_PACKAGE_ENHANCES "csound, libsound64-dev, csound-python, csoundqt")
 set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS "ON")
 set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY ">=")

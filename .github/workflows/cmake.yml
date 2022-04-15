@@ -115,10 +115,8 @@ jobs:
           files: |
             LICENSE
             README.md
-            *.csd
-            ${{github.workspace}}/build/*.dylib
-            ${{github.workspace}}/build/*.so
-
+            ${{github.workspace}}/build/*.tar.gz
+ 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Linux'
         with:
@@ -129,9 +127,8 @@ jobs:
           files: |
             LICENSE
             README.md
-            *.csd
-            ${{github.workspace}}/build/*.so
-           
+            ${{github.workspace}}/build/*.tar.gz
+          
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Windows'
         with:
@@ -142,8 +139,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            *.csd
-            ${{github.workspace}}/build/*.dll
+            ${{github.workspace}}/build/*.tar.gz
 
 
 
