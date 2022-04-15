@@ -100,7 +100,7 @@ jobs:
         run: |
           echo "Installing tools..."
           choco install graphviz -y
-          choco install doxygen.install -y
+          choco install doxygen -y
           refreshenv
           echo "Updating all git submodules..."
           git submodule update --init --recursive
