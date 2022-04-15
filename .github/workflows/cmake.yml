@@ -90,7 +90,7 @@ jobs:
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           echo "Documenting..."
-          doxygen
+          C:\Program Files\doxygen\doxygen
           echo "Packaging..."
           cd build
           cpack -V
