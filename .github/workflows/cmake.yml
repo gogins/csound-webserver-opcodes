@@ -123,7 +123,7 @@ jobs:
           echo "Packaging..."
           cd build
           cpack -V
-          dir build
+          dir 
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
