@@ -100,9 +100,10 @@ jobs:
         run: |
           echo "Installing tools..."
           choco install graphviz -y
-          choco install doxygen -y
+          choco install doxygen.install -y
+          dir C:\"Program Files"\doxygen
           refreshenv
-          path
+          echo %PATH%
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
