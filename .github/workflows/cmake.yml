@@ -102,6 +102,7 @@ jobs:
           choco install graphviz -y
           choco install doxygen -y
           refreshenv
+          path
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
@@ -118,7 +119,7 @@ jobs:
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           dir ${{github.workspace}}/build/Release
           echo "Documenting..."
-          doxygen
+          C:\Program Files\doxygen\doxygen
           echo "Packaging..."
           cd build
           cpack -V
