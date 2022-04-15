@@ -66,7 +66,8 @@ TableSet
 ```
 
 Any Web page that needs to communicate with the running instance of Csound 
-must include the `csound_jsonrpc_stub.js` script in the HTML `<head>` element.
+must include the `csound_jsonrpc_stub.js` script in the HTML `<head>` element. 
+This script is distributed in the `examples` directory.
 
 Please note, these methods are asynchronous, but all methods are declared 
 `async` so that that they can either be called asynchronously, or called 
