@@ -158,7 +158,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            ${{github.workspace}}\build\*.tar.gz
+            ${{github.workspace}}\build\csound-webserver-opcodes-1.3.0-win64.tar.gz
 
 
 
