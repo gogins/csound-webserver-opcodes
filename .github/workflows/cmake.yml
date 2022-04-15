@@ -158,7 +158,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            ${{github.workspace}}/build/*.tar.gz
+            ${{github.workspace}}\build\*.tar.gz
 
 
 
