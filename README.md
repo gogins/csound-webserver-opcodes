@@ -204,10 +204,9 @@ methods from a global `csound` object, using JSON-RPC.
 # Installation
 
 1. Install [Csound](https://github.com/csound/csound). On Linux, this 
-   generally means building from source code.
-2. Build the `webserver_opcodes` plugin opcode library by executing `build.sh`. 
-   You may need to modify this build script for your system.
-3. Test by executing `csound webserver_example.csd`. 
+   might mean building from source code.
+2. Install the [Risset]([https://github.com/csound-plugins/risset]) package manager for Csound.
+3. In the terminal, execute `risset install html5`. 
 
 # Credits
 

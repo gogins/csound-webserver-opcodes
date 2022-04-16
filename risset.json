@@ -1,0 +1,41 @@
+{
+  "name": "html5",
+  "version": "1.3.0,
+  "opcodes": [
+    "webserver_create",
+    "webserver_open_resource",
+    "webserver_open_html"
+  ],
+  "short_description": "Csound runs Web pages",
+  "long_description": "These are a set of Csound opcodes that embed a local Web server, and also Web pages, in Csound with a JSON-RPC interface from the Web page to Csound",
+  "csound_version": "6.17",
+  "author": "Michael Gogins",
+  "email": "michael.gogins@gmail.com",
+  "license": "LGPLv2",
+  "repository": "https://github.com/gogins/csound-webserver-opcodes",
+  "binaries": {
+    "linux": {
+      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/v0.3beta-linux/csound-vst3-linux.zip",
+      "extractpath": "build-linux/lib/Release/libvst3_plugins.so",
+      "build_platform": "Unknown"
+    },
+    "windows": {
+      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/v0.3beta-windows/csound-vst3-windows.zip",
+      "extractpath": "build-windows/lib/Release/vst3_plugins.dll",
+      "build_platform": "Unknown"
+    },
+    "macos": {
+      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/v0.3beta-macos/csound-vst3-macos.zip",
+      "extractpath": "build-macos/lib/Debug/libvst3_plugins.dylib",
+      "build_platform": "Unknown"
+    }
+  },
+  "assets": [
+    {
+      "name": "Examples",
+      "platform": "linux",
+      "url": "https://github.com/gogins/csound-vst3-opcodes/releases/download/v0.3beta-linux/csound-vst3-linux.zip",
+      "extractpath": "build-linux/VST3/Release/*.vst3"
+    }
+  ]
+}
