@@ -135,7 +135,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            ${{github.workspace}}/build/*.tar.gz
+            ${{github.workspace}}/build/*.zip
  
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Linux'
@@ -159,7 +159,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            build/*.gz
+            build/*.zip
 
 
 
