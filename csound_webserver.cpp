@@ -75,7 +75,6 @@ extern "C" {
     csoundTableSet_t csoundTableSet_;
 };
 
-
 namespace csound_webserver {
         
     static std::mutex &get_mutex() {
