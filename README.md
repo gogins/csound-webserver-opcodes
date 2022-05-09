@@ -29,8 +29,8 @@ These are the opcodes:
 i_webserver_handle webserver_create S_base_directory, i_port [, i_diagnostics_enabled]
 webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
 webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
-webserver_message_callback_i_webserver_handle, S_channel_name
 webserver_send i_webserver_handle, S_channel_name, S_message
+webserver_message_callback_i_webserver_handle, S_channel_name
 ```
 The following JavaScript interface can be used from the JavaScript context of 
 a Web page opened by these opcodes. As far as possible, the methods of this 
@@ -98,7 +98,6 @@ serve any resources located in its base directory, as well as remote resources.
 ## Syntax
 ```
 i_webserver_handle webserver_create S_base_directory [, i_port [, i_diagnostics_enabled]]
-
 ```
 ## Initialization
 
@@ -136,9 +135,9 @@ the Internet. Thus, `webserver_open_resource` is primarily useful for opening
 Internet resources such as documentation.
 
 ## Syntax
-
+```
 webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
-
+```
 ## Initialization
 
 *i_webserver_handle* - The handle of a Web server created by 
@@ -177,9 +176,9 @@ for the Csound proxy.
 Also note, only one such page can be hosted by any single webserver opcode.
 
 ## Syntax
-
+```
 webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
-
+```
 ## Initialization
 
 *i_webserver_handle* - The handle of a Web server created by 
@@ -227,9 +226,9 @@ webserver_send i_webserver_handle, "csound/notify", "Hello, World, from Csound!\
 ```
 
 ## Syntax
-
+```
 webserver_send i_webserver_handle, S_channel_name, S_message
-
+```
 ## Initialization
 
 *i_webserver_handle* - The handle of a Web server created by 
@@ -273,9 +272,9 @@ Csound's diagnostic messages are automatically routed to the server-sent event
 channel. 
 
 ## Syntax
-
+```
 webserver_message_callback_i_webserver_handle, S_channel_name
-
+```
 ## Initialization
 
 *i_webserver_handle* - The handle of a Web server created by 
