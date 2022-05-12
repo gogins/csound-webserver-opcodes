@@ -5,11 +5,11 @@ Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
-The csound_webserver opcodes embed a _local_, internal Web server into the 
+The Csound webserver opcodes embed a _local_, internal Web server into the 
 Csound performance, implement a JSON-RPC interface to the running instance of 
-Csound, and optionally serve Web pages from the embedded Web server. Such 
-pages can be embedded into the Csound orchestra code, or they can be a regular 
-HTML file that refers to other resources. The opcodes will optionally run a
+Csound, and optionally serve Web pages from that embedded Web server. Such 
+pages can be embedded into the Csound orchestra code, or they can be regular 
+HTML files that refer to other resources. The opcodes will optionally run a
 standard external Web browser to open the served HTML page or other resources. 
 This behaves more or less as though Csound had embedded within it a complete 
 Web browser.
@@ -22,7 +22,8 @@ the Csound performance.
 These opcodes were developed to overcome shortcomings that became apparent in 
 csound-extended-node (need for a package configuration file to run pieces), 
 webkit-opcodes (lack of consistency between Apple's WebKit and GTK's WebKit), 
-and CsoundQt-html5 (HTML not always available in release packages).
+and CsoundQt-html5 (HTML support has not always been available in release 
+packages).
 
 These are the opcodes: 
 ```
@@ -30,7 +31,7 @@ i_webserver_handle webserver_create S_base_directory, i_port [, i_diagnostics_en
 webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
 webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
 webserver_send i_webserver_handle, S_channel_name, S_message
-webserver_message_callback_i_webserver_handle, S_channel_name
+webserver_set_message_callback i_webserver_handle, S_channel_name
 ```
 The following JavaScript interface can be used from the JavaScript context of 
 a Web page opened by these opcodes. As far as possible, the methods of this 
@@ -75,7 +76,7 @@ Please note, these methods are asynchronous, but all methods are declared
 synchronously using `await` inside an `async` function.
 
 Also note, each webserver opcode can in general host any number of Web pages, 
-but only one Web page that embeds `csound_jsonrpc_stub.js`_.
+but can host only one Web page that embeds `csound_jsonrpc_stub.js`_.
 
 Naturally, all Csound API methods that destroy or create Csound, start 
 or stop the performance, or configure Csound's audio or MIDI input or output 
@@ -106,7 +107,7 @@ resources made available by the Web server must be relative to this base
 directory.
 
 *i_port* - The number of a port on `localhost` that the internal Web server 
-will listen on. Usually 8080 will work.
+will listen on. The default is 8080 which usually works.
 
 *i_diagnostics_enabled* - If 0 (the default), diagnostic messages are not 
 printed; if non-0, diagnostic messages are printed.
@@ -214,8 +215,8 @@ area, the Web page could contain this code:
 const csound_notify = new EventSource("csound/notify");
 csound_notify.onmessage = function(notification) {
     let notifications_textarea = document.getElementById("notifications_textarea");
-    let existing = notifications_textarea.value;
-    notifications_textarea.value = existing + notification;
+    let existing_notifications = notifications_textarea.value;
+    notifications_textarea.value = existing_notifications + notification;
 }
 ```
 
@@ -250,9 +251,9 @@ the existing handler is used to send the messages.
 For each message that is sent, the client handler is notified and receives the 
 body of the message.
 
-# webserver_message_callback
+# webserver_set_message_callback
 
-`webserver_message_callback` - Opens a "channel" through which the running 
+`webserver_set_message_callback` - Opens a "channel" through which the running 
 Csound orchestra will send all Csound diagnostics, i.e., everything that 
 Csound normally prints to `stderr`.
 
@@ -260,10 +261,10 @@ The Web page must define an EventSource for handling the server-sent
 events. For example, the Web page could contain this code:
 ```
 const csound_diagnostics = new EventSource("csound/diagnostics");
-csound_diagnostics.onmessage = function(notification) {
+csound_diagnostics.onmessage = function(diagnostic) {
     let diagnostics_textarea = document.getElementById("diagnostics_textarea");
-    let existing = diagnostics_textarea.value;
-    diagnosticstextarea.value = existing + notification;
+    let existing_diagnostics = diagnostics_textarea.value;
+    diagnosticstextarea.value = existing_diagnostics + diagnostic;
 }
 ```
 
@@ -273,7 +274,7 @@ channel.
 
 ## Syntax
 ```
-webserver_message_callback_i_webserver_handle, S_channel_name
+webserver_set_message_callback_i_webserver_handle, S_channel_name
 ```
 ## Initialization
 
