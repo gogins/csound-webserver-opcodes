@@ -282,16 +282,16 @@ namespace csound_webserver {
         std::string csound_message_callback_channel;
         std::map<std::string, concurrent_queue<char *>> event_queues_for_event_channels;
         CsoundWebServer() {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
         }
         virtual ~CsoundWebServer() {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
             server.stop();
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
         virtual void listen() {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...\n");
             // Was "0.0.0.0" for all interfaces -- for security we limit this
             // to localhost.
             server.listen("localhost", port);
@@ -364,7 +364,7 @@ namespace csound_webserver {
                 auto result = csoundCompileCsdText_(csound, csd_text.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/CompileOrc", [=](const httplib::Request &request, httplib::Response &response) {
@@ -374,7 +374,7 @@ namespace csound_webserver {
                 auto result = csoundCompileOrc_(csound, orc_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileOrc: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/EvalCode", [=](const httplib::Request &request, httplib::Response &response) {
@@ -388,7 +388,7 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: result: %f\n", result);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/Get0dBFS", [=](const httplib::Request &request, httplib::Response &response) {
@@ -397,7 +397,7 @@ namespace csound_webserver {
                 auto result = csoundGet0dBFS_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetAudioChannel", [=](const httplib::Request &request, httplib::Response &response) {
@@ -411,7 +411,7 @@ namespace csound_webserver {
                 csoundGetAudioChannel_(csound, channel_name.c_str(), buffer);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetControlChannel", [=](const httplib::Request &request, httplib::Response &response) {
@@ -422,7 +422,7 @@ namespace csound_webserver {
                 auto result = csoundGetControlChannel_(csound, channel_name.c_str(), &err);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetControlChannel: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 if (err == OK) {
                     response.status = 200;
                 } else {
@@ -435,7 +435,7 @@ namespace csound_webserver {
                 auto result = csoundGetDebug_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetKsmps", [=](const httplib::Request &request, httplib::Response &response) {
@@ -444,7 +444,7 @@ namespace csound_webserver {
                 auto result = csoundGetKsmps_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetKsmps: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetNchnls", [=](const httplib::Request &request, httplib::Response &response) {
@@ -453,7 +453,7 @@ namespace csound_webserver {
                 auto result = csoundGetNchnls_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnls: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetNchnlsInput", [=](const httplib::Request &request, httplib::Response &response) {
@@ -462,7 +462,7 @@ namespace csound_webserver {
                 auto result = csoundGetNchnlsInput_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnlsInput: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetScoreOffsetSeconds", [=](const httplib::Request &request, httplib::Response &response) {
@@ -471,7 +471,7 @@ namespace csound_webserver {
                 auto result = csoundGetScoreOffsetSeconds_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreOffsetSeconds: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetScoreTime", [=](const httplib::Request &request, httplib::Response &response) {
@@ -480,7 +480,7 @@ namespace csound_webserver {
                 auto result = csoundGetScoreTime_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreTime: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/GetSr", [=](const httplib::Request &request, httplib::Response &response) {
@@ -489,7 +489,7 @@ namespace csound_webserver {
                 auto result = csoundGetSr_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/InputMessage", [=](const httplib::Request &request, httplib::Response &response) {
@@ -499,7 +499,7 @@ namespace csound_webserver {
                 csoundInputMessage_(csound, sco_code.c_str());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/IsScorePending", [=](const httplib::Request &request, httplib::Response &response) {
@@ -508,7 +508,7 @@ namespace csound_webserver {
                 auto result = csoundIsScorePending_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/Message", [=](const httplib::Request &request, httplib::Response &response) {
@@ -518,7 +518,7 @@ namespace csound_webserver {
                 csoundMessage_(csound, message.c_str());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/ReadScore", [=](const httplib::Request &request, httplib::Response &response) {
@@ -528,7 +528,7 @@ namespace csound_webserver {
                 auto result = csoundReadScore_(csound, sco_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/RewindScore", [=](const httplib::Request &request, httplib::Response &response) {
@@ -537,7 +537,7 @@ namespace csound_webserver {
                 csoundRewindScore_(csound);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/ScoreEvent", [=](const httplib::Request &request, httplib::Response &response) {
@@ -548,7 +548,7 @@ namespace csound_webserver {
                 csoundScoreEvent_(csound, opcode_code, &pfields.front(), pfields.size());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/SetControlChannel", [=](const httplib::Request &request, httplib::Response &response) {
@@ -559,7 +559,7 @@ namespace csound_webserver {
                 csoundSetControlChannel_(csound, channel_name.c_str(), channel_value);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
                 response.status = 200;
             });
             server.Post("/SetDebug", [=](const httplib::Request &request, httplib::Response &response) {
@@ -569,7 +569,16 @@ namespace csound_webserver {
                 csoundSetDebug_(csound, enabled);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
+
+                response.status = 200;
+            });
+            server.Post("/SetMessageCallback", [=](const httplib::Request &request, httplib::Response &response) {
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetMessageCallback...\n");
+                auto json_request = nlohmann::json::parse(request.body);
+                auto channel_name = json_request["params"]["channel_name"];
+                set_message_callback(channel_name);
+                create_json_response(json_request, response, OK);
+                if (diagnostics_enabled) std::fprintf(stderr, "/SetMessageCallback: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
             server.Post("/SetScoreOffsetSeconds", [=](const httplib::Request &request, httplib::Response &response) {
@@ -579,7 +588,6 @@ namespace csound_webserver {
                 csoundSetScoreOffsetSeconds_(csound, score_time);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
                 response.status = 200;
             });
             server.Post("/SetScorePending", [=](const httplib::Request &request, httplib::Response &response) {
@@ -589,7 +597,6 @@ namespace csound_webserver {
                 csoundSetScorePending_(csound, pending);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
                 response.status = 200;
             });
             server.Post("/SetStringChannel", [=](const httplib::Request &request, httplib::Response &response) {
@@ -600,7 +607,6 @@ namespace csound_webserver {
                 csoundSetStringChannel_(csound, channel_name.c_str(), const_cast<char *>(channel_value.c_str()));
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetStringChannel: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
                 response.status = 200;
             });
             server.Post("/TableGet", [=](const httplib::Request &request, httplib::Response &response) {
@@ -611,7 +617,6 @@ namespace csound_webserver {
                 MYFLT result = csoundTableGet_(csound, table_number, index);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableGet: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
                 response.status = 200;
             });
             server.Post("/TableLength", [=](const httplib::Request &request, httplib::Response &response) {
@@ -621,7 +626,6 @@ namespace csound_webserver {
                 int result = csoundTableLength_(csound, table_number);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableLength: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
                 response.status = 200;
             });
             server.Post("/TableSet", [=](const httplib::Request &request, httplib::Response &response) {
@@ -633,7 +637,6 @@ namespace csound_webserver {
                 csoundTableSet_(csound, table_number, index, value);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableSet: response: %s\n", response.body.c_str());
-                // This is the HTTP result code.
                 response.status = 200;
             });
             // ...and start listening in a separate thread.
@@ -692,38 +695,43 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text.\n");
         }
         virtual void send_message(const std::string &channel_name, const std::string &message) {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message...\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message...\n");
             event_queues_for_event_channels[channel_name].push(strdup(message.c_str()));
             auto &event_queue = event_queues_for_event_channels.at(channel_name);
             server.Get("/" + channel_name, 
                 [&event_queue, channel_name](const httplib::Request & /*request*/, httplib::Response &response) {
-                    if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message Get: channel_name: %s\n", channel_name.c_str());
+                    ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message Get: channel_name: %s\n", channel_name.c_str());
                     response.set_chunked_content_provider("text/event-stream",
-                    [&event_queue](size_t /*offset*/, httplib::DataSink &sink) {
+                    [&event_queue, channel_name](size_t /*offset*/, httplib::DataSink &sink) {
                         char *message = nullptr;
                         event_queue.wait_and_pop(message);
-                        if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: popped: %s\n", message);
+                        ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: popped: %s\n", message);
                         if (sink.is_writable()) {
                             int result = 0;
-                            char header[] = "event: message\ndata:";
+                            // Using JSON ensures that _any_ data can be 
+                            // carried on this simple wire protocol.
+                            static char header[] = "data:";
                             result = sink.write(header, std::strlen(header));
-                            result = sink.write(message, std::strlen(message));
-                            char end_of_data[] = "\n\n";
-                            result = sink.write(end_of_data, std::strlen(end_of_data));
-                            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: wrote: %s result: %d\n", message, result);
+                            nlohmann::json json_data = message;
+                            auto dump = json_data.dump();
+                            auto text = dump.c_str();
+                            result = sink.write(text, std::strlen(text));
+                            static char footer[] = "\n\n";
+                            result = sink.write(footer, std::strlen(footer));
+                            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: channel_name: %s wrote: %s result: %d\n", channel_name.c_str(), message, result);
                             std::free(message);
                         }
                         return true;
                     });          
                     response.status = 200;
                 });
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message.\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message.\n");
         }
         virtual void message_callback(CSOUND *csound, int attr, const char *format, va_list valist) {
             char message[0x2000];
             std::vsnprintf(message, 0x2000, format, valist);
             send_message(csound_message_callback_channel, message);
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::message_callback: %s\n", message);
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::message_callback: %s\n", message);
         }
         static void message_callback_(CSOUND *csound, int attr, const char *format, va_list valist) {
             CsoundWebServer *web_server_ptr = nullptr;
@@ -731,11 +739,11 @@ namespace csound_webserver {
             web_server_ptr->message_callback(csound, attr, format, valist);
         }
         virtual void set_message_callback(const std::string &channel_name) {
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: csound: %p channel_name: %s\n", csound, channel_name.c_str());
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: csound: %p channel_name: %s\n", csound, channel_name.c_str());
             csound_message_callback_channel = channel_name;
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer...\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer...\n");
             csound::CreateGlobalPointer(csound, "CsoundWebServer", this);
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer.\n");
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer.\n");
             csoundSetMessageCallback_(csound, &CsoundWebServer::message_callback_);
             send_message(channel_name, channel_name);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: this: %p message_callback_: %p\n", this, &CsoundWebServer::message_callback_);
@@ -832,27 +840,6 @@ namespace csound_webserver {
             }
     };
 
-    class csound_webserver_set_message_callback : public csound::OpcodeBase<csound_webserver_set_message_callback> {
-        public:
-            // OUTPUTS
-            // INPUTS
-            MYFLT *i_server_handle_;
-            STRINGDAT *S_channel_name;
-            // STATE
-            CsoundWebServer *server;
-            int init(CSOUND *csound) {
-                log(csound, "csound_webserver_set_message_callback::init: this: %p csound: %p\n", this, csound);
-                int result = OK;
-                int i_server_handle = *i_server_handle_;
-                std::string channel_name = S_channel_name->data;
-                server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
-                log(csound, "csound_webserver_set_message_callback::init: server: %p channel_name: %s.\n", server, channel_name.c_str());
-                server->set_message_callback(channel_name);
-                log(csound, "csound_webserver_set_message_callback::init (2): channel_name: %s.\n", channel_name.c_str());
-                return result;
-            }
-    };
-
 };
 
 /**
@@ -904,16 +891,6 @@ extern "C" {
                 (char *)"",
                 (char *)"iSS",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_send::init_,
-                (int (*)(CSOUND*,void*)) 0,
-                (int (*)(CSOUND*,void*)) 0);
-        status += csound->AppendOpcode(csound,
-                (char *)"webserver_set_message_callback",
-                sizeof(csound_webserver::csound_webserver_set_message_callback),
-                0,
-                1,
-                (char *)"",
-                (char *)"iS",
-                (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_set_message_callback::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
         return status;

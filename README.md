@@ -5,19 +5,18 @@ Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
-The Csound webserver opcodes embed a _local_, internal Web server into the 
-Csound performance, implement a JSON-RPC interface to the running instance of 
-Csound, and optionally serve Web pages from that embedded Web server. Such 
-pages can be embedded into the Csound orchestra code, or they can be regular 
-HTML files that refer to other resources. The opcodes will optionally run a
-standard external Web browser to open the served HTML page or other resources. 
-This behaves more or less as though Csound had embedded within it a complete 
-Web browser.
+The Csound webserver opcodes enable the user to define user interfaces, 
+generate scores, or control performances using HTML and JavaScript, and 
+otherwise use all of the many, many capabilities of standard Web browsers 
+to enhance Csound.
 
-The purpose of these opcodes is to enable the user to define user interfaces, 
-generate scores, or control performances using JavaScript, and otherwise use 
-all of the many, many capabilities of standard Web browsers in the context of 
-the Csound performance.
+The webserver opcodes embed one or more _local, internal Web servers_ 
+into the Csound performance, implement a JSON-RPC interface to the running 
+instance of Csound, and optionally serve Web pages from the embedded Web 
+server(s). Such pages can be embedded in the Csound orchestra code, or 
+they can be regular HTML files that refer to other resources. The opcodes will 
+optionally run a standard external Web browser to open the served HTML page or 
+other resources. 
 
 These opcodes were developed to overcome shortcomings that became apparent in 
 csound-extended-node (need for a package configuration file to run pieces), 
@@ -31,7 +30,6 @@ i_webserver_handle webserver_create S_base_directory, i_port [, i_diagnostics_en
 webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
 webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
 webserver_send i_webserver_handle, S_channel_name, S_message
-webserver_set_message_callback i_webserver_handle, S_channel_name
 ```
 The following JavaScript interface can be used from the JavaScript context of 
 a Web page opened by these opcodes. As far as possible, the methods of this 
@@ -59,6 +57,10 @@ RewindScore
 ScoreEvent
 SetControlChannel
 SetDebug
+// Subscribes to a named event stream and sends its events to a callback.
+SetEventSourceCallback
+// Creates an event stream named "csound_message_callback."
+SetMessageCallback
 SetScoreOffsetSeconds
 SetScorePending
 SetStringChannel
@@ -75,12 +77,23 @@ Please note, these methods are asynchronous, but all methods are declared
 `async` so that that they can either be called asynchronously, or called 
 synchronously using `await` inside an `async` function.
 
-Also note, each webserver opcode can in general host any number of Web pages, 
-but can host only one Web page that embeds `csound_jsonrpc_stub.js`_.
+Also note, each internal webserver can in general fetch any number of Web 
+pages, but should host only one page that embeds `csound_jsonrpc_stub.js`_.
 
 Naturally, all Csound API methods that destroy or create Csound, start 
 or stop the performance, or configure Csound's audio or MIDI input or output 
 drivers have had to be omitted from this interface.
+
+### Protocols
+
+The Csound webserver opcodes provide asynchronous, bidirectional 
+communications between Csound and Web pages. 
+
+Web pages use the `csound_jsonrpc_stub.js` script to create a `Csound` object 
+that uses `fetch` to send JSON-RPC calls and receive return values.
+
+The Csound webserver opcodes use server-sent events to send JSON-encoded data 
+to Web pages that create an EventSource.
 
 # webserver_create
 
@@ -250,47 +263,6 @@ the existing handler is used to send the messages.
 
 For each message that is sent, the client handler is notified and receives the 
 body of the message.
-
-# webserver_set_message_callback
-
-`webserver_set_message_callback` - Opens a "channel" through which the running 
-Csound orchestra will send all Csound diagnostics, i.e., everything that 
-Csound normally prints to `stderr`.
-
-The Web page must define an EventSource for handling the server-sent 
-events. For example, the Web page could contain this code:
-```
-const csound_diagnostics = new EventSource("csound/diagnostics");
-csound_diagnostics.onmessage = function(diagnostic) {
-    let diagnostics_textarea = document.getElementById("diagnostics_textarea");
-    let existing_diagnostics = diagnostics_textarea.value;
-    diagnosticstextarea.value = existing_diagnostics + diagnostic;
-}
-```
-
-It is not necessary to call the opcode for each diagnostic message. All of 
-Csound's diagnostic messages are automatically routed to the server-sent event 
-channel. 
-
-## Syntax
-```
-webserver_set_message_callback_i_webserver_handle, S_channel_name
-```
-## Initialization
-
-*i_webserver_handle* - The handle of a Web server created by 
-`webserver_create`.
-
-*S_channel* - The channel name, a resource path that should correspond to a 
-matching path in the client.
-
-## Performance
-
-The first time this opcode is called, the HTTP handler for the server-sent 
-event channel is created, and an internal Csound message callback is created 
-that enqueues diagnostic messages on the server-sent event channel. After 
-that, each Csound diagnostic message is automatically sent to the 
-corresponding EventSource in the Web page.
 
 # Installation
 
