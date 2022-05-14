@@ -31,9 +31,18 @@ webserver_open_resource i_webserver_handle, S_resource [, S_browser_command]
 webserver_open_html i_webserver_handle, S_html_text [, S_browser_command]
 webserver_send i_webserver_handle, S_channel_name, S_message
 ```
-The following JavaScript interface can be used from the JavaScript context of 
-a Web page opened by these opcodes. As far as possible, the methods of this 
-interface are the same as those in `csound.hpp`:
+
+### Protocols
+
+The Csound webserver opcodes provide asynchronous, bidirectional 
+communications between Csound and Web pages hosted by Csound. 
+
+#### Web Pages to Csound
+
+Web pages use a JavaScript interface to create a `Csound` object that uses 
+`fetch` to send JSON-RPC calls and receive return values. The `Csound` object 
+defines the following methods, which, as far possible, have the same names and 
+behavior as those in `csound.hpp`:
 ```
 CompileCsdText
 CompileOrc
@@ -59,7 +68,9 @@ SetControlChannel
 SetDebug
 // Subscribes to a named event stream and sends its events to a callback.
 SetEventSourceCallback
-// Creates an event stream named "csound_message_callback."
+// Creates an event stream named "csound_message_callback",
+// sends Csound's diagnostic messaes on that stream and then to a 
+// JavaScript callback.
 SetMessageCallback
 SetScoreOffsetSeconds
 SetScorePending
@@ -68,10 +79,9 @@ TableGet
 TableLength
 TableSet
 ```
-
-Any Web page that needs to communicate with the running instance of Csound 
-must include the `csound_jsonrpc_stub.js` script in the HTML `<head>` element. 
-This script is distributed in the `examples` directory.
+Any Web page that uses this interface to communicate with the running instance 
+of Csound must include the `csound_jsonrpc_stub.js` script in the HTML 
+`<head>` element. This script is distributed in the `examples` directory.
 
 Please note, these methods are asynchronous, but all methods are declared 
 `async` so that that they can either be called asynchronously, or called 
@@ -84,16 +94,32 @@ Naturally, all Csound API methods that destroy or create Csound, start
 or stop the performance, or configure Csound's audio or MIDI input or output 
 drivers have had to be omitted from this interface.
 
-### Protocols
-
-The Csound webserver opcodes provide asynchronous, bidirectional 
-communications between Csound and Web pages. 
-
-Web pages use the `csound_jsonrpc_stub.js` script to create a `Csound` object 
-that uses `fetch` to send JSON-RPC calls and receive return values.
+#### Csound to Web Pages
 
 The Csound webserver opcodes use server-sent events to send JSON-encoded data 
 to Web pages that create an EventSource.
+
+#### Embedded C++ to Web Pages
+
+In addition, C++ code that is compiled by the csound-cxx-opcodes can send a 
+server-sent event to an internal Web server by declaring and calling this 
+function:
+```
+extern "C" void webserver_send(CSOUND *csound, int webserver_handle, const char *channel_name, const char *data);
+```
+The Web server handle is always 0 for the first (or only) Web server created 
+in the Csound performance. Here is an example of loading this function:
+```
+    extern "C" {
+        // Declare a pointer to the function.
+        void (webserver_send_message_ptr*)(CSOUND *csound, int webserver_handle, const char *channel_name, const char *message);
+    };
+    // Library handle 0 means: search all symbols in the process. For this to 
+    // work, libcsound_webserver.so (or the equivalent filename on other 
+    // platforms) must be in the link library list for THIS code, in order for 
+    // the function to be resolved.
+    message_send_message_ptr = (void (*)(CSOUND *, int, const char *, const char *)) csound->GetLibrarySymbol(0, "webserver_send_message");
+```
 
 # webserver_create
 
