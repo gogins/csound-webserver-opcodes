@@ -189,7 +189,7 @@ should form a valid, loadable URI. A complete URL, e.g. for resources from
 the Internet, can also be used.
 
 *S_browser_command* - The text of a command that should immediately open the
-named resource in a standard Web browser. This parameter should normally be 
+named resource in a standard Web browser. This parameter defaults to 
 `open` on macOS, which usually defaults to Safari; `xdg-open` on Linux, which 
 usually defaults to Firefox; or `start` on Windows, which usually defaults to 
 Edge. 
@@ -229,7 +229,7 @@ this is a regular HTML page and can contain anything that such a page
 contains.
 
 *S_browser_command* - The text of a command that should immediately open the
-named resource in a standard Web browser. This parameter should normally be 
+named resource in a standard Web browser. This parameter defaults to be 
 `open` on macOS, which usually defaults to Safari; `xdg-open` on Linux, which 
 usually defaults to Firefox; or `start` on Windows, which usually defaults to 
 Edge. 

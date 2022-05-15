@@ -89,17 +89,17 @@ namespace csound_webserver {
 
     class CsoundWebServer;
 
-    static std::string default_browser() {
+    static std::string default_open_command() {
 #if defined(_WIN64)
         return "start";
 #endif
-#if defined(__linux__)
-        return "xdg-open";
-#endif
-#if defined(macintosh)
+#if defined(__MACH__)
         return "open";
 #endif
-        return "Shell open command for browser is undefined.\n";
+  #if (defined(__GNU__) || defined(BSD) || defined(__unix__))
+        return "xdg-open";
+#endif
+      return "Shell open command for open_command is undefined.\n";
     }
 
     template<typename O> class heep_object_manager_t {
@@ -629,7 +629,7 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create.\n");
             return webserver;
         }
-        virtual void open_resource(const std::string &resource, const std::string &browser) {
+        virtual void open_resource(const std::string &resource, const std::string &open_command) {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_resource...\n");
             // Origin:
             // `http://host:port`
@@ -644,11 +644,11 @@ namespace csound_webserver {
             } else {
                 url = origin + "/" + resource;
             }
-            std::string command = browser + " " + url;
+            std::string command = open_command + " " + url;
             std::system(command.c_str());
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_resource: command: %s\n", command.c_str());
         }
-        virtual void open_html(const std::string &html_text, const std::string &browser) {
+        virtual void open_html(const std::string &html_text, const std::string &open_command) {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::open_html...\n");
             // Origin:
             // `http://host:port`
@@ -669,8 +669,8 @@ namespace csound_webserver {
                 std::fclose(file_);
             }
             std::string url = origin + "/" + html_path;
-            std::string command = browser + " " + url;
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text: command: %s\n", command.c_str());
+            std::string command = open_command + " " + url;
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text: command: %s url: %s\n", command.c_str(), url.c_str());
             std::system(command.c_str());
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text.\n");
         }
@@ -760,17 +760,23 @@ namespace csound_webserver {
             // INPUTS
             MYFLT *i_server_handle_;
             STRINGDAT *S_resource;
-            STRINGDAT *S_browser;
+            STRINGDAT *S_open_command;
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p\n", this);
+                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p\n", this, csound);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;
-                std::string browser = S_browser->data;
+                std::string open_command;
+                if (S_open_command == nullptr) {
+                    open_command = default_open_command();
+                } else {
+                    open_command = S_open_command->data;
+                }
+                log(csound, "csound_webserver_open_resource::init: open_command: %s\n", open_command.c_str());
                 server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
-                server->open_resource(resource, browser);
+                server->open_resource(resource, open_command);
                 log(csound, "csound_webserver_open_resource::init.\n");
                 return result;
             }
@@ -782,17 +788,23 @@ namespace csound_webserver {
             // INPUTS
             MYFLT *i_server_handle_;
             STRINGDAT *S_html_text_;
-            STRINGDAT *S_browser;
+            STRINGDAT *S_open_command;
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_html::init: this: %p\n", this);
+                log(csound, "csound_webserver_open_html::init: this: %p csound: %p\n", this, csound);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string html_text = S_html_text_->data;
-                std::string browser = S_browser->data;
+                std::string open_command;
+                if (S_open_command == nullptr) {
+                    open_command = default_open_command();
+                } else {
+                    open_command = S_open_command->data;
+                }
+                log(csound, "csound_webserver_open_html::init: open_command: %s\n", open_command.c_str());
                 server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
-                server->open_html(html_text, browser);
+                server->open_html(html_text, open_command);
                 log(csound, "csound_webserver_open_html::init.\n");
                 return result;
             }
@@ -861,7 +873,7 @@ extern "C" {
                 0,
                 1,
                 (char *)"",
-                (char *)"iSS",
+                (char *)"iSW",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_resource::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
@@ -871,7 +883,7 @@ extern "C" {
                 0,
                 1,
                 (char *)"",
-                (char *)"iSS",
+                (char *)"iSW",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_html::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
