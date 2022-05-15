@@ -3,7 +3,7 @@
 A very basic test of the Csound webserver opcodes.
 </CsLicense>
 <CsOptions>
--d -m165 -odac0
+-d -m165 -odac:plughw:2,0
 </CsOptions>
 <CsInstruments>
 sr = 48000
@@ -15,11 +15,11 @@ ksmps = 100
 gi_1odbfs init (1. / 5.)
 print gi_1odbfs
 
-//gS_open init "xdg-open"
-gS_open init "open"
+gS_open init "xdg-open"
+//gS_open init "open"
 
-i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
-//i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 0
+//i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 0
 
 webserver_open_resource i_webserver, "bare-test.html", gS_open
 

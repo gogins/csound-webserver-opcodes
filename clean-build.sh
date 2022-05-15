@@ -19,6 +19,6 @@ echo "Documenting..."
 doxygen
 cd build
 echo "Packaging..."
-cpack -V
+cpack
 ls -ll
 echo "Finished clean build."
