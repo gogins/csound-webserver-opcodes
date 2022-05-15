@@ -89,14 +89,14 @@ namespace csound_webserver {
 
     class CsoundWebServer;
 
-    static std::string default_browser() {
+    static std::string default_open_command() {
 #if defined(_WIN64)
         return "start";
 #endif
 #if defined(__linux__)
         return "xdg-open";
 #endif
-#if defined(macintosh)
+#if defined(__MACH__)
         return "open";
 #endif
         return "Shell open command for browser is undefined.\n";
@@ -764,11 +764,16 @@ namespace csound_webserver {
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p\n", this);
+                log(csound, "csound_webserver_open_resource::init: this: %p csound: %p open: %p\n", this, csound, S_browser);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string resource = S_resource->data;
-                std::string browser = S_browser->data;
+                std::string browser;
+                if (S_browser == nullptr) {
+                    browser = default_open_command();
+                } else {
+                    browser = S_browser->data;
+                }
                 server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
                 server->open_resource(resource, browser);
                 log(csound, "csound_webserver_open_resource::init.\n");
@@ -786,11 +791,16 @@ namespace csound_webserver {
             // STATE
             CsoundWebServer *server;
             int init(CSOUND *csound) {
-                log(csound, "csound_webserver_open_html::init: this: %p\n", this);
+                log(csound, "csound_webserver_open_html::init: this: %p csound: %p open: %p\n", this, csound, S_browser);
                 int result = OK;
                 int i_server_handle = *i_server_handle_;
                 std::string html_text = S_html_text_->data;
-                std::string browser = S_browser->data;
+                std::string browser;
+                if (S_browser == nullptr) {
+                    browser = default_open_command();
+                } else {
+                    browser = S_browser->data;
+                }
                 server = heep_object_manager_t<csound_webserver::CsoundWebServer>::instance().object_for_handle(csound, i_server_handle);
                 server->open_html(html_text, browser);
                 log(csound, "csound_webserver_open_html::init.\n");
@@ -861,7 +871,7 @@ extern "C" {
                 0,
                 1,
                 (char *)"",
-                (char *)"iSS",
+                (char *)"iSW",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_resource::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
@@ -871,7 +881,7 @@ extern "C" {
                 0,
                 1,
                 (char *)"",
-                (char *)"iSS",
+                (char *)"iSW",
                 (int (*)(CSOUND*,void*)) csound_webserver::csound_webserver_open_html::init_,
                 (int (*)(CSOUND*,void*)) 0,
                 (int (*)(CSOUND*,void*)) 0);
