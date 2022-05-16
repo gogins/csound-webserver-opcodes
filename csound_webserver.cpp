@@ -81,7 +81,6 @@ static bool diagnostics_enabled = true;
 
 namespace csound_webserver {
 
-
     static std::mutex &get_mutex() {
         static std::mutex mutex_;
         return mutex_;
@@ -675,7 +674,7 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::html_text.\n");
         }
         virtual void send_message(const std::string &channel_name, const std::string &message) {
-            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message...\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message...\n");
             event_queues_for_event_channels[channel_name].push(strdup(message.c_str()));
             auto &event_queue = event_queues_for_event_channels.at(channel_name);
             server.Get("/" + channel_name, 
@@ -698,14 +697,14 @@ namespace csound_webserver {
                             result = sink.write(text, std::strlen(text));
                             static char footer[] = "\n\n";
                             result = sink.write(footer, std::strlen(footer));
-                            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: channel_name: %s wrote: %s result: %d\n", channel_name.c_str(), message, result);
+                            /// if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: channel_name: %s wrote: %s result: %d\n", channel_name.c_str(), message, result);
                             std::free(message);
                         }
                         return true;
                     });          
                     response.status = 200;
                 });
-            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message.\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message.\n");
         }
         virtual void message_callback(CSOUND *csound, int attr, const char *format, va_list valist) {
             char message[0x2000];

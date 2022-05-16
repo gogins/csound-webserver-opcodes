@@ -15,8 +15,8 @@ ksmps = 100
 gi_1odbfs init (1. / 5.)
 print gi_1odbfs
 
-///i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
-i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 1
+i_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+//i_webserver webserver_create "/home/mkg/csound-webserver-opcodes/examples/", 8080, 1
 
 webserver_open_resource i_webserver, "bare-test.html"
 
