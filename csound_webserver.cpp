@@ -220,7 +220,9 @@ namespace csound_webserver {
             std::queue<Data> queue_;
             std::mutex mutex_;
             std::condition_variable condition_variable_;
+            bool keep_waiting = false;
         public:
+            concurrent_queue() : keep_waiting(true) {};
             void push(Data const& data) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 queue_.push(data);
@@ -243,10 +245,16 @@ namespace csound_webserver {
             void wait_and_pop(Data& popped_value) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 while(queue_.empty()) {
-                    condition_variable_.wait(lock);
+                    condition_variable_.wait(lock, stop_waiting_);
                 }
                 popped_value = queue_.front();
                 queue_.pop();
+            }
+            bool stop_waiting_() {
+                return !keep_waiting;
+            }
+            void stop_waiting() {
+                keep_waiting = false;
             }
     };
 
@@ -280,14 +288,19 @@ namespace csound_webserver {
         CSOUND *csound;
         void *library_handle;
         std::string csound_message_callback_channel;
+        bool stderr_enabled;
         std::map<std::string, concurrent_queue<char *>> event_queues_for_event_channels;
         CsoundWebServer() {
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
         }
         virtual ~CsoundWebServer() {
-            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
+            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
+            for (auto &entry : event_queues_for_event_channels) {
+                entry.second.stop_waiting();
+            }
             server.stop();
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
         virtual void listen() {
@@ -555,8 +568,9 @@ namespace csound_webserver {
             server.Post("/SetMessageCallback", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetMessageCallback...\n");
                 auto json_request = nlohmann::json::parse(request.body);
+                fprintf(stderr, "%s\n", json_request.dump().c_str());
                 auto channel_name = json_request["params"]["channel_name"];
-                set_message_callback(channel_name);
+                set_message_callback(channel_name, true);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetMessageCallback: response: %s\n", response.body.c_str());
                 response.status = 200;
@@ -711,16 +725,19 @@ namespace csound_webserver {
             char message[0x2000];
             std::vsnprintf(message, 0x2000, format, valist);
             send_message(csound_message_callback_channel, message);
-            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::message_callback: %s\n", message);
+            if (stderr_enabled) {
+                std::fprintf(stderr, "%s", message);
+            };
         }
         static void message_callback_(CSOUND *csound, int attr, const char *format, va_list valist) {
             CsoundWebServer *web_server_ptr = nullptr;
             web_server_ptr = (CsoundWebServer *)csound::QueryGlobalPointer(csound, "CsoundWebServer", web_server_ptr);
             web_server_ptr->message_callback(csound, attr, format, valist);
         }
-        virtual void set_message_callback(const std::string &channel_name) {
-            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: csound: %p channel_name: %s\n", csound, channel_name.c_str());
+        virtual void set_message_callback(const std::string &channel_name, bool stderr_enabled_) {
+            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: csound: %p channel_name: %s stderr_enabled: %ds\n", csound, channel_name.c_str(), stderr_enabled.c_str());
             csound_message_callback_channel = channel_name;
+            stderr_enabled = stderr_enabled_;
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer...\n");
             csound::CreateGlobalPointer(csound, "CsoundWebServer", this);
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer.\n");

@@ -145,12 +145,13 @@ class Csound {
         };
     };
     /** 
-     * Implements csoundSetMessageCallback using server-sent events.
+     * Implements csoundSetMessageCallback using server-sent events. All 
+     * Csound diagnostic messages are also printed to stderr.
      */
-    async SetMessageCallback(callback) {
-        var channel_name = "csound_message_callback";
-        var params = {channel_name : channel_name};
-        this.SetEventSourceCallback(channel_name, callback);
+    async SetMessageCallback(callback, stderr_enabled) {
+        var channel_name__ = "csound_message_callback";
+        this.SetEventSourceCallback(channel_name__, callback);
+        var params = {channel_name : channel_name__};
         return this.invoke_rpc("SetMessageCallback", params);
     };
     async SetScoreOffsetSeconds(score_time) {
