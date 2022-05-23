@@ -220,9 +220,9 @@ namespace csound_webserver {
             std::queue<Data> queue_;
             std::mutex mutex_;
             std::condition_variable condition_variable_;
-            bool keep_waiting = false;
+            bool keep_waiting_;
         public:
-            concurrent_queue() : keep_waiting(true) {};
+            concurrent_queue() : keep_waiting_(true) {};
             void push(Data const& data) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 queue_.push(data);
@@ -245,16 +245,14 @@ namespace csound_webserver {
             void wait_and_pop(Data& popped_value) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 while(queue_.empty()) {
-                    condition_variable_.wait(lock, stop_waiting_);
+                    auto predicate = [&stop_waiting]() {return keep_waiting_;};
+                    condition_variable_.wait(lock, predicate);
                 }
                 popped_value = queue_.front();
                 queue_.pop();
             }
-            bool stop_waiting_() {
-                return !keep_waiting;
-            }
             void stop_waiting() {
-                keep_waiting = false;
+                keep_waiting_ = false;
             }
     };
 
