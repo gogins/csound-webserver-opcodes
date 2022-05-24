@@ -179,37 +179,7 @@ namespace csound_webserver {
             }
     };
 
-    /**
-     * Enqueues messages for a server-sent event channel.
-     */
-    class EventDispatcher {
-        public:
-            EventDispatcher(const std::string &channel_name_) : channel_name(channel_name_) {
-            }
-            void wait_event(httplib::DataSink *sink) {
-                std::unique_lock<std::mutex> lk(m_);
-                int id = id_;
-                cv_.wait(lk, [&] { return cid_ == id; });
-                if (sink->is_writable()) {
-                    sink->write(message_.data(), message_.size());
-                }
-            }
-            void send_event(const std::string &message) {
-                std::lock_guard<std::mutex> lk(m_);
-                cid_ = id_++;
-                message_ = message;
-                cv_.notify_all();
-            }
-        private:
-            std::string channel_name;
-            std::mutex m_;
-            std::condition_variable cv_;
-            std::atomic_int id_{0};
-            std::atomic_int cid_{-1};
-            std::string message_;
-    };
-
-    /**
+   /**
     * A thread-safe queue, or first-in first-out (FIFO) queue, implemented using
     * only the standard C++11 library. The Data should be a simple type, such as
     * a pointer.
@@ -220,9 +190,7 @@ namespace csound_webserver {
             std::queue<Data> queue_;
             std::mutex mutex_;
             std::condition_variable condition_variable_;
-            bool keep_waiting_;
         public:
-            concurrent_queue() : keep_waiting_(true) {};
             void push(Data const& data) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 queue_.push(data);
@@ -245,16 +213,13 @@ namespace csound_webserver {
             void wait_and_pop(Data& popped_value) {
                 std::unique_lock<std::mutex> lock(mutex_);
                 while(queue_.empty()) {
-                    auto predicate = [&stop_waiting]() {return keep_waiting_;};
-                    condition_variable_.wait(lock, predicate);
+                    condition_variable_.wait(lock);
                 }
                 popped_value = queue_.front();
                 queue_.pop();
             }
-            void stop_waiting() {
-                keep_waiting_ = false;
-            }
     };
+    
 
     /**
      * First the Csound method is called, then this function creates the
@@ -294,12 +259,12 @@ namespace csound_webserver {
         }
         virtual ~CsoundWebServer() {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
-            for (auto &entry : event_queues_for_event_channels) {
-                entry.second.stop_waiting();
-            }
+            //~ for (auto &entry : event_queues_for_event_channels) {
+                //~ entry.second.stop_waiting();
+            //~ }
             server.stop();
             std::this_thread::sleep_for(std::chrono::seconds(1));
-            if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
+           if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
         virtual void listen() {
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...\n");
