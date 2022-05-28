@@ -710,7 +710,7 @@ namespace csound_webserver {
             char message[0x2000];
             std::vsnprintf(message, 0x2000, format, valist);
             send_message(csound_message_callback_channel, message);
-            ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::message_callback: %s\n", message);
+            std::fprintf(stderr, "%s", message);
         }
         static void message_callback_(CSOUND *csound, int attr, const char *format, va_list valist) {
             CsoundWebServer *web_server_ptr = nullptr;
