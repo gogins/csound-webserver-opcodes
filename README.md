@@ -294,9 +294,9 @@ body of the message.
 
 I plan to make these opcodes available from the [Risset](https://github.com/csound-plugins/risset) package manager for Csound.
 
-In the meantime, download the binary archive for your operating system from my GitHub repository at https://github.com/gogins/csound-webserver-opcodes/releases. 
+In the meantime, download the latest (development) binary archive for your operating system from my GitHub repository at https://github.com/gogins/csound-webserver-opcodes/releases. 
 
-Unpack the archive. Add the directory containing the opcodes shared library (for example, on macOS that might be `~/Downloads/csound-webserver-opcodes-1.3.0-Darwin/lib/csound/plugins64-6.0`) to your `OPCODE6DIR64` environment variable.
+Unpack the archive. Add the directory containing the opcodes shared library (for example, on macOS that might be `~/Downloads/csound-webserver-opcodes-1.3.0-Darwin/lib/csound/plugins64-6.0`) to the value of your `OPCODE6DIR64` environment variable.
 
 # Credits
 
