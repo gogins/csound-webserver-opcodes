@@ -1,20 +1,20 @@
-<CsoundSyntheizer>
+<CsoundSynthesizer>
 <CsLicense>
-Message From Another Planet (v4)  (Spring 1999, Fall 2017, Fall 2021)
+Message From Another Planet (v4)  (Spring 1999, Fall 2017, Summer 2022)
 
 Composed By Jacob Joaquin
 Modified by Michael Gogins
 
 To search for extraterrestrial intelligence from your home computer visit
-https://setiathome.berkeley.edu/
+https://setiathome.berkeley.edu/.
+
+This piece demonstrates the use of the Csound embedded Web server opcodes
+to display an interactive graphical user interface for the piece.
 </CsLicense>
-<CsOptions;
--m195 -odac
+<CsOptions>
+--m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -odac
 </CsOptions>
 <CsInstruments>
-
-alwayson "Browser" 
-
 sr              =           48000
 ksmps           =           128
 nchnls          =           2
@@ -69,8 +69,6 @@ kgain           =           ampdb(gk_master_level)
                 outs        aL * kgain, aR * kgain
                 clear       gasendL, gasendR
                 endin
-
-instr Browser
 
 gS_html init {{
 <!DOCTYPE html>
@@ -150,10 +148,17 @@ gS_html init {{
         font-family: 'Orienta', sans-serif;
     }    
     </style>
+    <!--
+    //////////////////////////////////////////////////////////////////////////
+    // All dependencies that are in some sense standard and widely used, are 
+    // loaded from content delivery networks.
+    //////////////////////////////////////////////////////////////////////////  
+    -->
+    <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
 </head>
-<body style="background-color:CadetBlue;box-sizing:border-box;padding:20px;:fullscreen">
+<body style="background-color:CadetBlue">
     <h1>Message from Another Planet, version 4</h1>
-    <h3>Adapted for Csound with the WebKit opcodes by Michael Gogins, from "Message from Another Planet" by Jacob Joaquin</h3>
+    <h3>Adapted for Csound with HTML5 by Michael Gogins, from "Message from Another Planet" by Jacob Joaquin</h3>
     <form id='persist'>
     <table>
     <col width="2*">
@@ -201,34 +206,30 @@ gS_html init {{
     </tr>
     </table>
     <p>
-     <input type="button" id='save' value="Save" />
+    <input type="button" id='save' value="Save" />
     <input type="button" id='restore' value="Restore" />
     </form>   
     <p>
-<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-<script src="csound.js"></script>
-<script>   
-    $(document).ready(function() {
-    var csound = new Csound("http://localhost:8383");
-    let nchnls_ = 0;
-    var onSuccess = function(id, response) {
-        csound.Message(`id: ${id} response: ${response}\\n`);
-        if (nchnls_promise !== null) {
-            nchnls_promise.resolve(response);
-        }
-        return response;
-    };
-    var onError = function(id, error) {
-        csound.Message(`id: ${id} response: ${error}\\n`);
-    }
-    csound.Message("Hello, World! -- from message.html displayed by the WebKit opcodes\\n", onSuccess);
-    nchnls_promise = new Promise(function(resolve, reject) {
-        csound.GetNchnls(onSuccess, onError);
-    });
-    csound.Message(`nchnls: (${typeof nchnls_}) ${nchnls_}\\n`);
-    $('input').on('input', function(event) {
+    <textarea id='csound_diagnostics' cols=80 rows=25>
+    </textarea>
+<script src="csound_jsonrpc_stub.js"></script>
+<script>
+    //////////////////////////////////////////////////////////////////////
+    // This is the JSON-RPC proxy of the instance of Csound that is 
+    // performing this piece.
+    //////////////////////////////////////////////////////////////////////
+    csound = new Csound(origin);
+    let message_callback_ = function(message) {
+        let notifications_textarea = document.getElementById("csound_diagnostics");
+        let existing_notifications = notifications_textarea.value;
+        notifications_textarea.value = existing_notifications + message;
+        notifications_textarea.scrollTop = notifications_textarea.scrollHeight;
+    }; 
+    csound.SetMessageCallback(message_callback_, true);
+$(document).ready(function() {
+    $('input').on('input', async function(event) {
         var slider_value = parseFloat(event.target.value);
-        csound.SetControlChannel(event.target.id, slider_value, onSuccess);
+        csound.SetControlChannel(event.target.id, slider_value);
         var output_selector = '#' + event.target.id + '_output';
         $(output_selector).val(slider_value);
     });
@@ -237,10 +238,10 @@ gS_html init {{
             localStorage.setItem(this.id, this.value);
         });
     });
-    $('#restore').on('click', function() {
+    $('#restore').on('click', async function() {
         $('.persistent-element').each(function() {
             this.value = localStorage.getItem(this.id);
-            csound.SetControlChannel(this.id, parseFloat(this.value), onSuccess);
+            csound.SetControlChannel(this.id, parseFloat(this.value));
             var output_selector = '#' + this.id + '_output';
             $(output_selector).val(this.value);
         });
@@ -251,21 +252,16 @@ gS_html init {{
 </html>
 }}
 
-gi_browser webkit_create 8383, 1
-webkit_open_uri gi_browser, "Csound Help", "https://csound.com/docs/manual/indexframes.html", 900, 600
-webkit_open_uri gi_browser, "WebKit Opcodes HTML5 Capabilities", "https://html5test.com", 900, 600
-S_pwd pwd
-S_base_uri sprintf "file://%s/", S_pwd
-prints S_base_uri
-webkit_open_html gi_browser, "Message", gS_html, S_base_uri, 900, 650, 0 ; Or 1 for fullscreen.
-endin
+; For Linux, modify and uncomment this line:
+;; gi_webserver webserver_create "/home/mkg/michael.gogins.studio/2022-NYCEMF/", 8080, 0
+; For macOS, modify and uncomment this line:
+gi_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+webserver_open_html gi_webserver, gS_html
 
 </CsInstruments>
 <CsScore>
-; Play for 10 minutes.
-f 0 [10 * 60]
 ; p1   p2   p3     p4      p5      p6         p7
-f 1    0    65537  10      1
+f 1    0    65536  10      1
 f 100  0    256  -7      0       16         1    240    0
 t 0    60
 i 2    0    256    3000    6.00    1          1.24    
@@ -292,5 +288,7 @@ i 2    0    .      .       .       5.333      1.03
 i 2    0    .      .       .       8          1.02    
 i 2    0    .      1000    .       9          1.01    
 i 2    0    .      500     .       16         1.00    
+
 </CsScore>
 </CsoundSynthesizer>
+
