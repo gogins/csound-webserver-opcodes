@@ -525,9 +525,9 @@ namespace csound_webserver {
             server.Post("/ScoreEvent", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto opcode_code = json_request["params"]["opcode_code"].get<char>();
+                auto opcode_code = json_request["params"]["opcode_code"].get<std::string>();
                 auto pfields = json_request["params"]["pfields"].get<std::vector<MYFLT> >();
-                csoundScoreEvent_(csound, opcode_code, &pfields.front(), pfields.size());
+                csoundScoreEvent_(csound, opcode_code[0], &pfields.front(), pfields.size());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent: response: %s\n", response.body.c_str());
                 response.status = 200;
