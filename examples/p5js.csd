@@ -1,16 +1,5 @@
 <CsoundSynthesizer>
 <CsLicense>
-Message From Another Planet (v4)  (Spring 1999, Fall 2017, Summer 2022)
-
-Composed By Jacob Joaquin
-Modified by Michael Gogins
-
-To search for extraterrestrial intelligence from your home computer visit
-https://setiathome.berkeley.edu/.
-
-This piece demonstrates the use of the Csound embedded Web server opcodes
-to display an interactive graphical user interface for the piece. This 
-version of this piece is modified to work with csound-webserver-opcodes.
 </CsLicense>
 <CsOptions>
 --m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -odac
@@ -71,7 +60,7 @@ gS_html init {{
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Message from Another Planet version 4</title>
+    <title>1-Dimensional Cellular Automata</title>
     <style type="text/css">
     input[type='range'] {
         -webkit-appearance: none;
@@ -155,8 +144,8 @@ gS_html init {{
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js" integrity="sha512-4P0ZJ49OMXe3jXT+EsEaq82eNwFeyYL81LeHGzGcEhowFbTqeQ80q+NEkgsE8tHPs6aCqvi7U+XWliAjDmT5Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body style="background-color:CadetBlue">
-    <h1>Message from Another Planet, version 4</h1>
-    <h3>Adapted for Csound with HTML5 by Michael Gogins, from "Message from Another Planet" by Jacob Joaquin</h3>
+    <h1>1-Dimesional Cellular Automata</h1>
+    <h3>Adapted for Csound with HTML5 by Michael Gogins, from <a href="https://p5js.org/examples/simulate-wolfram-ca.html">p5.js Wolfram CA example</a><h3>
     <form id='persist'>
         <table>
             <col width="2*">
@@ -164,19 +153,27 @@ gS_html init {{
             <col width="100px">
             <tr>
             <td>
-            <label for=gk2_spread>Frequency spread factor</label>
+            <label for=gk_rule>Rule</label>
             <td>
-            <input class=persistent-element type=range min=0 max=4 value=1 id=gk2_spread step=.001>
+            <input class=persistent-element type=range min=0 max=255 value=110 id=gk_rule step=1>
             <td>
-            <output for=gk2_spread id=gk2_spread_output>1</output>
+            <output for=gk_rule id=gk_rule_output>110</output>
             </tr>
             <tr>
             <td>
-            <label for=gk2_bass_gain>Bass emphasis factor</label>
+            <label for=gk_Pinitial_state>Initial state</label>
             <td>
-            <input class=persistent-element type=range min=0.0001 max=1 value=.005 id=gk2_bass_gain step=.001>
+            <input class=persistent-element type=range min=0 max=4 value=1 id=gk_initial_state step=.001>
             <td>
-            <output for=gk2_bass_gain id=gk2_bass_gain_output>.005</output>
+            <output for=gk_initial_state id=gk_initial_state_output>1</output>
+            </tr>
+            <tr>
+            <td>
+            <label for=gk_seconds_per_time_step>Seconds per time step</label>
+            <td>
+            <input class=persistent-element type=range min=0.01 max=5 value=1 id=gk_seconds_per_time_step step=.001>
+            <td>
+            <output for=gk_seconds_per_time_step id=gk_seconds_per_time_step_output>.005</output>
             </tr>
             <tr>
             <td>
@@ -204,25 +201,40 @@ gS_html init {{
             </tr>
         </table>
         <p>
-        <input type="button" id='save' value="Save" />
-        <input type="button" id='restore' value="Restore" />
+        <input type="button" id='start' value="Start" />
+        <input type="button" id='stop' value="Stop" />
+        <input type="button" id='save_controls' value="Save" />
+        <input type="button" id='restore_controls' value="Restore" />
     </form>   
     <p>
     <script src="csound_jsonrpc_stub.js"></script>
     <script>
-    
 
-let w = 2;
+function decimal_to_ruleset(decimal, size) {
+    const rule_set = [0]; // save the resulting bitwise
+    for (let i=0; i<size; i++) {
+        let mask = 1;
+        const bit = decimal & (mask << i); // And bitwise with left shift
+        if (bit === 0) {
+            rule_set[i] = 0;
+        } else {
+            rule_set[i] = 1;
+        }
+    }
+    return rule_set;
+}
+ 
+continue_generating_score = false;
+let w = 1;
 // An array of 0s and 1s
 let cells;
 
- // We arbitrarily start with just the middle cell having a state of "1"
 let generation = 0;
 
 //let ruleset = [0,1,0,1,1,0,1,0];
 //let ruleset = [0,1,1,0,1,1,0,1];
 // Rule 110 -- proved to be Turing complete.
-let ruleset =   [0,1,1,0,1,1,1,0];
+let ruleset = decimal_to_ruleset(110, 8);
 // Rule 54 -- possibly Turing complete.
 //let ruleset =   [0,0,1,1,0,1,1,0];
 
@@ -237,7 +249,10 @@ function setup() {
 
 }
 
-function draw() {
+function draw_() {
+  if (continue_generating_score === false) {
+    return;
+  }
   for (let i = 0; i < cells.length; i++) {
     if (cells[i] === 1) {
       fill(200);
@@ -250,6 +265,9 @@ function draw() {
   if (generation < height/w) {
     generate();
   }
+    let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
+
+  setTimeout(draw_, seconds_per_time_step * 1000);
 }
 
 // The process of creating the new generation
@@ -257,7 +275,7 @@ function generate() {
   // First we create an empty array for the new values
   let nextgen = Array(cells.length);
   // For every spot, determine new state by examing current state, and neighbor states
-  // Ignore edges that only have one neighor
+  // Ignore edges that only have one neighor (i.e. do not wrap).
   for (let i = 1; i < cells.length-1; i++) {
     let left   = cells[i-1];   // Left neighbor state
     let me     = cells[i];     // Current state
@@ -268,7 +286,6 @@ function generate() {
   cells = nextgen;
   generation++;
 }
-
 
 // Implementing the Wolfram rules
 // Could be improved and made more concise, but here we can explicitly see what is going on for each case
@@ -283,11 +300,6 @@ function rules(a, b, c) {
   if (a == 0 && b == 0 && c == 0) return ruleset[7];
   return 0;
 }
-
-
-
-
-    
     
     $(document).ready(function() {
         //////////////////////////////////////////////////////////////////////
@@ -308,13 +320,26 @@ function rules(a, b, c) {
             var output_selector = '#' + event.target.id + '_output';
             $(output_selector).val(slider_value);
             csound.Message(event.target.id + " = " + event.target.value + "\\n");
+            ruleset = decimal_to_ruleset(slider_value, 8);
+            csound.Message("ruleset = " + ruleset + "\\n");
+       });
+        $('#start').on('click', async function() {
+            continue_generating_score = true;
+            let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
+            setTimeout(draw_, seconds_per_time_step * 1000);
         });
-        $('#save').on('click', async function() {
+        $('#stop').on('click', async function() {
+            continue_generating_score = false;
+            noCanvas();
+            generation = 1;
+            setup();
+        });
+        $('#save_controls').on('click', async function() {
             $('.persistent-element').each(function() {
                 localStorage.setItem(this.id, this.value);
             });
         });
-        $('#restore').on('click', async function() {
+        $('#restore_controls').on('click', async function() {
             $('.persistent-element').each(function() {
                 this.value = localStorage.getItem(this.id);
                 csound.SetControlChannel(this.id, parseFloat(this.value));
