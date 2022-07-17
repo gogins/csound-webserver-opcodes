@@ -171,7 +171,7 @@ gS_html init {{
             <td>
             <label for=gk_seconds_per_time_step>Seconds per time step</label>
             <td>
-            <input class=persistent-element type=range min=0.01 max=5 value=1 id=gk_seconds_per_time_step step=.001>
+            <input class=persistent-element type=range min=0.01 max=4 value=.1 id=gk_seconds_per_time_step step=.01>
             <td>
             <output for=gk_seconds_per_time_step id=gk_seconds_per_time_step_output>.005</output>
             </tr>
@@ -210,96 +210,96 @@ gS_html init {{
     <script src="csound_jsonrpc_stub.js"></script>
     <script>
 
-function decimal_to_ruleset(decimal, size) {
-    const rule_set = [0]; // save the resulting bitwise
-    for (let i=0; i<size; i++) {
-        let mask = 1;
-        const bit = decimal & (mask << i); // And bitwise with left shift
-        if (bit === 0) {
-            rule_set[i] = 0;
-        } else {
-            rule_set[i] = 1;
+    function decimal_to_ruleset(decimal, size) {
+        const rule_set = [0];
+        for (let i=0; i<size; i++) {
+            let mask = 1;
+            const bit = decimal & (mask << i);
+            if (bit === 0) {
+                rule_set[i] = 0;
+            } else {
+                rule_set[i] = 1;
+            }
         }
+        return rule_set;
     }
-    return rule_set;
-}
- 
-continue_generating_score = false;
-let w = 1;
-// An array of 0s and 1s
-let cells;
+     
+    continue_generating_score = false;
+    let w = 1;
+    // An array of 0s and 1s
+    let cells;
 
-let generation = 0;
+    let generation = 0;
 
-//let ruleset = [0,1,0,1,1,0,1,0];
-//let ruleset = [0,1,1,0,1,1,0,1];
-// Rule 110 -- proved to be Turing complete.
-let ruleset = decimal_to_ruleset(110, 8);
-// Rule 54 -- possibly Turing complete.
-//let ruleset =   [0,0,1,1,0,1,1,0];
+    //let ruleset = [0,1,0,1,1,0,1,0];
+    //let ruleset = [0,1,1,0,1,1,0,1];
+    // Rule 110 -- proved to be Turing complete.
+    //let ruleset =   [0,1,1,0,1,1,1,0];
+    //let ruleset = decimal_to_ruleset(110, 8);
+    // Rule 54 -- possibly Turing complete.
+    //let ruleset =   [0,0,1,1,0,1,1,0];
 
-function setup() {
-  createCanvas(1000, 4000);
-  cells = Array(floor(width / w));
-  for (let i = 0; i < cells.length; i++) {
-    cells[i] = 0;
-  }
-  cells[cells.length-1] = 1;
-  //cells[cells.length-100] = 1;
-
-}
-
-function draw_() {
-  if (continue_generating_score === false) {
-    return;
-  }
-  for (let i = 0; i < cells.length; i++) {
-    if (cells[i] === 1) {
-      fill(200);
-    } else {
-      fill(51);
-      noStroke();
-      rect(i * w, generation * w, w, w);
+    function setup() {
+        createCanvas(1000, 300);
+        cells = Array(floor(width / w));
+        for (let i = 0; i < cells.length; i++) {
+            cells[i] = 0;
+        }
+        //cells[cells.length-1] = 1;
+        cells[cells.length-100] = 1;
     }
-  }
-  if (generation < height/w) {
-    generate();
-  }
-    let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
 
-  setTimeout(draw_, seconds_per_time_step * 1000);
-}
+    function draw_() {
+        if (continue_generating_score === false) {
+            return;
+        }
+        if (generation >= height / w) {
+            generation = 0;
+            clear();
+        }
+        for (let i = 0; i < cells.length; i++) {
+            if (cells[i] === 1) {
+                fill(200);
+            } else {
+                fill(51);
+                noStroke();
+                rect(i * w, generation * w, w, w);
+            }
+        }
+        generate();
+        let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
+        setTimeout(draw_, seconds_per_time_step * 1000);
+    }
 
-// The process of creating the new generation
-function generate() {
-  // First we create an empty array for the new values
-  let nextgen = Array(cells.length);
-  // For every spot, determine new state by examing current state, and neighbor states
-  // Ignore edges that only have one neighor (i.e. do not wrap).
-  for (let i = 1; i < cells.length-1; i++) {
-    let left   = cells[i-1];   // Left neighbor state
-    let me     = cells[i];     // Current state
-    let right  = cells[i+1];   // Right neighbor state
-    nextgen[i] = rules(left, me, right); // Compute next generation state based on ruleset
-  }
-  // The current generation is the new generation
-  cells = nextgen;
-  generation++;
-}
+    function generate() {
+        // First we create an empty array for the new values
+        let nextgen = Array(cells.length);
+        // For every spot, determine new state by examing current state, and neighbor states
+        // Ignore edges that only have one neighor (i.e. do not wrap).
+        for (let i = 1; i < cells.length-1; i++) {
+            let left   = cells[i-1];   // Left neighbor state
+            let me     = cells[i];     // Current state
+            let right  = cells[i+1];   // Right neighbor state
+            nextgen[i] = rules(left, me, right); // Compute next generation state based on ruleset
+        }
+        cells = nextgen;
+        generation++;
+    }
 
-// Implementing the Wolfram rules
-// Could be improved and made more concise, but here we can explicitly see what is going on for each case
-function rules(a, b, c) {
-  if (a == 1 && b == 1 && c == 1) return ruleset[0];
-  if (a == 1 && b == 1 && c == 0) return ruleset[1];
-  if (a == 1 && b == 0 && c == 1) return ruleset[2];
-  if (a == 1 && b == 0 && c == 0) return ruleset[3];
-  if (a == 0 && b == 1 && c == 1) return ruleset[4];
-  if (a == 0 && b == 1 && c == 0) return ruleset[5];
-  if (a == 0 && b == 0 && c == 1) return ruleset[6];
-  if (a == 0 && b == 0 && c == 0) return ruleset[7];
-  return 0;
-}
+    function rules(a, b, c) {
+        if (a == 1 && b == 1 && c == 1) return ruleset[7];
+        if (a == 1 && b == 1 && c == 0) return ruleset[6];
+        if (a == 1 && b == 0 && c == 1) return ruleset[5];
+        if (a == 1 && b == 0 && c == 0) return ruleset[4];
+        if (a == 0 && b == 1 && c == 1) return ruleset[3];
+        if (a == 0 && b == 1 && c == 0) return ruleset[2];
+        if (a == 0 && b == 0 && c == 1) return ruleset[1];
+        if (a == 0 && b == 0 && c == 0) return ruleset[0];
+        return 0;
+    }
+    
+    function play_cells() {
+    }
     
     $(document).ready(function() {
         //////////////////////////////////////////////////////////////////////
@@ -320,10 +320,15 @@ function rules(a, b, c) {
             var output_selector = '#' + event.target.id + '_output';
             $(output_selector).val(slider_value);
             csound.Message(event.target.id + " = " + event.target.value + "\\n");
-            ruleset = decimal_to_ruleset(slider_value, 8);
-            csound.Message("ruleset = " + ruleset + "\\n");
+            if (event.target.id == 'gk_rule') {
+                ruleset = decimal_to_ruleset(slider_value, 8);
+                csound.Message(`rule_number ${rule_number} = binary rule ${ruleset}\n`);
+            }
        });
         $('#start').on('click', async function() {
+            rule_number = $('#gk_rule').val();
+            ruleset = decimal_to_ruleset(rule_number, 8);
+            csound.Message(`rule_number ${rule_number} = binary rule ${ruleset}\n`);
             continue_generating_score = true;
             let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
             setTimeout(draw_, seconds_per_time_step * 1000);
@@ -331,7 +336,7 @@ function rules(a, b, c) {
         $('#stop').on('click', async function() {
             continue_generating_score = false;
             noCanvas();
-            generation = 1;
+            generation = 0;
             setup();
         });
         $('#save_controls').on('click', async function() {
