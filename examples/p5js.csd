@@ -8,49 +8,265 @@
 sr              =           48000
 ksmps           =           128
 nchnls          =           2
+0dbfs           =           100
 
-gasendL         init        0
-gasendR         init        0
+gS_os, gS_macros cxx_os
+prints "Operating system: %s\n", gS_os
 
-gk2_spread      chnexport   "gk2_spread", 3 ; 0
-gk2_bass_gain   chnexport   "gk2_bass_gain", 3 ; ""
-gk2_spread      init        1.0125
-gk2_bass_gain   init        0.005
+S_grain_code init {{
 
-                instr       Spreader
-    kpch        =           cpspch(p5)
-    imult       =           ((p6+1) / p6) * .5
-    iseed       =           (rnd(100)+100)/200
-    k2          expseg      .0625, 15, .0625, 113, 3.75, 113, .03125, 15, .0625
-    k3          linseg      1, 240, 1, 16, 0
-    k1          phasor      p7 * k2
-    k1          tablei      256 * k1 , 100, 0, 0, 1
-    krand       randi       30000, p7 * 5, iseed
-    krand       =           (krand + 30000) / 60000
-    kcps        =           kpch * p6 * gk2_spread
-    kamp        =           p4 * imult * k1 * k3 * pow(kcps, -gk2_bass_gain)
-    a1          poscil      kamp, kcps, 1
-    aoutleft    =           a1 * sqrt(krand)
-    aoutright   =           a1 * (sqrt(1-krand))
-    gasendL     =           gasendL + aoutleft
-    gasendR     =           gasendR + aoutright
-                prints      "%-24s i %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f #%3d\\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-                endin
+//void* __dso_handle = (void *)&__dso_handle;
 
-gk_reverb_delay chnexport   "gk_reverb_delay", 3 ; 0
-gk_reverb_hipass chnexport  "gk_reverb_hipass", 3 ; ""
-gk_master_level chnexport   "gk_master_level", 3 ; ""
-gk_reverb_delay init    .89
-gk_reverb_hipass init   12000
-gk_master_level init    -6
-                instr       reverb
-aL, aR          reverbsc    gasendL,gasendR,gk_reverb_delay,gk_reverb_hipass
-kgain           =           ampdb(gk_master_level)
-                outs        aL * kgain, aR * kgain
-                clear       gasendL, gasendR
-                prints      "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-                endin
-                alwayson    "reverb"
+static bool diagnostics_enabled = false;
+
+#include "cxx_invokable.hpp"
+#include <cmath>
+#include <complex>
+#include <csdl.h>
+#include <cstdio>
+
+    /**
+     * Compute a cosine grain. If the synchronous_phase argument is true
+     * (the default value), then all grains of the same frequency
+     * will have synchronous phases, which can be useful in avoiding certain artifacts.
+     * For example, if cosine grains of the same frequency have synchronous phases,
+     * they can be overlapped by 1/2 their duration without artifacts
+     * to produce a continuous cosine tone.
+     *
+     * The algorithm uses an efficient difference equation.
+     */
+struct InvokableCosineGrain : public CxxInvokableBase {
+    virtual ~InvokableCosineGrain() {
+    };
+    int init(CSOUND *csound_, OPDS *opds_, MYFLT **outputs, MYFLT **inputs) override {
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init...\\n");
+        int result = OK;
+        csound = csound_;
+        opds = opds_;
+        // Inputs.
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: csound: %p opds: %p inputs: %p.\\n", csound, opds, inputs);
+        center_time_seconds = *(inputs[0]);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: center_time_seconds: %9.4f\\n", center_time_seconds);
+        duration_seconds = *(inputs[1]);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: duration_seconds: %9.4f\\n", duration_seconds);
+        frequency_hz = *(inputs[2]);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: frequency_hz: %9.4f\\n", frequency_hz);
+        amplitude = *(inputs[3]);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: amplitude: %9.4f\\n", amplitude);
+        phase_offset_radians = *(inputs[4]);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: phase_offset_radians: %9.4f\\n", phase_offset_radians);
+        if (*(inputs[5]) != 0.) {
+            synchronous_phase = true;
+        } else {
+            synchronous_phase = false;
+        }
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: synchronous_phase: %i\\n", synchronous_phase);
+        if (synchronous_phase) {
+            wavelength_seconds = 1.0 / frequency_hz;
+            wavelengths = center_time_seconds / wavelength_seconds;
+            whole_cycles = 0;
+            fractional_cycle = std::modf(wavelengths, &whole_cycles);
+            phase_offset_radians = 2.0 * M_PI * fractional_cycle;
+        }
+        frames_per_second = csound->GetSr(csound);
+        frame_count = size_t(std::round(duration_seconds * frames_per_second));
+        // The signal is a cosine sinusoid.
+        sinusoid_radians_per_frame = 2.0 * M_PI * frequency_hz / frames_per_second;
+        sinusoid_coefficient = 2.0 * std::cos(sinusoid_radians_per_frame);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: sinusoid_coefficient: %9.4f\\n", sinusoid_coefficient);
+        // The initial frame.
+        sinusoid_1 = std::cos(phase_offset_radians);
+        // What would have been the previous frame.
+        sinusoid_2 = std::cos(-sinusoid_radians_per_frame + phase_offset_radians);
+        // The envelope is exactly 1 cycle of a cosine sinusoid, offset by -1.
+        envelope_frequency_hz = 1.0 / duration_seconds;
+        envelope_radians_per_frame = 2.0 * M_PI * envelope_frequency_hz / frames_per_second;
+        envelope_coefficient = 2.0 * std::cos(envelope_radians_per_frame);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: envelope_coefficient: %9.4f\\n", envelope_coefficient);
+        // The initial frame.
+        envelope_1 = std::cos(0.0);
+        // What would have been the previous frame.
+        envelope_2 = std::cos(-envelope_radians_per_frame);
+        signal = 0.0;
+        temporary = 0.0;
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: envelope_2: %9.4f\\n", envelope_2);
+        return result;
+    }
+    int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::kontrol...\\n");
+        int result = OK;
+        int frame_index = 0;
+        for( ; frame_index < kperiodOffset(); ++frame_index) {
+            outputs[0][frame_index] = 0;
+        }
+        for( ; frame_index < kperiodEnd(); ++frame_index) {
+            signal = (sinusoid_1 * (envelope_1 - 1.0)) * amplitude;
+            temporary = sinusoid_1;
+            sinusoid_1 = sinusoid_coefficient * sinusoid_1 - sinusoid_2;
+            sinusoid_2 = temporary;
+            temporary = envelope_1;
+            envelope_1 = envelope_coefficient * envelope_1 - envelope_2;
+            envelope_2 = temporary;
+            outputs[0][frame_index] = signal; //sample;
+        }
+        for( ; frame_index < ksmps(); ++frame_index) {
+            outputs[0][frame_index] = 0;
+        }
+        return result;
+    }
+    double center_time_seconds;
+    double duration_seconds;
+    double frequency_hz;
+    double amplitude;
+    double phase_offset_radians;
+    double wavelengths;
+    double wavelength_seconds;
+    double whole_cycles;
+    double fractional_cycle;
+    bool synchronous_phase;
+    int frame_count;
+    double frames_per_second;
+    double sinusoid_radians_per_frame;
+    double sinusoid_coefficient;    
+    double sinusoid_1;
+    double sinusoid_2;
+    double envelope_frequency_hz;
+    double envelope_radians_per_frame;
+    double envelope_coefficient;
+    double envelope_1;
+    double envelope_2;
+    double signal;
+    double temporary;
+};
+
+extern "C" {
+    
+    int grain_main(CSOUND *csound) {
+        int result = OK;
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> This is \\"grain_main\\".\\n");
+        return result;
+    }
+    
+    CxxInvokable *cosine_grain_factory() {
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> This is \\"cosine_grain_factory\\".\\n");
+        auto result = new InvokableCosineGrain;
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> \\"cosine_grain_factory\\" created %p.\\n", result);
+        return result;
+    }
+
+};
+
+}}
+
+if strcmp(gS_os, "Linux") == 0 then
+i_result cxx_compile "grain_main", S_grain_code, "g++ -v -g -O2 -std=c++17 -shared -fPIC -DUSE_DOUBLE -I. -I/usr/local/include/csound -I/home/mkg/csound/interfaces -I/usr/include/eigen3 -I/home/mkg/csound-extended/CsoundAC -lCsoundAC -lpthread -lm", "libcsound_webserver.so libCsoundAC.so"
+endif
+if strcmp(gS_os, "macOS") == 0 then
+i_result cxx_compile "grain_main", S_grain_code, "clang++ -g -O2 -std=c++14 -shared -fPIC -DUSE_DOUBLE -I. -I/System/Volumes/Data/opt/homebrew/include/eigen3 -I/opt/homebrew/Cellar/csound/6.17.0_5/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/boost/1.79.0/include -I/Users/michaelgogins/csound-extended/CsoundAC -lpthread -lm", "libCsoundAC.dylib"
+endif
+
+gk_CosineGrain_level chnexport "gk_CosineGrain_level", 3
+gk_CosineGrain_midi_dynamic_range chnexport "gk_CosineGrain_midi_dynamic_range", 3
+
+gk_CosineGrain_level init 0
+gk_CosineGrain_midi_dynamic_range init 20
+instr CosineGrain
+i_instrument = p1
+i_time = p2
+i_duration = p3
+i_midi_key = p4
+i_midi_dynamic_range = i(gk_CosineGrain_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+k_space_left_to_right = p7
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 65
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_CosineGrain_level)
+
+; Grain inputs.
+i_center_time_seconds init i_time
+i_duration_seconds init i_duration
+i_frequency_hz init i_frequency
+; i_amplitude init i_amplitude
+i_phase_offset_radians init 0
+i_synchronous_phase init 1
+a_signal init 0
+a_signal cxx_invoke "cosine_grain_factory", 3, i_center_time_seconds, i_duration_seconds, i_frequency_hz, i_amplitude, i_phase_offset_radians, i_synchronous_phase 
+a_signal = a_signal * k_gain
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
+;printks "a_signal: %9.4f a_out_left: %9.4f a_out_right: %9.4f\\n", 0, k(a_signal), k(a_out_left), k(a_out_right)
+outleta "outleft", a_out_left
+outleta "outright", a_out_right
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+gk_ReverbSC_feedback chnexport "gk_ReverbSC_feedback", 3
+gk_ReverbSC_wet chnexport "gk_ReverbSC_wet", 3
+gi_ReverbSC_delay_modulation chnexport "gi_ReverbSC_delay_modulation", 3
+gk_ReverbSC_frequency_cutoff chnexport "gk_ReverbSC_frequency_cutoff", 3
+
+gk_ReverbSC_feedback init 0.875
+gk_ReverbSC_wet init 0.5
+gi_ReverbSC_delay_modulation init 0.0075
+gk_ReverbSC_frequency_cutoff init 15000
+
+instr ReverbSC
+gk_ReverbSC_dry = 1.0 - gk_ReverbSC_wet
+aleftin init 0
+arightin init 0
+aleftout init 0
+arightout init 0
+aleftin inleta "inleft"
+arightin inleta "inright"
+aleftout, arightout reverbsc aleftin, arightin, gk_ReverbSC_feedback, gk_ReverbSC_frequency_cutoff, sr, gi_ReverbSC_delay_modulation
+aleftoutmix = aleftin * gk_ReverbSC_dry + aleftout * gk_ReverbSC_wet
+arightoutmix = arightin * gk_ReverbSC_dry + arightout * gk_ReverbSC_wet
+outleta "outleft", aleftoutmix
+outleta "outright", arightoutmix
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3 ; 0
+gS_MasterOutput_filename chnexport "gS_MasterOutput_filename", 3 ; ""
+
+gk_MasterOutput_level init 0
+gS_MasterOutput_filename init ""
+
+instr MasterOutput
+aleft inleta "inleft"
+aright inleta "inright"
+k_gain = ampdb(gk_MasterOutput_level)
+printks2 "Master gain: %f\n", k_gain
+iamp init 1
+aleft butterlp aleft, 18000
+aright butterlp aright, 18000
+outs aleft * k_gain, aright * k_gain
+; We want something that will play on my phone.
+i_amplitude_adjustment = ampdbfs(-3) / 32767
+i_filename_length strlen gS_MasterOutput_filename
+if i_filename_length > 0 then
+prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
+fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
+endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+instr Exit
+prints "Exit"
+endin
+
+connect "CosineGrain", "outleft", "ReverbSC", "inleft"
+connect "CosineGrain", "outright", "ReverbSC", "inright"
+connect "ReverbSC", "outleft", "MasterOutput", "inleft"
+connect "ReverbSC", "outright", "MasterOutput", "inright"
+
+alwayson "ReverbSC"
+alwayson "MasterOutput"
 
 //////////////////////////////////////////////////////////////////////////
 // This is all of the HTML5 code for the embedded Web page that controls 
@@ -133,6 +349,9 @@ gS_html init {{
         line-height: 30px;
         font-family: 'Orienta', sans-serif;
     }    
+    canvas {
+        overflow: true;
+    }
     </style>
     <!--
     //////////////////////////////////////////////////////////////////////////
@@ -144,7 +363,7 @@ gS_html init {{
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js" integrity="sha512-4P0ZJ49OMXe3jXT+EsEaq82eNwFeyYL81LeHGzGcEhowFbTqeQ80q+NEkgsE8tHPs6aCqvi7U+XWliAjDmT5Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body style="background-color:CadetBlue">
-    <h1>1-Dimesional Cellular Automata</h1>
+    <h1>1-Dimensional Cellular Automata</h1>
     <h3>Adapted for Csound with HTML5 by Michael Gogins, from <a href="https://p5js.org/examples/simulate-wolfram-ca.html">p5.js Wolfram CA example</a><h3>
     <form id='persist'>
         <table>
@@ -171,9 +390,9 @@ gS_html init {{
             <td>
             <label for=gk_seconds_per_time_step>Seconds per time step</label>
             <td>
-            <input class=persistent-element type=range min=0.01 max=4 value=.1 id=gk_seconds_per_time_step step=.01>
+            <input class=persistent-element type=range min=0.01 max=4 value=.25 id=gk_seconds_per_time_step step=.01>
             <td>
-            <output for=gk_seconds_per_time_step id=gk_seconds_per_time_step_output>.005</output>
+            <output for=gk_seconds_per_time_step id=gk_seconds_per_time_step_output>.25</output>
             </tr>
             <tr>
             <td>
@@ -193,11 +412,11 @@ gS_html init {{
             </tr>
             <tr>
             <td>
-            <label for=gk_master_level>Master output level (dB)</label>
+            <label for=gk_MasterOutput_level>Master output level (dB)</label>
             <td>
-            <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_master_level step=.001>
+            <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_MasterOutput_level step=.001>
             <td>
-            <output for=gk_master_level id=gk_master_level_output>-6</output>
+            <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-6</output>
             </tr>
         </table>
         <p>
@@ -210,103 +429,145 @@ gS_html init {{
     <script src="csound_jsonrpc_stub.js"></script>
     <script>
 
-    function decimal_to_ruleset(decimal, size) {
-        const rule_set = [0];
-        for (let i=0; i<size; i++) {
-            let mask = 1;
-            const bit = decimal & (mask << i);
-            if (bit === 0) {
-                rule_set[i] = 0;
-            } else {
-                rule_set[i] = 1;
-            }
-        }
-        return rule_set;
-    }
-     
-    continue_generating_score = false;
-    let w = 1;
-    // An array of 0s and 1s
-    let cells;
 
-    let generation = 0;
+let ds;
 
-    //let ruleset = [0,1,0,1,1,0,1,0];
-    //let ruleset = [0,1,1,0,1,1,0,1];
-    // Rule 110 -- proved to be Turing complete.
-    //let ruleset =   [0,1,1,0,1,1,1,0];
-    //let ruleset = decimal_to_ruleset(110, 8);
-    // Rule 54 -- possibly Turing complete.
-    //let ruleset =   [0,0,1,1,0,1,1,0];
+function setup() {
+  createCanvas(710, 400);
+  ds = new PenroseLSystem();
+  //please, play around with the following line
+  ds.simulate(5);
+}
 
-    function setup() {
-        createCanvas(1000, 300);
-        cells = Array(floor(width / w));
-        for (let i = 0; i < cells.length; i++) {
-            cells[i] = 0;
+function draw() {
+  background(0);
+  frameRate(1);
+  ds.render();
+}
+
+function PenroseLSystem() {
+    this.steps = 0;
+
+   //these are axiom and rules for the penrose rhombus l-system
+   //a reference would be cool, but I couldn't find a good one
+    this.axiom = "[X]++[X]++[X]++[X]++[X]";
+    this.ruleW = "YF++ZF----XF[-YF----WF]++";
+    this.ruleX = "+YF--ZF[---WF--XF]+";
+    this.ruleY = "-WF++XF[+++YF++ZF]-";
+    this.ruleZ = "--YF++++WF[+ZF++++XF]--XF";
+
+    //please play around with the following two lines
+    this.startLength = 500;//460.0;
+    this.theta = TWO_PI / 10.0; //10 = 36 degrees, try TWO_PI / 6.0, ...
+    this.reset();
+}
+
+PenroseLSystem.prototype.simulate = function (gen) {
+  while (this.getAge() < gen) {
+    this.iterate(this.production);
+  }
+}
+
+PenroseLSystem.prototype.reset = function () {
+    this.production = this.axiom;
+    this.drawLength = this.startLength;
+    this.generations = 0;
+  }
+
+PenroseLSystem.prototype.getAge = function () {
+    return this.generations;
+  }
+
+//apply substitution rules to create new iteration of production string
+PenroseLSystem.prototype.iterate = function() {
+    let newProduction = "";
+
+    for(let i=0; i < this.production.length; ++i) {
+      let step = this.production.charAt(i);
+      //if current character is 'W', replace current character
+      //by corresponding rule
+      if (step == 'W') {
+        newProduction = newProduction + this.ruleW;
+      }
+      else if (step == 'X') {
+        newProduction = newProduction + this.ruleX;
+      }
+      else if (step == 'Y') {
+        newProduction = newProduction + this.ruleY;
+      }
+      else if (step == 'Z') {
+        newProduction = newProduction + this.ruleZ;
+      }
+      else {
+        //drop all 'F' characters, don't touch other
+        //characters (i.e. '+', '-', '[', ']'
+        if (step != 'F') {
+          newProduction = newProduction + step;
         }
-        //cells[cells.length-1] = 1;
-        cells[cells.length-100] = 1;
+      }
     }
 
-    function draw_() {
-        if (continue_generating_score === false) {
-            return;
-        }
-        if (generation >= height / w) {
-            generation = 0;
-            clear();
-        }
-        for (let i = 0; i < cells.length; i++) {
-            if (cells[i] === 1) {
-                fill(200);
-            } else {
-                fill(51);
-                noStroke();
-                rect(i * w, generation * w, w, w);
-            }
-        }
-        generate();
-        let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
-        setTimeout(draw_, seconds_per_time_step * 1000);
-    }
+    this.drawLength = this.drawLength * 0.5;
+    this.generations++;
+    this.production = newProduction;
+}
 
-    function generate() {
-        // First we create an empty array for the new values
-        let nextgen = Array(cells.length);
-        // For every spot, determine new state by examing current state, and neighbor states
-        // Ignore edges that only have one neighor (i.e. do not wrap).
-        for (let i = 1; i < cells.length-1; i++) {
-            let left   = cells[i-1];   // Left neighbor state
-            let me     = cells[i];     // Current state
-            let right  = cells[i+1];   // Right neighbor state
-            nextgen[i] = rules(left, me, right); // Compute next generation state based on ruleset
-        }
-        cells = nextgen;
-        generation++;
-    }
+// Convert production string to a turtle graphic
+// and to real-time Csound notes. Here the graphics context 
+// acts as the graphics turtle.
+PenroseLSystem.prototype.render = function () {
+    // Move the origin from the upper right hand corner of the canvas to the 
+    // center.
+    translate(width / 2, height / 2);
 
-    function rules(a, b, c) {
-        if (a == 1 && b == 1 && c == 1) return ruleset[7];
-        if (a == 1 && b == 1 && c == 0) return ruleset[6];
-        if (a == 1 && b == 0 && c == 1) return ruleset[5];
-        if (a == 1 && b == 0 && c == 0) return ruleset[4];
-        if (a == 0 && b == 1 && c == 1) return ruleset[3];
-        if (a == 0 && b == 1 && c == 0) return ruleset[2];
-        if (a == 0 && b == 0 && c == 1) return ruleset[1];
-        if (a == 0 && b == 0 && c == 0) return ruleset[0];
-        return 0;
+    this.steps += 20;
+    if(this.steps > this.production.length) {
+      this.steps = this.production.length;
     }
-    
-    function play_cells() {
+// The production is divided into chunks that become strokes.
+    for(let i=0; i<this.steps; ++i) {
+      let step = this.production.charAt(i);
+
+      //'W', 'X', 'Y', 'Z' symbols don't actually correspond to a turtle action
+      if( step == 'F') {
+          // Gray, alpha.
+        stroke(255, 60);
+        for(let j=0; j < this.repeats; j++) {
+            // x0, y0, x2, y2
+            // It's always move by -y2 in the direction of theta.
+          line(0, 0, 0, -this.drawLength);
+            // Draw lines only.
+          noFill();
+            // Move the graphics context to the end of the just-drawn line.
+          translate(0, -this.drawLength);
+         matrix = drawingContext.getTransform();
+             csound.Message(`x: ${matrix.e} y: ${matrix.f}\n`);
+        }
+        this.repeats = 1;
+      }
+      else if (step == '+') {
+        rotate(this.theta);
+      }
+      else if (step == '-') {
+        rotate(-this.theta);
+      }
+      else if (step == '[') {
+        push();
+      }
+      else if (step == ']') {
+        pop();
+      }
     }
+  }
+
+
     
     $(document).ready(function() {
         //////////////////////////////////////////////////////////////////////
         // This is the JSON-RPC proxy of the instance of Csound that is 
         // performing this piece.
         //////////////////////////////////////////////////////////////////////
-        let csound = new Csound(origin);
+        csound = new Csound(origin);
         message_callback_ = function(message) {
             let notifications_textarea = document.getElementById("csound_diagnostics");
             let existing_notifications = notifications_textarea.value;
@@ -324,14 +585,12 @@ gS_html init {{
                 ruleset = decimal_to_ruleset(slider_value, 8);
                 csound.Message(`rule_number ${rule_number} = binary rule ${ruleset}\n`);
             }
-       });
+        });
         $('#start').on('click', async function() {
             rule_number = $('#gk_rule').val();
             ruleset = decimal_to_ruleset(rule_number, 8);
             csound.Message(`rule_number ${rule_number} = binary rule ${ruleset}\n`);
             continue_generating_score = true;
-            let seconds_per_time_step = $('#gk_seconds_per_time_step').val()
-            setTimeout(draw_, seconds_per_time_step * 1000);
         });
         $('#stop').on('click', async function() {
             continue_generating_score = false;
@@ -352,7 +611,7 @@ gS_html init {{
                 $(output_selector).val(this.value);
             });
         });
-    });
+     });
 </script>
 </body>
 </html>
@@ -368,35 +627,7 @@ webserver_open_html gi_webserver, gS_html
 
 </CsInstruments>
 <CsScore>
-; p1   p2   p3     p4      p5      p6         p7
-f 1    0    65536  10      1
-f 100  0    256    -7      0       16         1    240    0
-t 0    60
-i 1    0    256    3000    6.00    1          1.24    
-i 1    0    .      .       .       1.0666     1.23    
-i 1    0    .      .       .       1.125      1.22    
-i 1    0    .      .       .       1.14285    1.21    
-i 1    0    .      .       .       1.23076    1.20    
-i 1    0    .      .       .       1.28571    1.19    
-i 1    0    .      .       .       1.333      1.18    
-i 1    0    .      .       .       1.4545     1.17    
-i 1    0    .      .       .       1.5        1.16    
-i 1    0    .      .       .       1.6        1.15    
-i 1    0    .      .       .       1.777      1.14    
-i 1    0    .      .       .       1.8        1.13    
-i 1    0    .      .       .       2          1.12    
-i 1    0    .      .       .       2.25       1.10    
-i 1    0    .      .       .       2.28571    1.09    
-i 1    0    .      .       .       2.666      1.08    
-i 1    0    .      .       .       3          1.07    
-i 1    0    .      .       .       3.2        1.06    
-i 1    0    .      .       .       4          1.05    
-i 1    0    .      .       .       4.5        1.04    
-i 1    0    .      .       .       5.333      1.03    
-i 1    0    .      .       .       8          1.02    
-i 1    0    .      1000    .       9          1.01    
-i 1    0    .      500     .       16         1.00    
-
+i "Exit" 360 1
 </CsScore>
 </CsoundSynthesizer>
 
