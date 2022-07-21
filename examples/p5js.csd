@@ -431,8 +431,8 @@ PenroseLSystem.prototype.reset = function () {
                 let midi_key = Math.round(128. - (y / 5.));
                 let midi_velocity = x / 10.;
                 let pan = (x / 800) - .5;
-                let note = sprintf("i 1 0 2 %9.4f %9.4f 0 %9.4f", midi_key, midi_velocity, pan);
-                csound.ReadScore(note);
+                let note = sprintf("i 1 0 2 %9.4f %9.4f 0 %9.4f\\n", midi_key, midi_velocity, pan);
+                csound.InputMessage(note);
             }
             else if (step == '+') {
                 rotate(this.theta);

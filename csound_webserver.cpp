@@ -10,6 +10,7 @@
 #include <thread>
 #include <map>
 #include <memory>
+#define CPPHTTPLIB_THREAD_POOL_COUNT 24
 #include <cpp-httplib/httplib.h>
 #include <nlohmann/json.hpp>
 
@@ -699,6 +700,8 @@ namespace csound_webserver {
                             result = sink.write(footer, std::strlen(footer));
                             /// if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message: channel_name: %s wrote: %s result: %d\n", channel_name.c_str(), message, result);
                             std::free(message);
+                        } else {
+                            std::fprintf(stderr, "CsoundWebServer::send_message: sink is not writeable.\n");
                         }
                         return true;
                     });          
