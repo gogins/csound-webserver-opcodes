@@ -2,8 +2,8 @@
  * This class provides a JSON-RPC interface to an already running instance of 
  * a csound_webserver opcode, and thus to Csound itself.
  *
- * All methods are "async" so they can be called either asynchronously or 
- * synchronously.
+ * Some methods are "async" so they can be called either asynchronously or 
+ * synchronously. Other methods not requiring a response are always async.
  */
 const diagnostics_enabled = true;
 
@@ -12,7 +12,10 @@ class Csound {
         this.url = url;
         this.id = 0;
     }
-    async invoke_rpc(method, parameters) {
+    async invoke_rpc(method, parameters, synchronous) {
+        if (typeof synchronous === 'undefined') {
+            synchronous = true;
+        }
         let fetch_url = this.url + '/' + method;
         this.id = this.id + 1;
         let fetch_request = {
@@ -29,12 +32,17 @@ class Csound {
             })
         };    
         if (diagnostics_enabled == true) console.log("\nfetch_request:\n" + JSON.stringify(fetch_request) + "\n");
-        const jsonrpc_response = await fetch(fetch_url, fetch_request);
-        if (diagnostics_enabled == true) console.log("\jsonrpc_response:\n" + JSON.stringify(jsonrpc_response) + "\n");
-        const jsonrpc_result = await jsonrpc_response.json();
-        if (diagnostics_enabled == true) console.log("\jsonrpc_result:\n" + jsonrpc_result.result + "\n");
-        // Returns not the JSON of the result, but the _value_ of the result.
-        return jsonrpc_result.result;
+        if (synchronous === true) {
+            const jsonrpc_response = await fetch(fetch_url, fetch_request);
+            if (diagnostics_enabled == true) console.log("\jsonrpc_response:\n" + JSON.stringify(jsonrpc_response) + "\n");
+            const jsonrpc_result = await jsonrpc_response.json();
+            if (diagnostics_enabled == true) console.log("\jsonrpc_result:\n" + jsonrpc_result.result + "\n");
+            // Returns not the JSON of the result, but the _value_ of the result.
+            return jsonrpc_result.result;
+        } else {
+            fetch(fetch_url, fetch_request);
+            return 0;
+        }
     }
     async CompileCsdText(csd_text) {
         var params = {csd_text : csd_text};
@@ -94,7 +102,7 @@ class Csound {
     };
     async InputMessage(sco_code) {
         var params = {sco_code : sco_code};
-        return this.invoke_rpc("InputMessage", params);
+        return this.invoke_rpc("InputMessage", params, false);
     };
     async IsScorePending(callbackSuccess, callbackError) {
         var params = null;
@@ -106,7 +114,7 @@ class Csound {
     };
     async ReadScore(sco_code) {
         var params = {sco_code : sco_code};
-        return this.invoke_rpc("ReadScore", params);
+        return this.invoke_rpc("ReadScore", params, false);
     };
     async RewindScore(callbackSuccess, callbackError) {
         var params = null;
@@ -114,11 +122,11 @@ class Csound {
     };
     async ScoreEvent(opcode_code, pfields) {
         var params = {opcode_code : opcode_code, pfields : pfields};
-        return this.invoke_rpc("ScoreEvent", params);
+        return this.invoke_rpc("ScoreEvent", params, false);
     };
     async SetControlChannel(channel_name, channel_value) {
         var params = {channel_name : channel_name, channel_value : channel_value};
-        return this.invoke_rpc("SetControlChannel", params);
+        return this.invoke_rpc("SetControlChannel", params, false);
     };
     async SetDebug(enabled) {
         var params = {enabled : enabled};
@@ -163,7 +171,7 @@ class Csound {
     };
     async SetStringChannel(channel_name, channel_value) {
         var params = {channel_name : channel_name, channel_value : channel_value};
-        return this.invoke_rpc("SetStringChannel", params);
+        return this.invoke_rpc("SetStringChannel", params, false);
     };
     async TableLength(table_number) {
         var params = {table_number : table_number};
@@ -175,6 +183,6 @@ class Csound {
     };
     async TableSet(index, table_number, value) {
         var params = {index : index, table_number : table_number, value : value};
-        return this.invoke_rpc("TableSet", params);
+        return this.invoke_rpc("TableSet", params, false);
     };
 };

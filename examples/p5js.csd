@@ -10,198 +10,72 @@ ksmps           =           128
 nchnls          =           2
 0dbfs           =           100
 
-gS_os, gS_macros cxx_os
-prints "Operating system: %s\n", gS_os
+//////////////////////////////////////////////
+// Original by Steven Yi.
+// Adapted by Michael Gogins.
+//////////////////////////////////////////////
+gk_FMWaterBell_level chnexport "gk_FMWaterBell_level", 3 ; 0
+gi_FMWaterBell_attack chnexport "gi_FMWaterBell_attack", 3 ; 0.002
+gi_FMWaterBell_release chnexport "gi_FMWaterBell_release", 3 ; 0.01
+gi_FMWaterBell_sustain chnexport "gi_FMWaterBell_sustain", 3 ; 20
+gi_FMWaterBell_sustain_level chnexport "gi_FMWaterBell_sustain_level", 3 ; .1
+gk_FMWaterBell_index chnexport "gk_FMWaterBell_index", 3 ; .5
+gk_FMWaterBell_crossfade chnexport "gk_FMWaterBell_crossfade", 3 ; .5
+gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
+gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
+gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
 
-S_grain_code init {{
+gk_FMWaterBell_level init 0
+gi_FMWaterBell_attack init 0.002
+gi_FMWaterBell_release init 0.01
+gi_FMWaterBell_sustain init 20
+gi_FMWaterBell_sustain_level init .1
+gk_FMWaterBell_index init 5
+gk_FMWaterBell_crossfade init .5
+gk_FMWaterBell_vibrato_depth init 0.05
+gk_FMWaterBell_vibrato_rate init 6
+gk_FMWaterBell_midi_dynamic_range init 20
 
-//void* __dso_handle = (void *)&__dso_handle;
+gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
 
-static bool diagnostics_enabled = false;
-
-#include "cxx_invokable.hpp"
-#include <cmath>
-#include <complex>
-#include <csdl.h>
-#include <cstdio>
-
-    /**
-     * Compute a cosine grain. If the synchronous_phase argument is true
-     * (the default value), then all grains of the same frequency
-     * will have synchronous phases, which can be useful in avoiding certain artifacts.
-     * For example, if cosine grains of the same frequency have synchronous phases,
-     * they can be overlapped by 1/2 their duration without artifacts
-     * to produce a continuous cosine tone.
-     *
-     * The algorithm uses an efficient difference equation.
-     */
-struct InvokableCosineGrain : public CxxInvokableBase {
-    virtual ~InvokableCosineGrain() {
-    };
-    int init(CSOUND *csound_, OPDS *opds_, MYFLT **outputs, MYFLT **inputs) override {
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init...\\n");
-        int result = OK;
-        csound = csound_;
-        opds = opds_;
-        // Inputs.
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: csound: %p opds: %p inputs: %p.\\n", csound, opds, inputs);
-        center_time_seconds = *(inputs[0]);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: center_time_seconds: %9.4f\\n", center_time_seconds);
-        duration_seconds = *(inputs[1]);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: duration_seconds: %9.4f\\n", duration_seconds);
-        frequency_hz = *(inputs[2]);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: frequency_hz: %9.4f\\n", frequency_hz);
-        amplitude = *(inputs[3]);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: amplitude: %9.4f\\n", amplitude);
-        phase_offset_radians = *(inputs[4]);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: phase_offset_radians: %9.4f\\n", phase_offset_radians);
-        if (*(inputs[5]) != 0.) {
-            synchronous_phase = true;
-        } else {
-            synchronous_phase = false;
-        }
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: synchronous_phase: %i\\n", synchronous_phase);
-        if (synchronous_phase) {
-            wavelength_seconds = 1.0 / frequency_hz;
-            wavelengths = center_time_seconds / wavelength_seconds;
-            whole_cycles = 0;
-            fractional_cycle = std::modf(wavelengths, &whole_cycles);
-            phase_offset_radians = 2.0 * M_PI * fractional_cycle;
-        }
-        frames_per_second = csound->GetSr(csound);
-        frame_count = size_t(std::round(duration_seconds * frames_per_second));
-        // The signal is a cosine sinusoid.
-        sinusoid_radians_per_frame = 2.0 * M_PI * frequency_hz / frames_per_second;
-        sinusoid_coefficient = 2.0 * std::cos(sinusoid_radians_per_frame);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: sinusoid_coefficient: %9.4f\\n", sinusoid_coefficient);
-        // The initial frame.
-        sinusoid_1 = std::cos(phase_offset_radians);
-        // What would have been the previous frame.
-        sinusoid_2 = std::cos(-sinusoid_radians_per_frame + phase_offset_radians);
-        // The envelope is exactly 1 cycle of a cosine sinusoid, offset by -1.
-        envelope_frequency_hz = 1.0 / duration_seconds;
-        envelope_radians_per_frame = 2.0 * M_PI * envelope_frequency_hz / frames_per_second;
-        envelope_coefficient = 2.0 * std::cos(envelope_radians_per_frame);
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: envelope_coefficient: %9.4f\\n", envelope_coefficient);
-        // The initial frame.
-        envelope_1 = std::cos(0.0);
-        // What would have been the previous frame.
-        envelope_2 = std::cos(-envelope_radians_per_frame);
-        signal = 0.0;
-        temporary = 0.0;
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::init: envelope_2: %9.4f\\n", envelope_2);
-        return result;
-    }
-    int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> InvokableCosineGrain::kontrol...\\n");
-        int result = OK;
-        int frame_index = 0;
-        for( ; frame_index < kperiodOffset(); ++frame_index) {
-            outputs[0][frame_index] = 0;
-        }
-        for( ; frame_index < kperiodEnd(); ++frame_index) {
-            signal = (sinusoid_1 * (envelope_1 - 1.0)) * amplitude;
-            temporary = sinusoid_1;
-            sinusoid_1 = sinusoid_coefficient * sinusoid_1 - sinusoid_2;
-            sinusoid_2 = temporary;
-            temporary = envelope_1;
-            envelope_1 = envelope_coefficient * envelope_1 - envelope_2;
-            envelope_2 = temporary;
-            outputs[0][frame_index] = signal; //sample;
-        }
-        for( ; frame_index < ksmps(); ++frame_index) {
-            outputs[0][frame_index] = 0;
-        }
-        return result;
-    }
-    double center_time_seconds;
-    double duration_seconds;
-    double frequency_hz;
-    double amplitude;
-    double phase_offset_radians;
-    double wavelengths;
-    double wavelength_seconds;
-    double whole_cycles;
-    double fractional_cycle;
-    bool synchronous_phase;
-    int frame_count;
-    double frames_per_second;
-    double sinusoid_radians_per_frame;
-    double sinusoid_coefficient;    
-    double sinusoid_1;
-    double sinusoid_2;
-    double envelope_frequency_hz;
-    double envelope_radians_per_frame;
-    double envelope_coefficient;
-    double envelope_1;
-    double envelope_2;
-    double signal;
-    double temporary;
-};
-
-extern "C" {
-    
-    int grain_main(CSOUND *csound) {
-        int result = OK;
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> This is \\"grain_main\\".\\n");
-        return result;
-    }
-    
-    CxxInvokable *cosine_grain_factory() {
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> This is \\"cosine_grain_factory\\".\\n");
-        auto result = new InvokableCosineGrain;
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> \\"cosine_grain_factory\\" created %p.\\n", result);
-        return result;
-    }
-
-};
-
-}}
-
-if strcmp(gS_os, "Linux") == 0 then
-i_result cxx_compile "grain_main", S_grain_code, "g++ -v -g -O2 -std=c++17 -shared -fPIC -DUSE_DOUBLE -I. -I/usr/local/include/csound -I/home/mkg/csound/interfaces -I/usr/include/eigen3 -I/home/mkg/csound-extended/CsoundAC -lCsoundAC -lpthread -lm", "libcsound_webserver.so libCsoundAC.so"
-endif
-if strcmp(gS_os, "macOS") == 0 then
-i_result cxx_compile "grain_main", S_grain_code, "clang++ -g -O2 -std=c++14 -shared -fPIC -DUSE_DOUBLE -I. -I/System/Volumes/Data/opt/homebrew/include/eigen3 -I/opt/homebrew/Cellar/csound/6.17.0_5/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/boost/1.79.0/include -I/Users/michaelgogins/csound-extended/CsoundAC -lpthread -lm", "libCsoundAC.dylib"
-endif
-
-gk_CosineGrain_level chnexport "gk_CosineGrain_level", 3
-gk_CosineGrain_midi_dynamic_range chnexport "gk_CosineGrain_midi_dynamic_range", 3
-
-gk_CosineGrain_level init 0
-gk_CosineGrain_midi_dynamic_range init 20
-instr CosineGrain
+instr FMWaterBell
 i_instrument = p1
 i_time = p2
 i_duration = p3
+; One of the envelopes in this instrument should be releasing, and use this:
+i_sustain = 1000
+xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
-i_midi_dynamic_range = i(gk_CosineGrain_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
 k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
 ; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 65
+i_level_correction = 75
 i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(gk_CosineGrain_level)
+i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
+k_gain = ampdb(gk_FMWaterBell_level)
+a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
+;a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 0
+a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
+; ares transegr ia, idur, itype, ib [, idur2] [, itype] [, ic] ...
+;;a_envelope transegr 0, gi_FMWaterBell_attack, 12, 1, i_sustain, 12, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 12, 0
+a_signal = a_signal * i_amplitude * a_envelope * k_gain
 
-; Grain inputs.
-i_center_time_seconds init i_time
-i_duration_seconds init i_duration
-i_frequency_hz init i_frequency
-; i_amplitude init i_amplitude
-i_phase_offset_radians init 0
-i_synchronous_phase init 1
-a_signal init 0
-a_signal cxx_invoke "cosine_grain_factory", 3, i_center_time_seconds, i_duration_seconds, i_frequency_hz, i_amplitude, i_phase_offset_radians, i_synchronous_phase 
-a_signal = a_signal * k_gain
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-;printks "a_signal: %9.4f a_out_left: %9.4f a_out_right: %9.4f\\n", 0, k(a_signal), k(a_out_left), k(a_out_right)
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
+#endif
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
@@ -260,8 +134,8 @@ instr Exit
 prints "Exit"
 endin
 
-connect "CosineGrain", "outleft", "ReverbSC", "inleft"
-connect "CosineGrain", "outright", "ReverbSC", "inright"
+connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
+connect "FMWaterBell", "outright", "ReverbSC", "inright"
 connect "ReverbSC", "outleft", "MasterOutput", "inleft"
 connect "ReverbSC", "outright", "MasterOutput", "inright"
 
@@ -276,7 +150,7 @@ gS_html init {{
 <!DOCTYPE html>
 <html>
 <head>
-    <title>1-Dimensional Cellular Automata</title>
+    <title>Penrose Tiling</title>
     <style type="text/css">
     input[type='range'] {
         -webkit-appearance: none;
@@ -289,17 +163,16 @@ gS_html init {{
     input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none;
         border: none;
-        height: 16px;
-        width: 16px;
+        height: 12px;
+        width: 12px;
         border-radius: 50%;
-        box-shadow: inset 0 0 7px #234;
+        box-shadow: inset 0 0 5px #234;
         background: chartreuse;
         margin-top: -4px;
-        border-radius: 10px;
+        border-radius: 8px;
     }
     table td {
-        border-width: 2px;
-        padding: 8px;
+        padding: 2px;
         border-style: solid;
         border-color: transparent;
         color:yellow;
@@ -308,21 +181,23 @@ gS_html init {{
     }
     table th {
         border-width: 2px;
-        padding: 8px;
+        padding: 2px;
         border-style: solid;
         border-color: transparent;
         color:white;
         background-color:teal;
-         font-family: sans-serif
+        font-family: sans-serif
    }
     textarea {
-        border-width: 2px;
-        padding: 8px;
-        border-style: solid;
-        border-color: transparent;
         color:chartreuse;
         background-color:black;
         font-family: 'Courier', sans-serif
+        border: none;
+        width: 100%;
+        height: 100%;
+        -webkit-box-sizing: border-box; /* <=iOS4, <= Android  2.3 */
+        -moz-box-sizing: border-box; /* FF1+ */
+        box-sizing: border-box; /* Chrome, IE8, Opera, Safari 5.1*/
     }
     h1 {
         margin: 1em 0 0.5em 0;
@@ -361,54 +236,52 @@ gS_html init {{
     -->
     <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js" integrity="sha512-4P0ZJ49OMXe3jXT+EsEaq82eNwFeyYL81LeHGzGcEhowFbTqeQ80q+NEkgsE8tHPs6aCqvi7U+XWliAjDmT5Lg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.js" integrity="sha512-dY9NsJoe4eisOR4ZtU0WaFNOxGcGZMfaviwSYHoiiEXvC6QLBsOOVsv3uY+5lEvuRtGTATg7usKQGajlDWSo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body style="background-color:CadetBlue">
-    <h1>1-Dimensional Cellular Automata</h1>
-    <h3>Adapted for Csound with HTML5 by Michael Gogins, from <a href="https://p5js.org/examples/simulate-wolfram-ca.html">p5.js Wolfram CA example</a><h3>
+    <h1>Penrose Tiling</h1>
+    <h3>Adapted for Csound with HTML5 by Michael Gogins, from <a href="https://p5js.org/examples/simulate-penrose-tiles.html">p5.js Penrose tiling example</a><h3>
     <form id='persist'>
-        <table>
+        <table style="font-size:12pt;">
             <col width="2*">
             <col width="5*">
-            <col width="100px">
+            <col width="2*">
+            <col width="12*">
             <tr>
             <td>
-            <label for=gk_rule>Rule</label>
+            <label for=gk_FMWaterBell_level>Water bell level</label>
             <td>
-            <input class=persistent-element type=range min=0 max=255 value=110 id=gk_rule step=1>
+            <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_FMWaterBell_level step=1>
             <td>
-            <output for=gk_rule id=gk_rule_output>110</output>
+            <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>0</output>
+            <td rowspan=6>
+                <textarea id="csound_diagnostics" cols=128 rows=14>
+                </textarea>
+            </td>
             </tr>
             <tr>
             <td>
-            <label for=gk_Pinitial_state>Initial state</label>
+            <label for=gk_frame_rate>Frame rate</label>
             <td>
-            <input class=persistent-element type=range min=0 max=4 value=1 id=gk_initial_state step=.001>
+            <input class=persistent-element type=range min=.5 max=8 value=1 id=gk_frame_rate step=.1>
             <td>
-            <output for=gk_initial_state id=gk_initial_state_output>1</output>
+            <output for=gk_frame_rate id=gk_frame_rate_output>1</output>
             </tr>
             <tr>
             <td>
-            <label for=gk_seconds_per_time_step>Seconds per time step</label>
+            <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
             <td>
-            <input class=persistent-element type=range min=0.01 max=4 value=.25 id=gk_seconds_per_time_step step=.01>
+            <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
             <td>
-            <output for=gk_seconds_per_time_step id=gk_seconds_per_time_step_output>.25</output>
+            <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.89</output>
             </tr>
             <tr>
             <td>
-            <label for=gk_reverb_delay>Reverb delay feedback</label>
+            <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
             <td>
-            <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_reverb_delay step=.001>
+            <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
             <td>
-            <output for=gk_reverb_delay id=gk_reverb_delay_output>.89</output>
-            </tr>
-            <tr>
-            <td>
-            <label for=gk_reverb_hipass>Reverb highpass cutoff (Hz)</label>
-            <td>
-            <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_reverb_hipass step=.001>
-            <td>
-            <output for=gk_reverb_hipass id=gk_reverb_hipass_output>12000</output>
+            <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff>12000</output>
             </tr>
             <tr>
             <td>
@@ -417,6 +290,8 @@ gS_html init {{
             <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_MasterOutput_level step=.001>
             <td>
             <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-6</output>
+            </tr>
+            <tr>
             </tr>
         </table>
         <p>
@@ -429,138 +304,150 @@ gS_html init {{
     <script src="csound_jsonrpc_stub.js"></script>
     <script>
 
+    let ds;
+    var gk_frame_rate = 1.;
+    var do_render = false;
 
-let ds;
+    function setup() {
+        createCanvas(710, 400);
+        ds = new PenroseLSystem();
+        //please, play around with the following line
+        ds.simulate(5);
+    }
 
-function setup() {
-  createCanvas(710, 400);
-  ds = new PenroseLSystem();
-  //please, play around with the following line
-  ds.simulate(5);
-}
+    function draw() {
+        if (do_render === true) {
+            background(0);
+            frameRate(gk_frame_rate);
+            ds.render();
+        }
+    }
 
-function draw() {
-  background(0);
-  frameRate(1);
-  ds.render();
-}
+    function PenroseLSystem() {
+        this.steps = 0;
+        this.axiom = "[X]++[X]++[X]++[X]++[X]";
+        this.ruleW = "YF++ZF----XF[-YF----WF]++";
+        this.ruleX = "+YF--ZF[---WF--XF]+";
+        this.ruleY = "-WF++XF[+++YF++ZF]-";
+        this.ruleZ = "--YF++++WF[+ZF++++XF]--XF";
+        this.startLength = 500;//460.0;
+        this.theta = TWO_PI / 10.0; //10 = 36 degrees, try TWO_PI / 6.0, ...
+        this.reset();
+    }
 
-function PenroseLSystem() {
-    this.steps = 0;
-
-   //these are axiom and rules for the penrose rhombus l-system
-   //a reference would be cool, but I couldn't find a good one
-    this.axiom = "[X]++[X]++[X]++[X]++[X]";
-    this.ruleW = "YF++ZF----XF[-YF----WF]++";
-    this.ruleX = "+YF--ZF[---WF--XF]+";
-    this.ruleY = "-WF++XF[+++YF++ZF]-";
-    this.ruleZ = "--YF++++WF[+ZF++++XF]--XF";
-
-    //please play around with the following two lines
-    this.startLength = 500;//460.0;
-    this.theta = TWO_PI / 10.0; //10 = 36 degrees, try TWO_PI / 6.0, ...
-    this.reset();
-}
-
-PenroseLSystem.prototype.simulate = function (gen) {
-  while (this.getAge() < gen) {
-    this.iterate(this.production);
-  }
-}
+    PenroseLSystem.prototype.simulate = function (gen) {
+        while (this.getAge() < gen) {
+            this.iterate(this.production);
+        }
+    }
 
 PenroseLSystem.prototype.reset = function () {
-    this.production = this.axiom;
-    this.drawLength = this.startLength;
-    this.generations = 0;
-  }
+        this.production = this.axiom;
+        this.drawLength = this.startLength;
+        this.generations = 0;
+    }
 
-PenroseLSystem.prototype.getAge = function () {
-    return this.generations;
-  }
+    PenroseLSystem.prototype.getAge = function () {
+        return this.generations;
+    }
 
-//apply substitution rules to create new iteration of production string
-PenroseLSystem.prototype.iterate = function() {
-    let newProduction = "";
-
-    for(let i=0; i < this.production.length; ++i) {
-      let step = this.production.charAt(i);
-      //if current character is 'W', replace current character
-      //by corresponding rule
-      if (step == 'W') {
-        newProduction = newProduction + this.ruleW;
-      }
-      else if (step == 'X') {
-        newProduction = newProduction + this.ruleX;
-      }
-      else if (step == 'Y') {
-        newProduction = newProduction + this.ruleY;
-      }
-      else if (step == 'Z') {
-        newProduction = newProduction + this.ruleZ;
-      }
-      else {
-        //drop all 'F' characters, don't touch other
-        //characters (i.e. '+', '-', '[', ']'
-        if (step != 'F') {
-          newProduction = newProduction + step;
+    PenroseLSystem.prototype.iterate = function() {
+        let newProduction = "";
+        for(let i=0; i < this.production.length; ++i) {
+            let step = this.production.charAt(i);
+            // If the current character is 'W', replace the current character
+            //by the corresponding rule.
+            if (step == 'W') {
+                newProduction = newProduction + this.ruleW;
+            }
+            else if (step == 'X') {
+                newProduction = newProduction + this.ruleX;
+            }
+            else if (step == 'Y') {
+                newProduction = newProduction + this.ruleY;
+            }
+            else if (step == 'Z') {
+                newProduction = newProduction + this.ruleZ;
+            }
+            else {
+                // Drop all 'F' characters, don't touch other
+                //c haracters (i.e. '+', '-', '[', ']'
+                if (step != 'F') {
+                  newProduction = newProduction + step;
+                }
+            }
         }
-      }
+        this.drawLength = this.drawLength * 0.5;
+        this.generations++;
+        this.production = newProduction;
     }
 
-    this.drawLength = this.drawLength * 0.5;
-    this.generations++;
-    this.production = newProduction;
-}
-
-// Convert production string to a turtle graphic
-// and to real-time Csound notes. Here the graphics context 
-// acts as the graphics turtle.
-PenroseLSystem.prototype.render = function () {
-    // Move the origin from the upper right hand corner of the canvas to the 
-    // center.
-    translate(width / 2, height / 2);
-
-    this.steps += 20;
-    if(this.steps > this.production.length) {
-      this.steps = this.production.length;
-    }
-// The production is divided into chunks that become strokes.
-    for(let i=0; i<this.steps; ++i) {
-      let step = this.production.charAt(i);
-
-      //'W', 'X', 'Y', 'Z' symbols don't actually correspond to a turtle action
-      if( step == 'F') {
-          // Gray, alpha.
-        stroke(255, 60);
-        for(let j=0; j < this.repeats; j++) {
-            // x0, y0, x2, y2
-            // It's always move by -y2 in the direction of theta.
-          line(0, 0, 0, -this.drawLength);
-            // Draw lines only.
-          noFill();
-            // Move the graphics context to the end of the just-drawn line.
-          translate(0, -this.drawLength);
-         matrix = drawingContext.getTransform();
-             csound.Message(`x: ${matrix.e} y: ${matrix.f}\n`);
+    /**
+     * Render the production string to a turtle drawing and also to real-time 
+     * Csound notes, one time step per animation frame. We draw 1 'F' for each 
+     * animation frame.
+     */
+    PenroseLSystem.prototype.render = function () {
+        // Move the origin from the upper right hand corner of the canvas to the 
+        // center.
+        translate(width / 2, height / 2);
+        this.steps += 20;
+        if (this.steps > this.production.length) {
+            this.steps = this.production.length;
         }
-        this.repeats = 1;
-      }
-      else if (step == '+') {
-        rotate(this.theta);
-      }
-      else if (step == '-') {
-        rotate(-this.theta);
-      }
-      else if (step == '[') {
-        push();
-      }
-      else if (step == ']') {
-        pop();
-      }
-    }
-  }
-
-
+        // The production is divided into chunks that become strokes.
+        for(let i=0; i<this.steps; ++i) {
+            let step = this.production.charAt(i);
+            //'W', 'X', 'Y', 'Z' symbols don't actually correspond to a turtle action
+            if( step == 'F') {
+                // Gray, alpha.
+                stroke(255, 60);
+                let score = new Array();
+                // x0, y0, x2, y2
+                // It's always move by -y2 in the direction of theta.
+                line(0, 0, 0, -this.drawLength);
+                // Draw lines only.
+                noFill();
+                // Move the graphics context to the end of the just-drawn line.
+                translate(0, -this.drawLength);
+                matrix = drawingContext.getTransform();
+                let x = matrix.e;
+                let y = matrix.f;
+                let position = sprintf("x: %9.4f y: %9.4f\\n", x, y);
+                // Draw a green dot for each note.
+                fill("green");
+                circle(0, 0, 4);
+                // The commented out code below is how I figured out that, 
+                // at least in this case, the translation elements of the 
+                // current transformation are the x, y coordinates of the 
+                // current point under the _original_ transformation.
+                //~ push()
+                //~ drawingContext.resetTransform();
+                //~ fill("red");
+                //~ circle(x, y, 4);
+                //~ pop()
+                // Rescale by some reasonable amount.
+                // Note that y origin is at top, this must be reversed.
+                let midi_key = Math.round(128. - (y / 5.));
+                let midi_velocity = x / 10.;
+                let pan = (x / 800) - .5;
+                let note = sprintf("i 1 0 2 %9.4f %9.4f 0 %9.4f", midi_key, midi_velocity, pan);
+                csound.ReadScore(note);
+            }
+            else if (step == '+') {
+                rotate(this.theta);
+            }
+            else if (step == '-') {
+                rotate(-this.theta);
+            }
+            else if (step == '[') {
+                push();
+            }
+            else if (step == ']') {
+                pop();
+                }
+            }
+        }
     
     $(document).ready(function() {
         //////////////////////////////////////////////////////////////////////
@@ -568,7 +455,7 @@ PenroseLSystem.prototype.render = function () {
         // performing this piece.
         //////////////////////////////////////////////////////////////////////
         csound = new Csound(origin);
-        message_callback_ = function(message) {
+        message_callback_ = async function(message) {
             let notifications_textarea = document.getElementById("csound_diagnostics");
             let existing_notifications = notifications_textarea.value;
             notifications_textarea.value = existing_notifications + message;
@@ -581,22 +468,15 @@ PenroseLSystem.prototype.render = function () {
             var output_selector = '#' + event.target.id + '_output';
             $(output_selector).val(slider_value);
             csound.Message(event.target.id + " = " + event.target.value + "\\n");
-            if (event.target.id == 'gk_rule') {
-                ruleset = decimal_to_ruleset(slider_value, 8);
-                csound.Message(`rule_number ${rule_number} = binary rule ${ruleset}\n`);
+            if (event.target.id == "gk_frame_rate") {
+                gk_frame_rate = slider_value;
             }
-        });
+         });
         $('#start').on('click', async function() {
-            rule_number = $('#gk_rule').val();
-            ruleset = decimal_to_ruleset(rule_number, 8);
-            csound.Message(`rule_number ${rule_number} = binary rule ${ruleset}\n`);
-            continue_generating_score = true;
+            do_render = true;
         });
         $('#stop').on('click', async function() {
-            continue_generating_score = false;
-            noCanvas();
-            generation = 0;
-            setup();
+            do_render = false;
         });
         $('#save_controls').on('click', async function() {
             $('.persistent-element').each(function() {
