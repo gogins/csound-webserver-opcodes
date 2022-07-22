@@ -10,7 +10,6 @@
 #include <thread>
 #include <map>
 #include <memory>
-#define CPPHTTPLIB_THREAD_POOL_COUNT 24
 #include <cpp-httplib/httplib.h>
 #include <nlohmann/json.hpp>
 
@@ -259,11 +258,16 @@ namespace csound_webserver {
     void create_json_response(const nlohmann::json &json_request, httplib::Response &response, const T &return_value_) {
         nlohmann::json json_response;
         json_response["jsonrpc"] = "2.0";
-        json_response["id"] = json_request["id"];
+        auto id_it = json_request.find("id");
+        if (id_it != json_request.end()) {
+            json_response["id"] = *id_it;
+        }
         json_response["method"] = json_request["method"];
-        if (diagnostics_enabled) std::fprintf(stderr, "json_request: %s\n", json_request.dump().c_str());
-        nlohmann::json return_value(return_value_);
-        json_response["result"] = return_value;
+        if (diagnostics_enabled) std::fprintf(stderr, "json_request:  %s\n", json_request.dump().c_str());
+        if (id_it != json_request.end()) {
+            nlohmann::json return_value(return_value_);
+            json_response["result"] = return_value;
+        }
         if (diagnostics_enabled) std::fprintf(stderr, "json_response: %s\n", json_response.dump().c_str());
         response.set_content(json_response.dump(), "application/json");
     }
@@ -281,6 +285,8 @@ namespace csound_webserver {
         void *library_handle;
         std::string csound_message_callback_channel;
         std::map<std::string, concurrent_queue<char *>> event_queues_for_event_channels;
+        std::atomic<size_t> request_count = 0;
+        std::atomic<size_t> response_count = 0;
         CsoundWebServer() {
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer...\n");
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::CsoundWebServer.\n");
@@ -350,6 +356,7 @@ namespace csound_webserver {
                     std::fprintf(stderr, "Response: reason: %s body: %s\n", res.reason.c_str(), res.body.c_str());
                 });
             }
+            server.set_keep_alive_max_count(1024);
             server.set_base_dir(base_directory.c_str());
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create: base_directory: %s\n", base_directory.c_str());
             origin = "http://localhost:" + std::to_string(port);
@@ -358,12 +365,14 @@ namespace csound_webserver {
             // the JSON-RPC 2.0 wire protocol, so there is no need for a
             // second port to carry the RPCs.
             server.Post("/CompileCsdText", [=](const httplib::Request &request, httplib::Response &response) {
-                if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText...\n");
+                request_count++;
+                if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText [%9lu]...\n", request_count.load());
                 auto json_request = nlohmann::json::parse(request.body);
                 auto csd_text = json_request["params"]["csd_text"].get<std::string>();
                 auto result = csoundCompileCsdText_(csound, csd_text.c_str());
                 create_json_response(json_request, response, result);
-                if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response: %s\n", response.body.c_str());
+                response_count++;
+                if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response [%9lu]: %s\n", response_count.load(), response.body.c_str());
                 response.status = 200;
             });
             server.Post("/CompileOrc", [=](const httplib::Request &request, httplib::Response &response) {
@@ -481,12 +490,14 @@ namespace csound_webserver {
                 response.status = 200;
             });
             server.Post("/InputMessage", [=](const httplib::Request &request, httplib::Response &response) {
-                if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage...\n");
+                request_count++;
+                if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage [%9lu]...\n", request_count.load());
                 auto json_request = nlohmann::json::parse(request.body);
                 auto sco_code = json_request["params"]["sco_code"].get<std::string>();
                 csoundInputMessage_(csound, sco_code.c_str());
+                response_count++;
                 create_json_response(json_request, response, OK);
-                if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage: response: %s\n", response.body.c_str());
+                if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage [%9lu]: response: %s\n", response_count.load(), response.body.c_str());
                 response.status = 200;
             });
             server.Post("/IsScorePending", [=](const httplib::Request &request, httplib::Response &response) {
@@ -498,12 +509,14 @@ namespace csound_webserver {
                 response.status = 200;
             });
             server.Post("/Message", [=](const httplib::Request &request, httplib::Response &response) {
-                if (diagnostics_enabled) std::fprintf(stderr, "/Message...\n");
+                request_count++;
+                if (diagnostics_enabled) std::fprintf(stderr, "/Message [%9lu]...\n", request_count.load());
                 auto json_request = nlohmann::json::parse(request.body);
                 auto message = json_request["params"]["message"].get<std::string>();
                 csoundMessage_(csound, message.c_str());
+                response_count++;
                 create_json_response(json_request, response, OK);
-                if (diagnostics_enabled) std::fprintf(stderr, "/Message: response: %s\n", response.body.c_str());
+                if (diagnostics_enabled) std::fprintf(stderr, "/Message [%9lu]: response: %s\n", response_count.load(), response.body.c_str());
                 response.status = 200;
             });
             server.Post("/ReadScore", [=](const httplib::Request &request, httplib::Response &response) {

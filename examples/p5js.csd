@@ -501,7 +501,7 @@ PenroseLSystem.prototype.reset = function () {
 ; gi_webserver webserver_create "/home/mkg//csound-webserver-opcodes/examples/", 8080, 0
 
 ; For macOS, uncomment and if necessary edit this line:
-gi_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
+gi_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1
 
 webserver_open_html gi_webserver, gS_html
 
