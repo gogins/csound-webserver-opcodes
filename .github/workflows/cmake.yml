@@ -50,7 +50,13 @@ jobs:
           # OPTIONAL: Specify a custom install location
           # boost_install_dir: /home/runner/some_directory
           # OPTIONAL: Specify a toolset
-          # toolset: clang        
+          # toolset: clang    
+
+      - name: Find Boost.Beast
+        id: find-boost-beast
+        run: |
+          find ${{env.BOOST_ROOT}} -name "advanced_server.cpp" -ls 2>/dev/null
+          find ${{env.BOOST_ROOT}} -name "websocket.hpp" -ls 2>/dev/null
 
       - name: Build on Mac OS
         if: runner.os == 'macOS'
