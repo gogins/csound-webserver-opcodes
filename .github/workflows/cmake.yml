@@ -2,7 +2,9 @@ name: CMake
 
 on:
   push:
-    branches: [ main websocket ]
+    branches: 
+      - main
+      - websocket
   pull_request:
     branches: [ main ]
 
