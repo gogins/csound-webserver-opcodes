@@ -86,12 +86,6 @@ jobs:
           toolset: msvc    
           link: shared
 
-      - name: Find Boost.Beast
-        id: find-boost-beast
-        run: |
-          find ${{env.BOOST_ROOT}} -name "advanced_server.cpp" -ls 
-          find ${{env.BOOST_ROOT}} -name "websocket.hpp" -ls 
-
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
