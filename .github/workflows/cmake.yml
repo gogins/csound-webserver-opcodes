@@ -37,9 +37,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
         
-      - name: Install boost
+      - name: Install boost on macOS
         uses: MarkusJx/install-boost@v2.3.0
-        id: install-boost
+        id: install-boost-macos
         if: runner.os == 'macOS' 
         with:
           # REQUIRED: Specify the required boost version
@@ -52,6 +52,10 @@ jobs:
           # boost_install_dir: /home/runner/some_directory
           # OPTIONAL: Specify a toolset
           toolset: clang    
+          
+      - name: Install boost on Linux
+        uses: MarkusJx/install-boost@v2.3.0
+        id: install-boost-linux
         if: runner.os == 'Linux' 
         with:
           # OPTIONAL: Specify a platform version
@@ -60,6 +64,10 @@ jobs:
           # boost_install_dir: /home/runner/some_directory
           # OPTIONAL: Specify a toolset
           toolset: gcc    
+
+      - name: Install boost on Windows
+        uses: MarkusJx/install-boost@v2.3.0
+        id: install-boost-windows
         if: runner.os == 'Windows' 
         with:
           # OPTIONAL: Specify a platform version
