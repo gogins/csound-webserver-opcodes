@@ -45,12 +45,27 @@ jobs:
           # A list of supported versions can be found here: 
           # https://github.com/actions/boost-versions/blob/main/versions-manifest.json
           boost_version: 1.79.0
-          # OPTIONAL: Specify a platform version
-          # platform_version: 10.15
-          # OPTIONAL: Specify a custom install location
-          # boost_install_dir: /home/runner/some_directory
-          # OPTIONAL: Specify a toolset
-          # toolset: clang    
+          if: runner.os == 'macOS' |
+              # OPTIONAL: Specify a platform version
+              platform_version: 11.6
+              # OPTIONAL: Specify a custom install location
+              # boost_install_dir: /home/runner/some_directory
+              # OPTIONAL: Specify a toolset
+              toolset: clang    
+          if: runner.os == 'Linux' |
+              # OPTIONAL: Specify a platform version
+              platform_version: 20.04
+              # OPTIONAL: Specify a custom install location
+              # boost_install_dir: /home/runner/some_directory
+              # OPTIONAL: Specify a toolset
+              toolset: gcc    
+          if: runner.os == 'Windows' |
+              # OPTIONAL: Specify a platform version
+              platform_version: 2022
+              # OPTIONAL: Specify a custom install location
+              # boost_install_dir: /home/runner/some_directory
+              # OPTIONAL: Specify a toolset
+              toolset: msvc    
 
       - name: Find Boost.Beast
         id: find-boost-beast
