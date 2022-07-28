@@ -356,7 +356,8 @@ namespace csound_webserver {
                     std::fprintf(stderr, "Response: reason: %s body: %s\n", res.reason.c_str(), res.body.c_str());
                 });
             }
-            server.set_keep_alive_max_count(1024);
+            server.set_keep_alive_timeout(10);
+            server.set_keep_alive_max_count(10);
             server.set_base_dir(base_directory.c_str());
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create: base_directory: %s\n", base_directory.c_str());
             origin = "http://localhost:" + std::to_string(port);

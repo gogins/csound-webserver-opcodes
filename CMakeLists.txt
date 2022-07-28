@@ -74,6 +74,8 @@ endif()
 install(TARGETS csound_webserver
     LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR})
 
+#add_program(advanced_server 
+
 # These are the real targets: the packages.
 
 # distro codename
