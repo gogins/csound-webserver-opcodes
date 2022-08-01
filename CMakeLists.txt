@@ -62,7 +62,7 @@ message(STATUS "SHARE_INSTALL_DIR:              ${SHARE_INSTALL_DIR}")
 message(STATUS "CMAKE_INSTALL_PREFIX:           ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "CPACK_PACKAGING_INSTALL_PREFIX: ${CPACK_PACKAGING_INSTALL_PREFIX}")
 
-add_library(csound_webserver SHARED csound_webserver_ws.cpp)
+add_library(csound_webserver SHARED csound_webserver_http.cpp)
 set_target_properties(csound_webserver PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${BUILD_BIN_DIR}
     LIBRARY_OUTPUT_DIRECTORY ${BUILD_LIB_DIR}

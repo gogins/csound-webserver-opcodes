@@ -1,5 +1,14 @@
 <CsoundSynthesizer>
 <CsLicense>
+Penrose Tiling Music
+Copyright 2022 by Michael Gogins
+
+This piece the use of p5.js to generate music and render it with Csound. 
+Performance is controlled by a Web page displayed using Csound's webserver 
+opcodes.
+
+This software and music are licensed under the provisions of the Creative 
+Commons Attribution-NonCommercial-ShareAlike license.
 </CsLicense>
 <CsOptions>
 --m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -odac
@@ -8,65 +17,62 @@
 sr              =           48000
 ksmps           =           128
 nchnls          =           2
-0dbfs           =           100
+0dbfs           =           10
 
-//////////////////////////////////////////////
-// Original by Steven Yi.
-// Adapted by Michael Gogins.
-//////////////////////////////////////////////
-gk_FMWaterBell_level chnexport "gk_FMWaterBell_level", 3 ; 0
-gi_FMWaterBell_attack chnexport "gi_FMWaterBell_attack", 3 ; 0.002
-gi_FMWaterBell_release chnexport "gi_FMWaterBell_release", 3 ; 0.01
-gi_FMWaterBell_sustain chnexport "gi_FMWaterBell_sustain", 3 ; 20
-gi_FMWaterBell_sustain_level chnexport "gi_FMWaterBell_sustain_level", 3 ; .1
-gk_FMWaterBell_index chnexport "gk_FMWaterBell_index", 3 ; .5
-gk_FMWaterBell_crossfade chnexport "gk_FMWaterBell_crossfade", 3 ; .5
-gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
-gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
-gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
+gk_Xing_level chnexport "gk_Xing_level", 3
 
-gk_FMWaterBell_level init 0
-gi_FMWaterBell_attack init 0.002
-gi_FMWaterBell_release init 0.01
-gi_FMWaterBell_sustain init 20
-gi_FMWaterBell_sustain_level init .1
-gk_FMWaterBell_index init 5
-gk_FMWaterBell_crossfade init .5
-gk_FMWaterBell_vibrato_depth init 0.05
-gk_FMWaterBell_vibrato_rate init 6
-gk_FMWaterBell_midi_dynamic_range init 20
+gk_Xing_level init 0.
 
-gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
+gi_Xing_isine ftgen 0, 0, 65537, 10, 1
 
-instr FMWaterBell
+instr Xing
+; Author: Andrew Horner
 i_instrument = p1
 i_time = p2
 i_duration = p3
-; One of the envelopes in this instrument should be releasing, and use this:
-i_sustain = p3
-;xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
-i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
+i_midi_velocity = p5
 k_space_front_to_back = p6
 k_space_left_to_right = p7
 k_space_bottom_to_top = p8
 i_phase = p9
+i_overall_amps = 75
+i_normalization = ampdb(-i_overall_amps) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
 i_frequency = cpsmidinn(i_midi_key)
-; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 75
-i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
-k_gain = ampdb(gk_FMWaterBell_level)
-a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
-;a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 0
-a_envelope linseg 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
-k_current_time timeinsts
-if k_current_time > i_sustain then
-    prints "turning off...\n"
-    turnoff
-endif
-a_signal = a_signal * i_amplitude * a_envelope * k_gain
+k_Xing_gain = ampdb(gk_Xing_level)
+iinstrument = p1
+istarttime = p2
+ioctave = p4
+idur = p3
+kfreq = k(i_frequency)
+iamp = 1
+inorm = 32310
+aamp1 linseg 0,.001,5200,.001,800,.001,3000,.0025,1100,.002,2800,.0015,1500,.001,2100,.011,1600,.03,1400,.95,700,1,320,1,180,1,90,1,40,1,20,1,12,1,6,1,3,1,0,1,0
+adevamp1 linseg 0, .05, .3, idur - .05, 0
+adev1 poscil adevamp1, 6.7, gi_Xing_isine, .8
+amp1 = aamp1 * (1 + adev1)
+aamp2 linseg 0,.0009,22000,.0005,7300,.0009,11000,.0004,5500,.0006,15000,.0004,5500,.0008,2200,.055,7300,.02,8500,.38,5000,.5,300,.5,73,.5,5.,5,0,1,1
+adevamp2 linseg 0,.12,.5,idur-.12,0
+adev2 poscil adevamp2, 10.5, gi_Xing_isine, 0
+amp2 = aamp2 * (1 + adev2)
+aamp3 linseg 0,.001,3000,.001,1000,.0017,12000,.0013,3700,.001,12500,.0018,3000,.0012,1200,.001,1400,.0017,6000,.0023,200,.001,3000,.001,1200,.0015,8000,.001,1800,.0015,6000,.08,1200,.2,200,.2,40,.2,10,.4,0,1,0
+adevamp3 linseg 0, .02, .8, idur - .02, 0
+adev3 poscil adevamp3, 70, gi_Xing_isine ,0
+amp3 = aamp3 * (1 + adev3)
+awt1 poscil amp1, i_frequency, gi_Xing_isine
+awt2 poscil amp2, 2.7 * i_frequency, gi_Xing_isine
+awt3 poscil amp3, 4.95 * i_frequency, gi_Xing_isine
+asig = awt1 + awt2 + awt3
+arel linenr 1,0, idur, .06
+a_signal = asig * arel * (iamp / inorm)
+i_attack = .002
+i_sustain = p3
+i_release = 0.01
+xtratim i_attack + i_release
+a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
+a_signal = a_signal * i_amplitude * a_declicking * k_Xing_gain
+
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
@@ -128,8 +134,8 @@ instr Exit
 prints "Exit"
 endin
 
-connect "FMWaterBell", "outleft", "ReverbSC", "inleft"
-connect "FMWaterBell", "outright", "ReverbSC", "inright"
+connect "Xing", "outleft", "ReverbSC", "inleft"
+connect "Xing", "outright", "ReverbSC", "inright"
 connect "ReverbSC", "outleft", "MasterOutput", "inleft"
 connect "ReverbSC", "outright", "MasterOutput", "inright"
 
@@ -233,8 +239,13 @@ gS_html init {{
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.js" integrity="sha512-dY9NsJoe4eisOR4ZtU0WaFNOxGcGZMfaviwSYHoiiEXvC6QLBsOOVsv3uY+5lEvuRtGTATg7usKQGajlDWSo7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body style="background-color:CadetBlue">
-    <h1>Penrose Tiling</h1>
-    <h3>Adapted for Csound with HTML5 by Michael Gogins, from <a href="https://p5js.org/examples/simulate-penrose-tiles.html">p5.js Penrose tiling example</a><h3>
+    <h1>Penrose Tiling Music</h1>
+    <h3>Adapted for Csound with HTML5 by Michael Gogins, from <a href="https://p5js.org/examples/simulate-penrose-tiles.html">p5.js Penrose tiling example.</a>
+    <br/><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" 
+        style="border-width:0" 
+        src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a>
+    This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.   
+    </h3>
     <form id='persist'>
         <table style="font-size:12pt;">
             <col width="2*">
@@ -242,12 +253,14 @@ gS_html init {{
             <col width="2*">
             <col width="12*">
             <tr>
+            </tr>
+            <tr>
             <td>
-            <label for=gk_FMWaterBell_level>Water bell level</label>
+            <label for=gk_frame_rate>Animation frames per second</label>
             <td>
-            <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_FMWaterBell_level step=1>
+            <input class=persistent-element type=range min=.5 max=64 value=24 id=gk_frame_rate step=.1>
             <td>
-            <output for=gk_FMWaterBell_level id=gk_FMWaterBell_level_output>0</output>
+            <output for=gk_frame_rate id=gk_frame_rate_output>25</output>
             <td rowspan=6>
                 <textarea id="csound_diagnostics" cols=128 rows=14>
                 </textarea>
@@ -255,65 +268,40 @@ gS_html init {{
             </tr>
             <tr>
             <td>
-            <label for=gk_frame_rate>Frame rate</label>
-            <td>
-            <input class=persistent-element type=range min=.5 max=8 value=1 id=gk_frame_rate step=.1>
-            <td>
-            <output for=gk_frame_rate id=gk_frame_rate_output>1</output>
-            </tr>
-            <tr>
-            <td>
             <label for=gk_ReverbSC_feedback>Reverb delay feedback</label>
             <td>
-            <input class=persistent-element type=range min=0 max=1 value=.89 id=gk_ReverbSC_feedback step=.001>
+            <input class=persistent-element type=range min=0 max=1 value=.5 id=gk_ReverbSC_feedback step=.001>
             <td>
-            <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.89</output>
+            <output for=gk_ReverbSC_feedback id=gk_ReverbSC_feedback_output>.5</output>
             </tr>
             <tr>
             <td>
             <label for=gk_ReverbSC_frequency_cutoff>Reverb highpass cutoff (Hz)</label>
             <td>
-            <input class=persistent-element type=range min=0 max=20000 value=12000 id=gk_ReverbSC_frequency_cutoff step=.001>
+            <input class=persistent-element type=range min=0 max=20000 value=5000 id=gk_ReverbSC_frequency_cutoff step=.001>
             <td>
-            <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff>12000</output>
+            <output for=gk_ReverbSC_frequency_cutoff id=gk_ReverbSC_frequency_cutoff_output>5000</output>
             </tr>
             <tr>
             <td>
             <label for=gk_MasterOutput_level>Master output level (dB)</label>
             <td>
-            <input class=persistent-element type=range min=-40 max=40 value=-6 id=gk_MasterOutput_level step=.001>
+            <input class=persistent-element type=range min=-40 max=40 value=0 id=gk_MasterOutput_level step=.001>
             <td>
-            <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>-6</output>
+            <output for=gk_MasterOutput_level id=gk_MasterOutput_level_output>0</output>
             </tr>
             <tr>
             </tr>
         </table>
         <p>
-        <input type="button" id='echo' value="Echo" />
         <input type="button" id='start' value="Start" />
         <input type="button" id='stop' value="Stop" />
         <input type="button" id='save_controls' value="Save" />
         <input type="button" id='restore_controls' value="Restore" />
     </form>   
-    <p>
     <script src="csound_jsonrpc_stub.js"></script>
     <script>
     
-    var ws = new WebSocket("ws://localhost:8081/echo");
-    console.log(ws);
-    ws.onopen = new function(e) {
-        console.log(e);
-    };
-    ws.onmessage = new function(e) {
-        console.log(e);
-    };
-    ws.onclose = new function(e) {
-        console.log(e);
-    };
-    ws.onerror = new function(e) {
-        console.log(e);
-    };
-
     let ds;
     var gk_frame_rate = 1.;
     var do_render = false;
@@ -335,6 +323,7 @@ gS_html init {{
 
     function PenroseLSystem() {
         this.steps = 0;
+        this.prior_steps = 0;
         this.axiom = "[X]++[X]++[X]++[X]++[X]";
         this.ruleW = "YF++ZF----XF[-YF----WF]++";
         this.ruleX = "+YF--ZF[---WF--XF]+";
@@ -394,18 +383,13 @@ gS_html init {{
 
     /**
      * Render the production string to a turtle drawing and also to real-time 
-     * Csound notes, one time step per animation frame. We draw 1 'F' for each 
-     * animation frame.
+     * Csound notes, one note per animation frame. 
      */
     PenroseLSystem.prototype.render = function () {
         // Move the origin from the upper right hand corner of the canvas to the 
         // center.
         translate(width / 2, height / 2);
-        this.steps += 20;
-        if (this.steps > this.production.length) {
-            this.steps = this.production.length;
-        }
-        // The production is divided into chunks that become strokes.
+        this.steps += 1;
         for(let i=0; i<this.steps; ++i) {
             let step = this.production.charAt(i);
             //'W', 'X', 'Y', 'Z' symbols don't actually correspond to a turtle action
@@ -436,14 +420,20 @@ gS_html init {{
                 //~ fill("red");
                 //~ circle(x, y, 4);
                 //~ pop()
-                // Rescale by some reasonable amount.
-                // Note that y origin is at top, this must be reversed.
-                let midi_key = Math.round(128. - (y / 5.));
-                let midi_velocity = x / 10.;
-                let pan = (x / 800) - .5;
-                let note = sprintf("i 1. 0. 2. %9.4f %9.4f 0 %9.4f", midi_key, midi_velocity, pan);
-                csound.InputMessage(note);
-                ///ws.send(note);
+                // The entire graph is re-traced for each animation frame, 
+                // plus one additonal edge and node. However, we want to play 
+                // only the last drawn node.
+                if (i > this.prior_steps) {
+                    // Rescale by some reasonable amount.
+                    let duration = 30. / gk_frame_rate;
+                    // Note that y origin is at top, this must be reversed.
+                    let midi_key = Math.round(((((400. - y) / 400.)) * 48.) + 48.);
+                    let midi_velocity = x / 10.;
+                    let pan = (x / 800) - .5;
+                    let note = sprintf("i 1. 0. %9.4f %9.4f %9.4f 0 %9.4f", duration, midi_key, midi_velocity, pan);
+                    csound.InputMessage(note);
+                    this.prior_steps = i;
+                }
             }
             else if (step == '+') {
                 rotate(this.theta);
@@ -483,10 +473,8 @@ gS_html init {{
                 gk_frame_rate = slider_value;
             }
          });
-        $('#echo').on('click', async function() {
-            ws.send("hello");
-        });
         $('#start').on('click', async function() {
+            gk_frame_rate = parseFloat($('#gk_frame_rate').val());
             do_render = true;
         });
         $('#stop').on('click', async function() {

@@ -85,7 +85,9 @@ of Csound must include the `csound_jsonrpc_stub.js` script in the HTML
 
 Please note, these methods are asynchronous, but all methods are declared 
 `async` so that that they can either be called asynchronously, or called 
-synchronously using `await` inside an `async` function.
+synchronously using `await` inside an `async` function. However, some 
+performance-critical functions such as InputMessage or ReadScore are 
+stricly asynchronous.
 
 Also note, each internal webserver can in general fetch any number of Web 
 pages, but should host only one page that embeds `csound_jsonrpc_stub.js`_.
