@@ -5,6 +5,8 @@ include(ExternalProject)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_VERBOSE_MAKEFILE ON)
+find_package(Boost 1.79.0)
+find_package(OpenSSL)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall")
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
@@ -14,8 +16,11 @@ include_directories(".")
 include_directories("${CMAKE_SOURCE_DIR}")
 include_directories("${CMAKE_SOURCE_DIR}/csound/interfaces")
 include_directories("${CMAKE_SOURCE_DIR}/csound/include")
-include_directories("${CMAKE_SOURCE_DIR}/json/single_include")
-
+##include_directories("${CMAKE_SOURCE_DIR}/json/single_include")
+include_directories("${Boost_INCLUDE_DIRS}")
+include_directories("${Boost_INCLUDE_DIRS}"/json)
+message(STATUS "Boost: ${Boost_INCLUDE_DIRS}")
+include_directories("${OPENSSL_INCLUDE_DIR}")
 set(APIVERSION "6.0")
 set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/local-linux")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -57,7 +62,7 @@ message(STATUS "SHARE_INSTALL_DIR:              ${SHARE_INSTALL_DIR}")
 message(STATUS "CMAKE_INSTALL_PREFIX:           ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "CPACK_PACKAGING_INSTALL_PREFIX: ${CPACK_PACKAGING_INSTALL_PREFIX}")
 
-add_library(csound_webserver SHARED csound_webserver.cpp)
+add_library(csound_webserver SHARED csound_webserver_ws.cpp)
 set_target_properties(csound_webserver PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${BUILD_BIN_DIR}
     LIBRARY_OUTPUT_DIRECTORY ${BUILD_LIB_DIR}
@@ -65,16 +70,18 @@ set_target_properties(csound_webserver PROPERTIES
     )
 target_include_directories(csound_webserver PUBLIC 
     "." 
+    "/opt/homebrew/include"
     "${CMAKE_SOURCE_DIR}/json/single_include/nlohmann"
     "${CMAKE_SOURCE_DIR}/csound/interfaces"
     "${CMAKE_SOURCE_DIR}/csound/include")
+target_link_libraries(csound_webserver PRIVATE 
+    "${OPENSSL_SSL_LIBRARY}"
+    "${OPENSSL_CRYPTO_LIBRARY}")
 if(APPLE)
     target_link_libraries(csound_webserver PRIVATE "-framework Cocoa")
 endif()
 install(TARGETS csound_webserver
     LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR})
-
-#add_program(advanced_server 
 
 # These are the real targets: the packages.
 

@@ -1,3 +1,21 @@
+/**
+ * Csound opcodes embedding a local Web server that serves Web pages embedded 
+ * in .csd files, and provides a JavaScript interface to much of the Csound 
+ * API from such pages. This implementation does that using JSON-RPC over 
+ * WebSocket requests.
+ */
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/json.hpp>
+#include <boost/json/src.hpp>
+#include <boost/make_unique.hpp>
+#include <boost/optional.hpp>
 #include <future>
 #include <atomic>
 #include <chrono>
@@ -7,11 +25,12 @@
 #include <ctime>
 #include <iostream>
 #include <queue>
+#include <Simple-WebSocket-Server/server_ws.hpp>
 #include <thread>
 #include <map>
 #include <memory>
 #include <cpp-httplib/httplib.h>
-#include <nlohmann/json.hpp>
+///#include <nlohmann/json.hpp>
 
 extern "C" {
     typedef int (*csoundCompileCsdText_t)(CSOUND *, const char *);
@@ -255,21 +274,22 @@ namespace csound_webserver {
      * Csound method.
      */
     template<typename T>
-    void create_json_response(const nlohmann::json &json_request, httplib::Response &response, const T &return_value_) {
-        nlohmann::json json_response;
+    void create_json_response(boost::json::value &json_request_, httplib::Response &response, const T &return_value_) {
+        boost::json::object json_request = json_request_.as_object();
+        boost::json::object json_response;
         json_response["jsonrpc"] = "2.0";
         auto id_it = json_request.find("id");
         if (id_it != json_request.end()) {
-            json_response["id"] = *id_it;
+            json_response["id"] = id_it->value();
         }
         json_response["method"] = json_request["method"];
-        if (diagnostics_enabled) std::fprintf(stderr, "json_request:  %s\n", json_request.dump().c_str());
+        if (diagnostics_enabled) std::fprintf(stderr, "json_request:  %s\n", boost::json::serialize(json_request).c_str());
         if (id_it != json_request.end()) {
-            nlohmann::json return_value(return_value_);
-            json_response["result"] = return_value;
+            ///boost::json::object return_value(return_value_);
+            json_response["result"] = boost::json::value_from(return_value_);
         }
-        if (diagnostics_enabled) std::fprintf(stderr, "json_response: %s\n", json_response.dump().c_str());
-        response.set_content(json_response.dump(), "application/json");
+        if (diagnostics_enabled) std::fprintf(stderr, "json_response: %s\n", boost::json::serialize(json_response).c_str());
+        response.set_content(boost::json::serialize(json_response), "application/json");
     }
 
     struct CsoundWebServer {
@@ -279,8 +299,11 @@ namespace csound_webserver {
         // origin.
         std::string origin;
         int port;
-        httplib::Server server;
+        int ws_port;
+        httplib::Server http_server;
+        SimpleWeb::SocketServer<SimpleWeb::WS> ws_server;
         std::thread *listener_thread;
+        std::thread *ws_listener_thread;
         CSOUND *csound;
         void *library_handle;
         std::string csound_message_callback_channel;
@@ -293,14 +316,14 @@ namespace csound_webserver {
         }
         virtual ~CsoundWebServer() {
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer...\n");
-            server.stop();
+            http_server.stop();
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::~CsoundWebServer.\n");
         }
         virtual void listen() {
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen...\n");
             // Was "0.0.0.0" for all interfaces -- for security we limit this
             // to localhost.
-            server.listen("localhost", port);
+            http_server.listen("localhost", port);
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::listen.\n");
         }
         bool &interface_initialized() {
@@ -315,7 +338,7 @@ namespace csound_webserver {
             int result = csound->OpenLibrary(&library_handle, nullptr);
             if (interface_initialized() == false) {
                 csoundCompileCsdText_ = (csoundCompileCsdText_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileCsdText");
-                csoundCompileOrc_ = (csoundCompileOrc_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileOrc");
+                csoundCompileOrc_ = (csoundCompileOrc_t) csound_->GetLibrarySymbol(library_handle, "csoundCompileOrcAsync");
                 csoundEvalCode_ = (csoundEvalCode_t) csound_->GetLibrarySymbol(library_handle, "csoundEvalCode");
                 csoundGet0dBFS_ = (csoundGet0dBFS_t) csound_->GetLibrarySymbol(library_handle, "csoundGet0dBFS");
                 csoundGetAudioChannel_ = (csoundGetAudioChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetAudioChannel");///
@@ -328,12 +351,12 @@ namespace csound_webserver {
                 csoundGetScoreTime_ = (csoundGetScoreTime_t) csound_->GetLibrarySymbol(library_handle, "csoundGetScoreTime");
                 csoundGetSr_ = (csoundGetSr_t) csound_->GetLibrarySymbol(library_handle, "csoundGetSr");
                 csoundGetStringChannel_ = (csoundGetStringChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundGetStringChannel");
-                csoundInputMessage_ = (csoundInputMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundInputMessage");///
+                csoundInputMessage_ = (csoundInputMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundInputMessageAsync");///
                 csoundIsScorePending_ = (csoundIsScorePending_t) csound_->GetLibrarySymbol(library_handle, "csoundIsScorePending");
                 csoundMessage_ = (csoundMessage_t) csound_->GetLibrarySymbol(library_handle, "csoundMessage");///
-                csoundReadScore_ = (csoundReadScore_t) csound_->GetLibrarySymbol(library_handle, "csoundReadScore");
+                csoundReadScore_ = (csoundReadScore_t) csound_->GetLibrarySymbol(library_handle, "csoundReadScoreAsync");
                 csoundRewindScore_ = (csoundRewindScore_t) csound_->GetLibrarySymbol(library_handle, "csoundRewindScore");///
-                csoundScoreEvent_ = (csoundScoreEvent_t) csound_->GetLibrarySymbol(library_handle, "csoundScoreEvent");///
+                csoundScoreEvent_ = (csoundScoreEvent_t) csound_->GetLibrarySymbol(library_handle, "csoundScoreEventAsync");///
                 csoundSetControlChannel_ = (csoundSetControlChannel_t) csound_->GetLibrarySymbol(library_handle, "csoundSetControlChannel");
                 csoundSetDebug_ = (csoundSetDebug_t) csound_->GetLibrarySymbol(library_handle, "csoundSetDebug");
                 csoundSetMessageCallback_ = (csoundSetMessageCallback_t) csound_->GetLibrarySymbol(library_handle, "csoundSetMessageCallback");
@@ -350,47 +373,59 @@ namespace csound_webserver {
             } else {
                 port = 8080;
             }
+            ws_port = port + 1;
             if (diagnostics_enabled) {
-                server.set_logger([](const auto& req, const auto& res) {
+                http_server.set_logger([](const auto& req, const auto& res) {
                     std::fprintf(stderr, "Request:  method: %s path: %s body: %s\n", req.method.c_str(), req.path.c_str(), req.body.c_str());
                     std::fprintf(stderr, "Response: reason: %s body: %s\n", res.reason.c_str(), res.body.c_str());
                 });
             }
-            server.set_keep_alive_timeout(10);
-            server.set_keep_alive_max_count(10);
-            server.set_base_dir(base_directory.c_str());
+            http_server.set_keep_alive_max_count(1024);
+            http_server.set_base_dir(base_directory.c_str());
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create: base_directory: %s\n", base_directory.c_str());
             origin = "http://localhost:" + std::to_string(port);
             csound->Message(csound_, "CsoundWebServer: origin: %s\n", origin.c_str());
+            ws_server.config.port = ws_port;
             // Add JSON-RPC skeletons... these are just HTTP APIs that follow
             // the JSON-RPC 2.0 wire protocol, so there is no need for a
             // second port to carry the RPCs.
-            server.Post("/CompileCsdText", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/hello", [=](const httplib::Request &request, httplib::Response &response) {
+                request_count++;
+                if (diagnostics_enabled) std::fprintf(stderr, "/hello [%9lu]...\n", request_count.load());
+                auto json_request = boost::json::parse(request.body);
+                auto csd_text = json_request.at_pointer("/params/csd_text").as_string();
+                auto result = csoundCompileCsdText_(csound, csd_text.c_str());
+                create_json_response(json_request, response, result);
+                response_count++;
+                if (diagnostics_enabled) std::fprintf(stderr, "/hello: response [%9lu]: %s\n", response_count.load(), response.body.c_str());
+                response.status = 200;
+            });
+            http_server.Post("/CompileCsdText", [=](const httplib::Request &request, httplib::Response &response) {
                 request_count++;
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText [%9lu]...\n", request_count.load());
-                auto json_request = nlohmann::json::parse(request.body);
-                auto csd_text = json_request["params"]["csd_text"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto csd_text = json_request.at_pointer("/params/csd_text").as_string();
                 auto result = csoundCompileCsdText_(csound, csd_text.c_str());
                 create_json_response(json_request, response, result);
                 response_count++;
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileCsdText: response [%9lu]: %s\n", response_count.load(), response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/CompileOrc", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/CompileOrc", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileOrc...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto orc_code = json_request["params"]["orc_code"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto orc_code = json_request.at_pointer("/params/orc_code").as_string();
                 auto result = csoundCompileOrc_(csound, orc_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/CompileOrc: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/EvalCode", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/EvalCode", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode...\n");
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: request.body: %s\n", request.body.c_str());
-                auto json_request = nlohmann::json::parse(request.body);
-                if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: json_request: %s\n", json_request.dump().c_str());
-                auto orc_code = json_request["params"]["orc_code"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: json_request: %s\n", json_request.as_string().c_str());
+                auto orc_code = json_request.at_pointer("/params/orc_code").as_string();
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: orc_code: %s\n", orc_code.c_str());
                 auto result = csoundEvalCode_(csound, orc_code.c_str());
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: result: %f\n", result);
@@ -398,19 +433,19 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/Get0dBFS", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/Get0dBFS", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGet0dBFS_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Get0dBFS: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetAudioChannel", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetAudioChannel", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto ksmps = csound->GetKsmps(csound);
-                auto channel_name = json_request["params"]["channel_name"].get<std::string>();
+                auto channel_name = json_request.at_pointer("/params/channel_name").as_string();
                 std::vector<MYFLT> result;
                 result.resize(ksmps);
                 MYFLT *buffer = &result.front();
@@ -419,10 +454,10 @@ namespace csound_webserver {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetAudioChannel: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetControlChannel", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetControlChannel", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetControlChannel...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["params"]["channel_name"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto channel_name = json_request.at_pointer("/params/channel_name").as_string();
                 int err;
                 auto result = csoundGetControlChannel_(csound, channel_name.c_str(), &err);
                 create_json_response(json_request, response, result);
@@ -433,208 +468,253 @@ namespace csound_webserver {
                     response.status = 404;
                 }
             });
-            server.Post("/GetDebug", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetDebug", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetDebug...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetDebug_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/EvalCode: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetKsmps", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetKsmps", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetKsmps...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetKsmps_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetKsmps: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetNchnls", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetNchnls", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnls...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetNchnls_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnls: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetNchnlsInput", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetNchnlsInput", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnlsInput...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetNchnlsInput_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetNchnlsInput: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetScoreOffsetSeconds", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetScoreOffsetSeconds", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreOffsetSeconds...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetScoreOffsetSeconds_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreOffsetSeconds: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetScoreTime", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetScoreTime", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreTime...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetScoreTime_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetScoreTime: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/GetSr", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/GetSr", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundGetSr_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/GetSr: response: %s\n", response.body.c_str());
 
                 response.status = 200;
             });
-            server.Post("/InputMessage", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/InputMessage", [=](const httplib::Request &request, httplib::Response &response) {
                 request_count++;
                 if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage [%9lu]...\n", request_count.load());
-                auto json_request = nlohmann::json::parse(request.body);
-                auto sco_code = json_request["params"]["sco_code"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto sco_code = json_request.at_pointer("/params/sco_code").as_string();
                 csoundInputMessage_(csound, sco_code.c_str());
+                ///if (true) std::fprintf(stderr, "/InputMessage [%9lu] %s\n", request_count.load(), sco_code.c_str());
                 response_count++;
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/InputMessage [%9lu]: response: %s\n", response_count.load(), response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/IsScorePending", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/IsScorePending", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 auto result = csoundIsScorePending_(csound);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/IsScorePending: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/Message", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/Message", [=](const httplib::Request &request, httplib::Response &response) {
                 request_count++;
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message [%9lu]...\n", request_count.load());
-                auto json_request = nlohmann::json::parse(request.body);
-                auto message = json_request["params"]["message"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto message = json_request.at_pointer("/params/message").as_string();
                 csoundMessage_(csound, message.c_str());
                 response_count++;
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/Message [%9lu]: response: %s\n", response_count.load(), response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/ReadScore", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/ReadScore", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto sco_code = json_request["params"]["sco_code"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto sco_code = json_request.at_pointer("/params/sco_code").as_string();
                 auto result = csoundReadScore_(csound, sco_code.c_str());
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ReadScore: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/RewindScore", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/RewindScore", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore...\n");
-                auto json_request = nlohmann::json::parse(request.body);
+                auto json_request = boost::json::parse(request.body);
                 csoundRewindScore_(csound);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/RewindScore: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/ScoreEvent", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/ScoreEvent", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto opcode_code = json_request["params"]["opcode_code"].get<std::string>();
-                auto pfields = json_request["params"]["pfields"].get<std::vector<MYFLT> >();
+                auto json_request = boost::json::parse(request.body);
+                auto opcode_code = json_request.at_pointer("/params/opcode_code").as_string();
+                auto pfields_ = json_request.at_pointer("/params/pfields");
+                auto pfields = boost::json::value_to<std::vector< MYFLT>>(pfields_);
                 csoundScoreEvent_(csound, opcode_code[0], &pfields.front(), pfields.size());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/SetControlChannel", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/SetControlChannel", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["params"]["channel_name"].get<std::string>();
-                auto channel_value = json_request["params"]["channel_value"].get<MYFLT>();
+                auto json_request = boost::json::parse(request.body);
+                auto channel_name = json_request.at_pointer("/params/channel_name").as_string();
+                auto channel_value = json_request.at_pointer("/params/channel_value").as_double();
                 csoundSetControlChannel_(csound, channel_name.c_str(), channel_value);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/SetDebug", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/SetDebug", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto enabled = json_request["params"]["enabled"].get<int>();
+                auto json_request = boost::json::parse(request.body);
+                auto enabled = json_request.at_pointer("/params/channel_name").as_int64();
                 csoundSetDebug_(csound, enabled);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetDebug: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/SetMessageCallback", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/SetMessageCallback", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetMessageCallback...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["params"]["channel_name"];
-                set_message_callback(channel_name);
+                auto json_request = boost::json::parse(request.body);
+                auto channel_name = json_request.at_pointer("/params/channel_name").as_string();
+                set_message_callback(channel_name.c_str());
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetMessageCallback: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/SetScoreOffsetSeconds", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/SetScoreOffsetSeconds", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto score_time = json_request["params"]["score_time"].get<MYFLT>();
+                auto json_request = boost::json::parse(request.body);
+                auto score_time = json_request.at_pointer("/params/score_time").as_double();
                 csoundSetScoreOffsetSeconds_(csound, score_time);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScoreOffsetSeconds: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/SetScorePending", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/SetScorePending", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto pending = json_request["params"]["pending"].get<int>();
+                auto json_request = boost::json::parse(request.body);
+                auto pending = json_request.at_pointer("/params/pending").as_int64();
                 csoundSetScorePending_(csound, pending);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetScorePending: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/SetStringChannel", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/SetStringChannel", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetControlChannel...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto channel_name = json_request["params"]["channel_name"].get<std::string>();
-                auto channel_value = json_request["params"]["channel_value"].get<std::string>();
+                auto json_request = boost::json::parse(request.body);
+                auto channel_name = json_request.at_pointer("/params/channel_name").as_string();
+                auto channel_value = json_request.at_pointer("/params/channel_value").as_string();
                 csoundSetStringChannel_(csound, channel_name.c_str(), const_cast<char *>(channel_value.c_str()));
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/SetStringChannel: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/TableGet", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/TableGet", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableGet...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto table_number = json_request["params"]["table_number"].get<int>();
-                auto index = json_request["params"]["index"].get<int>();
+                auto json_request = boost::json::parse(request.body);
+                auto table_number = json_request.at_pointer("/params/table_number").as_int64();
+                auto index = json_request.at_pointer("/params/index").as_int64();
                 MYFLT result = csoundTableGet_(csound, table_number, index);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableGet: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/TableLength", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/TableLength", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableLength...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto table_number = json_request["params"]["table_number"].get<int>();
+                auto json_request = boost::json::parse(request.body);
+                auto table_number = json_request.at_pointer("/params/table_number").as_int64();
                 int result = csoundTableLength_(csound, table_number);
                 create_json_response(json_request, response, result);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableLength: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
-            server.Post("/TableSet", [=](const httplib::Request &request, httplib::Response &response) {
+            http_server.Post("/TableSet", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableSet...\n");
-                auto json_request = nlohmann::json::parse(request.body);
-                auto table_number = json_request["params"]["table_number"].get<int>();
-                auto index = json_request["params"]["table_number"].get<int>();
-                auto  value = json_request["params"]["table_number"].get<MYFLT>();
-                csoundTableSet_(csound, table_number, index, value);
+                auto json_request = boost::json::parse(request.body);
+                auto table_number = json_request.at_pointer("/params/table_number").as_int64();
+                auto index = json_request.at_pointer("/params/index").as_int64();
+                auto value_ = json_request.at_pointer("/params/value").as_double();
+                csoundTableSet_(csound, table_number, index, value_);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/TableSet: response: %s\n", response.body.c_str());
                 response.status = 200;
             });
+            auto &echo = ws_server.endpoint["^/echo/?$"];
+            echo.on_message = [&](std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection> connection, std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::InMessage> in_message) {
+                auto out_message = in_message->string();
+                std::cerr << "Server: Message received: \"" << out_message << "\" from " << connection.get() << std::endl;
+                //~ if (out_message[0] == 'i') {
+                    //~ csoundInputMessage_(csound, out_message.c_str());
+                //~ }
+                //csoundReadScore_(csound, out_message.c_str());
+                //~ std::cerr << "Server: Sending message \"" << out_message << "\" to " << connection.get() << std::endl;
+                //~ // connection->send is an asynchronous function
+                //~ connection->send(out_message, [](const SimpleWeb::error_code &ec) {
+                    //~ if(ec) {
+                        //~ std::cerr << "Server: Error sending message. " <<
+                            //~ // See http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio/reference.html, Error Codes for error code meanings
+                            //~ "Error: " << ec << ", error message: " << ec.message() << std::endl;
+                        //~ }
+                //~ });
+            };
+            echo.on_open = [](std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection> connection) {
+                std::cerr << "Server: Opened connection " << connection.get() << std::endl;
+            };
+            // See RFC 6455 7.4.1. for status codes
+            echo.on_close = [](std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection> connection, int status, const std::string & /*reason*/) {
+                std::cerr << "Server: Closed connection " << connection.get() << " with status code " << status << std::endl;
+            };
+            // Can modify handshake response headers here if needed
+            echo.on_handshake = [](std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection> /*connection*/, SimpleWeb::CaseInsensitiveMultimap & /*response_header*/) {
+                return SimpleWeb::StatusCode::information_switching_protocols; // Upgrade to websocket
+            };
+            // See http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio/reference.html, Error Codes for error code meanings
+            echo.on_error = [](std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection> connection, const SimpleWeb::error_code &ec) {
+            std::cerr << "Server: Error in connection " << connection.get() << ". "
+                 << "Error: " << ec << ", error message: " << ec.message() << std::endl;
+            };
             // ...and start listening in a separate thread.
             listener_thread = new std::thread(&CsoundWebServer::listen, this);
+            std::promise<unsigned short> server_port;
+            ws_listener_thread = new std::thread([&]() {
+                // Start server
+                ws_server.start([&](unsigned short port_) {
+                    server_port.set_value(port_);
+                });
+            });
+            std::cerr << "CsoundWebServer: ws_server listening on port " << server_port.get_future().get() << "." << std::endl 
+               << std::endl;
         }
         static CsoundWebServer *create(CSOUND *csound_, const std::string &base_directory_, int port_) {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::create...\n");
@@ -692,7 +772,7 @@ namespace csound_webserver {
             if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message...\n");
             event_queues_for_event_channels[channel_name].push(strdup(message.c_str()));
             auto &event_queue = event_queues_for_event_channels.at(channel_name);
-            server.Get("/" + channel_name, 
+            http_server.Get("/" + channel_name, 
                 [&event_queue, channel_name](const httplib::Request & /*request*/, httplib::Response &response) {
                     ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::send_message Get: channel_name: %s\n", channel_name.c_str());
                     response.set_chunked_content_provider("text/event-stream",
@@ -706,8 +786,8 @@ namespace csound_webserver {
                             // carried on this simple wire protocol.
                             static char header[] = "data:";
                             result = sink.write(header, std::strlen(header));
-                            nlohmann::json json_data = message;
-                            auto dump = json_data.dump();
+                            boost::json::value json_data(message);
+                            auto dump = boost::json::serialize(json_data);
                             auto text = dump.c_str();
                             result = sink.write(text, std::strlen(text));
                             static char footer[] = "\n\n";
@@ -734,7 +814,7 @@ namespace csound_webserver {
             web_server_ptr = (CsoundWebServer *)csound::QueryGlobalPointer(csound, "CsoundWebServer", web_server_ptr);
             web_server_ptr->message_callback(csound, attr, format, valist);
         }
-        virtual void set_message_callback(const std::string &channel_name) {
+        virtual void set_message_callback(std::string channel_name) {
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: csound: %p channel_name: %s\n", csound, channel_name.c_str());
             csound_message_callback_channel = channel_name;
             ///if (diagnostics_enabled) std::fprintf(stderr, "CsoundWebServer::set_message_callback: CreateGlobalPointer...\n");

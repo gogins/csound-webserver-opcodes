@@ -43,8 +43,8 @@ i_instrument = p1
 i_time = p2
 i_duration = p3
 ; One of the envelopes in this instrument should be releasing, and use this:
-i_sustain = 1000
-xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
+i_sustain = p3
+;xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
@@ -60,22 +60,16 @@ i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
 k_gain = ampdb(gk_FMWaterBell_level)
 a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
 ;a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 0
-a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
-; ares transegr ia, idur, itype, ib [, idur2] [, itype] [, ic] ...
-;;a_envelope transegr 0, gi_FMWaterBell_attack, 12, 1, i_sustain, 12, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 12, 0
+a_envelope linseg 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
+k_current_time timeinsts
+if k_current_time > i_sustain then
+    prints "turning off...\n"
+    turnoff
+endif
 a_signal = a_signal * i_amplitude * a_envelope * k_gain
-
-#ifdef USE_SPATIALIZATION
-a_spatial_reverb_send init 0
-a_bsignal[] init 16
-a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
-outletv "outbformat", a_bsignal
-outleta "out", a_spatial_reverb_send
-#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-#endif
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
@@ -295,6 +289,7 @@ gS_html init {{
             </tr>
         </table>
         <p>
+        <input type="button" id='echo' value="Echo" />
         <input type="button" id='start' value="Start" />
         <input type="button" id='stop' value="Stop" />
         <input type="button" id='save_controls' value="Save" />
@@ -303,6 +298,21 @@ gS_html init {{
     <p>
     <script src="csound_jsonrpc_stub.js"></script>
     <script>
+    
+    var ws = new WebSocket("ws://localhost:8081/echo");
+    console.log(ws);
+    ws.onopen = new function(e) {
+        console.log(e);
+    };
+    ws.onmessage = new function(e) {
+        console.log(e);
+    };
+    ws.onclose = new function(e) {
+        console.log(e);
+    };
+    ws.onerror = new function(e) {
+        console.log(e);
+    };
 
     let ds;
     var gk_frame_rate = 1.;
@@ -341,7 +351,7 @@ gS_html init {{
         }
     }
 
-PenroseLSystem.prototype.reset = function () {
+    PenroseLSystem.prototype.reset = function () {
         this.production = this.axiom;
         this.drawLength = this.startLength;
         this.generations = 0;
@@ -431,8 +441,9 @@ PenroseLSystem.prototype.reset = function () {
                 let midi_key = Math.round(128. - (y / 5.));
                 let midi_velocity = x / 10.;
                 let pan = (x / 800) - .5;
-                let note = sprintf("i 1 0 2 %9.4f %9.4f 0 %9.4f\\n", midi_key, midi_velocity, pan);
+                let note = sprintf("i 1. 0. 2. %9.4f %9.4f 0 %9.4f", midi_key, midi_velocity, pan);
                 csound.InputMessage(note);
+                ///ws.send(note);
             }
             else if (step == '+') {
                 rotate(this.theta);
@@ -472,6 +483,9 @@ PenroseLSystem.prototype.reset = function () {
                 gk_frame_rate = slider_value;
             }
          });
+        $('#echo').on('click', async function() {
+            ws.send("hello");
+        });
         $('#start').on('click', async function() {
             do_render = true;
         });
@@ -501,7 +515,7 @@ PenroseLSystem.prototype.reset = function () {
 ; gi_webserver webserver_create "/home/mkg//csound-webserver-opcodes/examples/", 8080, 0
 
 ; For macOS, uncomment and if necessary edit this line:
-gi_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 1
+gi_webserver webserver_create "/Users/michaelgogins/csound-webserver-opcodes/examples/", 8080, 0
 
 webserver_open_html gi_webserver, gS_html
 
