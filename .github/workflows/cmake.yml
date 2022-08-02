@@ -83,6 +83,12 @@ jobs:
           # OPTIONAL: Specify a toolset
           toolset: msvc    
           link: shared
+          
+      - name: Locate Boost_INCLUDE_DIR
+        run: |
+          - env
+          - echo ${BOOST_ROOT}
+          - ls -ll ${BOOST_ROOT}
 
       - name: Build on Mac OS
         if: runner.os == 'macOS'
@@ -105,7 +111,7 @@ jobs:
           echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBOOST_ROOT=${{ steps.install-boost.outputs.BOOST_ROOT }}
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBOOST_ROOT=${{ steps.install-boost.outputs.BOOST_ROOT }} -DBoost_INCLUDE_DIR=/Users/runner/work/csound-webserver-opcodes/csound-webserver-opcodes/boost/boost
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           echo "Documenting..."
