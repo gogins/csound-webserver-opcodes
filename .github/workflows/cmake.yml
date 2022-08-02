@@ -86,9 +86,9 @@ jobs:
           
       - name: Locate Boost_INCLUDE_DIR
         run: |
-          - env
-          - echo ${{ steps.install-boost.outputs.BOOST_ROOT }}
-          - ls -ll ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          env
+          echo ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          ls -ll ${{ steps.install-boost.outputs.BOOST_ROOT }}
 
       - name: Build on Mac OS
         if: runner.os == 'macOS'
