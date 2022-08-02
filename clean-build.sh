@@ -12,7 +12,6 @@ rm -rf build/*
 mkdir -p build
 cd build
 echo "Configuring..."
-export BOOST_ROOT=/opt/homebrew/Cellar/boost/1.79.0_1
 cmake .. -DCMAKE_PREFIX_PATH=/usr/local:/usr
 echo "Building..."
 make

@@ -5,8 +5,6 @@ include(ExternalProject)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_VERBOSE_MAKEFILE ON)
-find_package(Boost 1.79.0)
-find_package(OpenSSL)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall")
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
@@ -16,11 +14,7 @@ include_directories(".")
 include_directories("${CMAKE_SOURCE_DIR}")
 include_directories("${CMAKE_SOURCE_DIR}/csound/interfaces")
 include_directories("${CMAKE_SOURCE_DIR}/csound/include")
-##include_directories("${CMAKE_SOURCE_DIR}/json/single_include")
-include_directories("${Boost_INCLUDE_DIRS}")
-include_directories("${Boost_INCLUDE_DIRS}"/json)
-message(STATUS "Boost: ${Boost_INCLUDE_DIRS}")
-include_directories("${OPENSSL_INCLUDE_DIR}")
+include_directories("${CMAKE_SOURCE_DIR}/json/single_include")
 set(APIVERSION "6.0")
 set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/local-linux")
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -74,9 +68,6 @@ target_include_directories(csound_webserver PUBLIC
     "${CMAKE_SOURCE_DIR}/json/single_include/nlohmann"
     "${CMAKE_SOURCE_DIR}/csound/interfaces"
     "${CMAKE_SOURCE_DIR}/csound/include")
-target_link_libraries(csound_webserver PRIVATE 
-    "${OPENSSL_SSL_LIBRARY}"
-    "${OPENSSL_CRYPTO_LIBRARY}")
 if(APPLE)
     target_link_libraries(csound_webserver PRIVATE "-framework Cocoa")
 endif()
