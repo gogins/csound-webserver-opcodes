@@ -546,9 +546,19 @@ namespace csound_webserver {
             http_server.Post("/ScoreEvent", [=](const httplib::Request &request, httplib::Response &response) {
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent...\n");
                 auto json_request = nlohmann::json::parse(request.body);
-                auto opcode_code = json_request["params"]["opcode_code"].get<std::string>();
-                auto pfields = json_request["params"]["pfields"].get<std::vector<MYFLT> >();
-                csoundScoreEvent_(csound, opcode_code[0], &pfields.front(), pfields.size());
+                auto opcode_ = json_request["params"]["opcode_code"].get<std::string>();
+                auto pfields_ = json_request["params"]["pfields"].get<std::vector<MYFLT> >();
+                char opcode = opcode_[0];
+                MYFLT *pfields = pfields_.data();
+                long pfield_count = pfields_.size();
+                if (diagnostics_enabled) {
+                    std::fprintf(stderr, "/ScoreEvent: opcode: %c pfields: [", opcode);
+                    for (long i = 0, n = pfield_count; i < n; ++i) {
+                        std::fprintf(stderr, " %9.4f", pfields[i]);
+                    }
+                std::fprintf(stderr, "]\n");
+                };
+                csoundScoreEvent_(csound, opcode, pfields, pfield_count);
                 create_json_response(json_request, response, OK);
                 if (diagnostics_enabled) std::fprintf(stderr, "/ScoreEvent: response: %s\n", response.body.c_str());
                 response.status = 200;
