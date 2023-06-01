@@ -24,13 +24,8 @@ gk_FMWaterBell_vibrato_depth init 0.05
 gk_FMWaterBell_vibrato_rate init 6
 gk_FMWaterBell_midi_dynamic_range init 20
 
-gk_FMWaterBell_front_to_back chnexport "gk_FMWaterBell_front_to_back", 3 ;  0
-gk_FMWaterBell_left_to_right chnexport "gk_FMWaterBell_left_to_right", 3 ;  0.5
-gk_FMWaterBell_bottom_to_top chnexport "gk_FMWaterBell_bottom_to_top", 3 ;  0
-
-gk_FMWaterBell_front_to_back init 0
-gk_FMWaterBell_left_to_right init 0.5
-gk_FMWaterBell_bottom_to_top init 0
+gk_FMWaterBell_space_left_to_right chnexport "gk_FMWaterBell_space_left_to_right", 3
+gk_FMWaterBell_space_left_to_right init .5
 
 gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
 
@@ -44,24 +39,28 @@ xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
 i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-k_space_front_to_back = gk_FMWaterBell_front_to_back
-k_space_left_to_right = gk_FMWaterBell_bottom_to_top
+k_space_front_to_back = p6
+if p7 ==0 then
+k_space_left_to_right = gk_FMWaterBell_space_left_to_right
+else
+k_space_left_to_right = p7
+endif
 k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
 ; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 75
+i_level_correction = 80
 i_normalization = ampdb(-i_level_correction) / 2
 i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
 k_gain = ampdb(gk_FMWaterBell_level)
+i_releasing_attack = 3 / min(i_frequency, 256)
+i_releasing_release = .01
 a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
-;a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 0
-a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
-; ares transegr ia, idur, itype, ib [, idur2] [, itype] [, ic] ...
-; a_envelope transegr 0, gi_FMWaterBell_attack, 12, 1, i_sustain, 12, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 12, 0
-a_signal = a_signal * i_amplitude * a_envelope * k_gain
+a_envelope transeg 0, gi_FMWaterBell_attack, 6,  1, gi_FMWaterBell_sustain, -6,  0
+a_declicking cossegr 0, i_releasing_attack, 1, gi_FMWaterBell_sustain - 1, 1, i_releasing_release, 0
+;;;a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
+a_signal = a_signal * i_amplitude * a_envelope * a_declicking * k_gain
 
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -73,4 +72,5 @@ a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin

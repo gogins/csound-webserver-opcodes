@@ -1,6 +1,5 @@
 // This must be initialized in the orc header before any #includes.
 
-gi_Pianoteq vstinit "/home/mkg/Pianoteq\ 7/x86-64bit/Pianoteq\ 7.so", 0
 vstinfo gi_Pianoteq 
 
 gk_PianoOutPianoteq_level chnexport "gk_PianoOutPianoteq_level", 3 ;  0
@@ -16,7 +15,7 @@ gk_PianoOutPianoteq_left_to_right init 0.5
 gk_PianoOutPianoteq_bottom_to_top init 0
 
 instr PianoOutPianoteq
-vstprogset gi_Pianoteq, 1
+vstprogset gi_Pianoteq, 3
 ; Sustain off.
 vstparamset gi_Pianoteq, 6, 1
 ; Reverb switch off.
@@ -54,5 +53,5 @@ outleta "out", a_spatial_reverb_send
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin

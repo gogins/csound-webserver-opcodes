@@ -2,11 +2,13 @@ gk_ZakianFlute_midi_dynamic_range chnexport "gk_ZakianFlute_midi_dynamic_range",
 gk_ZakianFlute_level chnexport "gk_ZakianFlute_level", 3 ;  0
 gk_ZakianFlute_pan chnexport "gk_ZakianFlute_pan", 3 ;  .5
 gi_ZakianFLute_seed chnexport "gi_ZakianFLute_seed", 3 ;  .5
+gi_ZakianFLute_space_left_to_front chnexport "gi_ZakianFLute_space_left_to_front", 3 ;  .5
 
 gk_ZakianFlute_midi_dynamic_range init 20
 gk_ZakianFlute_level init 0
 gk_ZakianFlute_pan init .5
 gi_ZakianFLute_seed init .5
+gi_ZakianFLute_space_left_to_front init .5
 
 gi_ZakianFLute_f2  ftgen 0, 0, 16, -2, 40, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 10240
 gi_ZakianFlute_f26 ftgen 0, 0, 65537, -10, 2000, 489, 74, 219, 125, 9, 33, 5, 5
@@ -23,24 +25,24 @@ gi_ZakianFlute_f36 ftgen 0, 0, 65537, -10, 174, 12
 gi_ZakianFlute_f37 ftgen 0, 0, 65537, -10, 314, 13
 gi_ZakianFlute_wtsin ftgen 0, 0, 65537, 10, 1
 
-gk_ZakianFlute_front_to_back chnexport "gk_ZakianFlute", 3 ;  0
-gk_ZakianFlute_left_to_right chnexport "gk_ZakianFlute_left_to_right", 3 ;  0.5
-gk_ZakianFlute_bottom_to_top chnexport "gk_ZakianFlute_bottom_to_top", 3 ;  0
-
-gk_ZakianFlute_front_to_back init 0
-gk_ZakianFlute_left_to_right init 0.5
-gk_ZakianFlute_bottom_to_top init 0
-
 instr ZakianFlute
 ; Author: Lee Zakian
 ; Adapted by: Michael Gogins
 i_instrument = p1
 i_time = p2
+if p3 == -1 then
+i_duration = 1000
+else
 i_duration = p3
+endif
 i_midi_key = p4
 i_midi_velocity = p5
 k_space_front_to_back = p6
+if p7 == 0 then
+k_space_left_to_right = gi_ZakianFLute_space_left_to_front
+else
 k_space_left_to_right = p7
+endif
 k_space_bottom_to_top = p8
 i_phase = p9
 i_overall_amps = 65.2
@@ -49,16 +51,13 @@ i_midi_dynamic_range = i(gk_ZakianFlute_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
 i_amplitude = ampdb(i_midi_velocity) * i_normalization
 k_gain = ampdb(gk_ZakianFlute_level)
-;;;iattack = .002
-;;;isustain = p3
-;;;irelease = .3
 ;;;xtratim iattack + irelease
 iHz = cpsmidinn(i_midi_key)
 kHz = k(iHz)
 // Bug?
 // aenvelope transeg 1.0, 20.0, -10.0, 0.05
 aenvelope transegr 1.0, 20.0, -10.0, 0.05
-ip3 = (p3 < 3.0 ? p3 : 3.0)
+ip3 = 3;;; (p3 < 3.0 ? p3 : 3.0)
 ; parameters
 ; p4 overall amplitude scaling factor
 ip4 init i_amplitude
@@ -91,8 +90,8 @@ gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
 ifiltcut tablei ip9, gi_ZakianFLute_f2 ; lowpass filter cutoff frequency
 iattack = (iattack < 6/kr ? 6/kr : iattack) ; minimal attack length
 idecay = (idecay < 6/kr ? 6/kr : idecay) ; minimal decay length
-isustain = p3 - iattack - idecay
-p3 = (isustain < 5/kr ? iattack+idecay+5/kr : p3) ; minimal sustain length
+isustain = i_duration - iattack - idecay
+;;;p3 = (isustain < 5/kr ? iattack+idecay+5/kr : i_duration) ; minimal sustain length
 isustain = (isustain < 5/kr ? 5/kr : isustain)
 iatt = iattack/6
 isus = isustain/4
@@ -111,12 +110,12 @@ gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
 ivibr2 = gi_ZakianFLute_seed
 gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
 if ip6 < 0 goto vibrato1
-kvibrate linseg 2.5+ivibr1, p3, 4.5+ivibr2 ; if p6 positive vibrato gets faster
+kvibrate linseg 2.5+ivibr1, isustain, 4.5+ivibr2 ; if p6 positive vibrato gets faster
 goto vibrato2
 vibrato1:
 ivibr3 = gi_ZakianFLute_seed
 gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
-kvibrate linseg 3.5+ivibr1, .1, 4.5+ivibr2, p3-.1, 2.5+ivibr3 ; if p6 negative vibrato gets slower
+kvibrate linseg 3.5+ivibr1, .1, 4.5+ivibr2,isustain-.1, 2.5+ivibr3 ; if p6 negative vibrato gets slower
 vibrato2:
 kvibrater randi .1*kvibrate, 5, gi_ZakianFLute_seed ; up to 10% vibrato rate variation
 gi_ZakianFLute_seed = frac(gi_ZakianFLute_seed*105.947)
@@ -228,13 +227,18 @@ kcut linseg 0, iattack, ifiltcut, isustain, ifiltcut, idecay, 0 ; lowpass filter
 afilt tone asig, kcut
 a_signal balance afilt, asig
 i_attack = .002
-i_sustain = p3
+i_sustain = i_duration
 i_release = 0.01
-xtratim i_attack + i_release
-a_declicking linseg 0, i_attack, 1, i_sustain, 1, i_release, 0
-a_signal = a_signal * i_amplitude * a_declicking * k_gain
+i_declick_attack = i_attack
+i_declick_release = i_declick_attack * 2
+; The end of the note must be extended _past_ the end of the release segment.
+xtratim 1
+a_declicking_envelope cossegr 0, i_declick_attack, 1,  i_duration, 1,  i_declick_release, 0
+; That envelope is then low-pass filtered to remove most discontinuities.
+a_filtered_envelope tonex a_declicking_envelope, 40, 4
+a_signal = a_signal * i_amplitude * a_filtered_envelope * k_gain 
 
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 #ifdef USE_SPATIALIZATION
 a_spatial_reverb_send init 0
 a_bsignal[] init 16
@@ -243,7 +247,7 @@ outletv "outbformat", a_bsignal
 outleta "out", a_spatial_reverb_send
 #else
 a_signal *= .7
-a_out_left, a_out_right pan2 a_signal, p7
+a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif

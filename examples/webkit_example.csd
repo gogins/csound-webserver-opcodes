@@ -9,7 +9,7 @@ To search for extraterrestrial intelligence from your home computer visit
 https://setiathome.berkeley.edu/
 </CsLicense>
 <CsOptions;
--m195 -odac
+-m195 -odac:plughw:2,0
 </CsOptions>
 <CsInstruments>
 

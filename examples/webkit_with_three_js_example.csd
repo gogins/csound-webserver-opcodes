@@ -50,8 +50,8 @@ Even if you don't get everything here running, you may still find useful
 information on how to use some of these features in your own pieces.
 
 </CsLicense>
-<CsOptions>
--m0 -d -odac
+<CsOptions>test.wav
+;dac:plughw:2,0
 </CsOptions>
 <CsInstruments>
 
@@ -591,7 +591,7 @@ S_score_generator_code init {{
 //////////////////////////////////////////////////////////////////////////////
 void* __dso_handle = (void *)&__dso_handle;
 
-static bool diagnostics_enabled = false;
+static bool diagnostics_enabled = true;
 
 extern "C" { 
 
@@ -653,7 +653,7 @@ extern "C" int score_generator(CSOUND *csound) {
     Cursor pen;
     modality.fromString("0 4 7 11 14");
     pen.chord = modality;
-    pen.note = {1,1,144,0,1,1,0,0,0,0,1};
+    pen.note = csound::Event{1,1,144,0,1,1,0,0,0,0,1};
     pen.note[csound::Event::DURATION] = 0.0125;
 
     std::vector<std::function<Cursor(const Cursor &, int, csound::Score &)>> generators;
@@ -832,7 +832,7 @@ extern "C" int score_generator(CSOUND *csound) {
 // This compiles the above C++ module and then calls its entry point function.
 // Note that dynamic link libraries must be passed as complete filepaths.
 //////////////////////////////////////////////////////////////////////////////
-i_result clang_compile "score_generator", S_score_generator_code, "-g -v -O2 -std=c++17 -I/home/mkg/clang-opcodes -I/home/mkg/csound-extended/CsoundAC -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/libCsoundAC.so.6.0 /usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /home/mkg/webkit-opcodes/webkit_opcodes.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+i_result clang_compile "score_generator", S_score_generator_code, "-g -O2 -std=c++17 -I/home/mkg/clang-opcodes -I/home/mkg/csound-ac/CsoundAC -I/usr/local/include/csound -I/usr/include/eigen3 -I/home/mkg/csound-webserver-opcodes/csound/interfaces -stdlib=libstdc++", "/usr/lib/libCsoundAC.so.6.0 /usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /home/mkg/webkit-opcodes/webkit_opcodes.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 instr Exit
 prints "exitnow i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
