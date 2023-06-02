@@ -366,7 +366,7 @@ gk_PianoOutPianoteq_level init -44.04858959726072
 // This instrument defines a WebKit browser embedded in Csound. The following 
 // HTML5 code is pretty much the standard sort of thing for Web pages.
 //
-// However, the <csound.js> script brings a proxy for the instance of Csound 
+// However, the <csound_jsonrpc_stub.js> script brings a proxy for the instance of Csound 
 // that is performing into the JavaScript context of the Web page, so the 
 // event handlers of the sliders on the page can call Csound to set control 
 // channel values.
@@ -426,7 +426,7 @@ gS_html init {{<!DOCTYPE html>
     -->
     <script src="TrackballControls.js"></script>
     <script src="PianoRoll3D.js"></script>    
-    <script src="csound.js"></script>    
+    <script src="csound_jsonrpc_stub.js"></script>    
 </head>
 <body style="background-color:black;box-sizing:border-box;padding:10px;:fullscreen">
     <canvas id="canvas" style="block;height:100vh;width:100vw">

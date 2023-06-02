@@ -50,7 +50,8 @@ Even if you don't get everything here running, you may still find useful
 information on how to use some of these features in your own pieces.
 
 </CsLicense>
-<CsOptions>test.wav
+<CsOptions>
+-+msg_color=0 -m34 -d --sample-accurate -f -otest.wav
 ;dac:plughw:2,0
 </CsOptions>
 <CsInstruments>
@@ -120,9 +121,9 @@ prealloc 9, 20
 #include "Blower.inc"
 #include "ZakianFlute.inc"
 gi_Pianoteq vstinit "/home/mkg/Pianoteq\ 7/x86-64bit/Pianoteq\ 7.so", 0
-#include "PianoNotePianoteq.inc"
+#include "PianoNotePianoteqVst2.inc"
 #include "Bower.inc"
-#include "PianoOutPianoteq.inc"
+#include "PianoOutPianoteqVst2.inc"
 alwayson "PianoOutPianoteq"
 #include "MVerb.inc"
 //alwayson "MVerb"
@@ -195,7 +196,7 @@ gS_html init {{<!DOCTYPE html>
     -->
     <script src="TrackballControls.js"></script>
     <script src="PianoRoll3D.js"></script>    
-    <script src="csound.js"></script>    
+    <script src="csound_jsonrpc_stub.js"></script>    
 </head>
 <body style="background-color:black;box-sizing:border-box;padding:10px;:fullscreen">
     <canvas id="canvas" style="block;height:100vh;width:100vw">
